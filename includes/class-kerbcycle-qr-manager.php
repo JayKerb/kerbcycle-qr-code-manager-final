@@ -216,7 +216,7 @@ class KerbCycle_QR_Manager {
     }
 
     public function register_rest_endpoints() {
-        register_rest_route('qrmgmt2/v1', '/qr-code/scanned', array(
+        register_rest_route('kerbcycle/v1', '/qr-code/scanned', array(
             'methods' => 'POST',
             'callback' => array($this, 'handle_qr_code_scan'),
             'permission_callback' => '__return_true',
