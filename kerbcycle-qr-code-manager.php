@@ -16,6 +16,9 @@ if (!defined('KERBCYCLE_QR_URL')) {
     define('KERBCYCLE_QR_URL', plugin_dir_url(__FILE__));
 }
 
+// Include required files
+require_once plugin_dir_path(__FILE__) . 'includes/class-kerbcycle-qr-api.php';
+
 // Main plugin class
 class KerbCycle_QR_Manager {
 
@@ -128,7 +131,7 @@ class KerbCycle_QR_Manager {
         $table_name = $wpdb->prefix . 'kerbcycle_qr_codes';
 
         $qr_codes = $wpdb->get_results(
-            $wpdb->prepare("SELECT * FROM $table_name ORDER BY assigned_at DESC LIMIT %d", 100)
+            "SELECT * FROM $table_name ORDER BY assigned_at DESC LIMIT 100"
         );
         ?>
         <div class="wrap">
@@ -205,10 +208,41 @@ class KerbCycle_QR_Manager {
     public function assign_qr_code() {
         check_ajax_referer('kerbcycle_qr_nonce', 'security');
 
+        // Validate input
+        if (!isset($_POST['qr_code']) || !isset($_POST['customer_id'])) {
+            wp_send_json_error(array('message' => 'Missing required parameters'));
+            return;
+        }
+
         global $wpdb;
         $qr_code = sanitize_text_field($_POST['qr_code']);
         $user_id = intval($_POST['customer_id']);
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
+
+        // Validate QR code format (basic validation)
+        if (empty($qr_code) || strlen($qr_code) > 255) {
+            wp_send_json_error(array('message' => 'Invalid QR code format'));
+            return;
+        }
+
+        // Validate user ID
+        if ($user_id <= 0) {
+            wp_send_json_error(array('message' => 'Invalid customer ID'));
+            return;
+        }
+
+        // Check if QR code exists
+        $existing_qr = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE qr_code = %s", $qr_code));
+        if (!$existing_qr) {
+            wp_send_json_error(array('message' => 'QR code not found'));
+            return;
+        }
+
+        // Check if QR code is already assigned
+        if ($existing_qr->status === 'assigned' && $existing_qr->user_id) {
+            wp_send_json_error(array('message' => 'QR code is already assigned to another user'));
+            return;
+        }
 
         $result = $wpdb->update(
             $table,
@@ -238,9 +272,34 @@ class KerbCycle_QR_Manager {
     public function release_qr_code() {
         check_ajax_referer('kerbcycle_qr_nonce', 'security');
 
+        // Validate input
+        if (!isset($_POST['qr_code'])) {
+            wp_send_json_error(array('message' => 'Missing QR code parameter'));
+            return;
+        }
+
         global $wpdb;
         $qr_code = sanitize_text_field($_POST['qr_code']);
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
+
+        // Validate QR code format
+        if (empty($qr_code) || strlen($qr_code) > 255) {
+            wp_send_json_error(array('message' => 'Invalid QR code format'));
+            return;
+        }
+
+        // Check if QR code exists
+        $existing_qr = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE qr_code = %s", $qr_code));
+        if (!$existing_qr) {
+            wp_send_json_error(array('message' => 'QR code not found'));
+            return;
+        }
+
+        // Check if QR code is already available
+        if ($existing_qr->status === 'available') {
+            wp_send_json_error(array('message' => 'QR code is already available'));
+            return;
+        }
 
         $result = $wpdb->update(
             $table,
@@ -263,7 +322,7 @@ class KerbCycle_QR_Manager {
 
     // REST API: Handle QR code scan
     public function register_rest_endpoints() {
-        register_rest_route('qrmgmt2/v1', '/qr-code/scanned', array(
+        register_rest_route('kerbcycle/v1', '/qr-code/scanned', array(
             'methods' => 'POST',
             'callback' => array($this, 'handle_qr_code_scan'),
             'permission_callback' => '__return_true'
@@ -274,10 +333,30 @@ class KerbCycle_QR_Manager {
         $qr_code = sanitize_text_field($request->get_param('qr_code'));
         $user_id = intval($request->get_param('user_id'));
 
+        // Validate input
+        if (empty($qr_code) || strlen($qr_code) > 255) {
+            return new WP_Error('invalid_qr_code', 'Invalid QR code format', array('status' => 400));
+        }
+
+        if ($user_id <= 0) {
+            return new WP_Error('invalid_user_id', 'Invalid user ID', array('status' => 400));
+        }
+
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
 
-        $wpdb->update(
+        // Check if QR code exists
+        $existing_qr = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE qr_code = %s", $qr_code));
+        if (!$existing_qr) {
+            return new WP_Error('qr_not_found', 'QR code not found', array('status' => 404));
+        }
+
+        // Check if QR code is already assigned
+        if ($existing_qr->status === 'assigned' && $existing_qr->user_id) {
+            return new WP_Error('qr_already_assigned', 'QR code is already assigned', array('status' => 409));
+        }
+
+        $result = $wpdb->update(
             $table,
             array(
                 'user_id' => $user_id,
@@ -288,6 +367,10 @@ class KerbCycle_QR_Manager {
             array('%d', '%s', '%s'),
             array('%s')
         );
+
+        if ($result === false) {
+            return new WP_Error('update_failed', 'Failed to update QR code', array('status' => 500));
+        }
 
         return new WP_REST_Response(array(
             'success' => true,
@@ -315,6 +398,11 @@ class KerbCycle_QR_Manager {
 // Instantiate the plugin
 if (class_exists('KerbCycle_QR_Manager')) {
     new KerbCycle_QR_Manager();
+}
+
+// Initialize API class
+if (class_exists('KerbCycle_QR_API')) {
+    new KerbCycle_QR_API();
 }
 
 // Activation/Deactivation hooks

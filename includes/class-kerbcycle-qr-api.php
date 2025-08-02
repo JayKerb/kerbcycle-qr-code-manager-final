@@ -1,4 +1,8 @@
 <?php
+// Prevent direct access
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 class KerbCycle_QR_API {
 

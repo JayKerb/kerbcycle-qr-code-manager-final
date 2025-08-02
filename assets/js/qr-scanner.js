@@ -1,10 +1,29 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const scanner = new Html5Qrcode("reader", true);
+    let scannedQRCode = ''; // Store QR code data
     const scanResult = document.getElementById("scan-result");
+    const assignBtn = document.getElementById("assign-qr-btn");
+    const customerIdInput = document.getElementById("customer-id");
 
-    document.getElementById("assign-qr-btn").addEventListener("click", function () {
-        const userId = document.getElementById("customer-id").value;
-        const qrCode = scanResult.innerText;
+    // Check if required elements exist
+    if (!scanResult || !assignBtn || !customerIdInput) {
+        console.error('Required DOM elements not found');
+        return;
+    }
+
+    // Initialize scanner with error handling
+    let scanner;
+    try {
+        scanner = new Html5Qrcode("reader", true);
+    } catch (error) {
+        console.error('Failed to initialize QR scanner:', error);
+        scanResult.style.display = 'block';
+        scanResult.innerHTML = '<strong>❌ Error: Failed to initialize QR scanner</strong>';
+        return;
+    }
+
+    assignBtn.addEventListener("click", function () {
+        const userId = customerIdInput.value;
+        const qrCode = scannedQRCode; // Use stored QR code data
 
         if (!userId || !qrCode) {
             alert("Please enter user ID and scan a QR code.");
@@ -22,8 +41,12 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(data => {
             if (data.success) {
                 alert("QR code assigned successfully.");
+                // Clear the form
+                customerIdInput.value = '';
+                scannedQRCode = '';
+                scanResult.style.display = 'none';
             } else {
-                alert("Failed to assign QR code.");
+                alert("Failed to assign QR code: " + (data.data?.message || 'Unknown error'));
             }
         })
         .catch(error => {
@@ -33,11 +56,23 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     function onScanSuccess(decodedText) {
-    scanner.pause(); // Stop scanning after success
-    scanResult.style.display = 'block'; // Make the result visible
-    scanResult.classList.add('updated'); // Use WordPress success styles
-    scanResult.innerHTML = `<strong>✅ QR Code Scanned Successfully!</strong><br>Content: <code>${decodedText}</code>`;
-}
+        scannedQRCode = decodedText; // Store QR code data
+        scanner.pause(); // Stop scanning after success
+        scanResult.style.display = 'block'; // Make the result visible
+        scanResult.classList.add('updated'); // Use WordPress success styles
+        scanResult.innerHTML = `<strong>✅ QR Code Scanned Successfully!</strong><br>Content: <code>${decodedText}</code>`;
+    }
 
-    scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
+    function onScanError(error) {
+        // Handle scan errors gracefully
+        console.warn('QR scan error:', error);
+    }
+
+    // Start scanner with error handling
+    scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess, onScanError)
+        .catch(error => {
+            console.error('Failed to start scanner:', error);
+            scanResult.style.display = 'block';
+            scanResult.innerHTML = '<strong>❌ Error: Failed to start camera. Please check permissions.</strong>';
+        });
 });
