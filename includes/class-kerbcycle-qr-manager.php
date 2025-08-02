@@ -1,20 +1,4 @@
 <?php
-/*
-Plugin Name: KerbCycle QR Code Manager
-Description: Manages QR code scanning and assignment for customers
-Version: 1.0
-Author: Your Name
-*/
-
-// Define constants
-if (!defined('KERBCYCLE_QR_URL')) {
-    define('KERBCYCLE_QR_URL', plugin_dir_url(__FILE__));
-}
-
-// Instantiate the main class
-if (class_exists('KerbCycle_QR_Manager')) {
-    new KerbCycle_QR_Manager();
-}
 
 class KerbCycle_QR_Manager {
 
@@ -281,7 +265,3 @@ class KerbCycle_QR_Manager {
         wp_mail($admin_email, $subject, $message);
     }
 }
-
-// Activation Hooks
-register_activation_hook(__FILE__, array('KerbCycle_QR_Manager', 'activate'));
-register_deactivation_hook(__FILE__, array('KerbCycle_QR_Manager', 'deactivate'));
