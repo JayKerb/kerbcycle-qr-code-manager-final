@@ -186,7 +186,7 @@ class KerbCycle_QR_Manager {
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
         $available_codes = $wpdb->get_results("SELECT qr_code FROM $table WHERE status = 'available' ORDER BY id DESC");
-        $all_codes = $wpdb->get_results("SELECT qr_code, user_id, status FROM $table ORDER BY id DESC");
+        $all_codes = $wpdb->get_results("SELECT id, qr_code, user_id, status, assigned_at FROM $table ORDER BY id DESC");
         ?>
         <div class="wrap">
             <h1>KerbCycle QR Code Manager</h1>
@@ -227,10 +227,21 @@ class KerbCycle_QR_Manager {
             <p class="description"><?php esc_html_e('Drag and drop to reorder, select multiple codes for bulk actions, or click a code to edit.', 'kerbcycle'); ?></p>
             <form id="qr-code-bulk-form">
                 <ul id="qr-code-list">
+                    <li class="qr-header">
+                        <span class="qr-id"><?php esc_html_e('ID', 'kerbcycle'); ?></span>
+                        <span class="qr-text"><?php esc_html_e('QR Code', 'kerbcycle'); ?></span>
+                        <span class="qr-user"><?php esc_html_e('User ID', 'kerbcycle'); ?></span>
+                        <span class="qr-status"><?php esc_html_e('Status', 'kerbcycle'); ?></span>
+                        <span class="qr-assigned"><?php esc_html_e('Assigned At', 'kerbcycle'); ?></span>
+                    </li>
                     <?php foreach ($all_codes as $code) : ?>
-                        <li class="qr-item" data-code="<?= esc_attr($code->qr_code); ?>">
+                        <li class="qr-item" data-code="<?= esc_attr($code->qr_code); ?>" data-id="<?= esc_attr($code->id); ?>">
                             <input type="checkbox" class="qr-select" />
+                            <span class="qr-id"><?= esc_html($code->id); ?></span>
                             <span class="qr-text" contenteditable="true"><?= esc_html($code->qr_code); ?></span>
+                            <span class="qr-user"><?= $code->user_id ? esc_html($code->user_id) : '—'; ?></span>
+                            <span class="qr-status"><?= esc_html(ucfirst($code->status)); ?></span>
+                            <span class="qr-assigned"><?= $code->assigned_at ? esc_html($code->assigned_at) : '—'; ?></span>
                         </li>
                     <?php endforeach; ?>
                 </ul>
