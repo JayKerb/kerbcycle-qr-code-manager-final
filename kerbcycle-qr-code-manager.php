@@ -28,9 +28,14 @@ class KerbCycle_QR_Manager {
         // AJAX handlers
         add_action('wp_ajax_assign_qr_code', array($this, 'assign_qr_code'));
         add_action('wp_ajax_release_qr_code', array($this, 'release_qr_code'));
+        add_action('wp_ajax_bulk_release_qr_codes', array($this, 'bulk_release_qr_codes'));
+        add_action('wp_ajax_update_qr_code', array($this, 'update_qr_code'));
 
         // REST API endpoint
         add_action('rest_api_init', array($this, 'register_rest_endpoints'));
+
+        // Reminder handler
+        add_action('kerbcycle_qr_reminder', array($this, 'handle_reminder'), 10, 2);
 
         // Shortcode support
         add_shortcode('kerbcycle_scanner', array($this, 'generate_frontend_scanner'));
@@ -103,7 +108,7 @@ class KerbCycle_QR_Manager {
         wp_enqueue_script(
             'kerbcycle-qr-js',
             KERBCYCLE_QR_URL . 'assets/js/qr-scanner.js',
-            array('html5-qrcode'),
+            array('html5-qrcode', 'jquery-ui-sortable'),
             '1.0',
             true
         );
@@ -117,6 +122,8 @@ class KerbCycle_QR_Manager {
     // Register plugin settings
     public function register_settings() {
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_email');
+        register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_sms');
+        register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_reminders');
 
         add_settings_section(
             'kerbcycle_qr_main',
@@ -132,6 +139,22 @@ class KerbCycle_QR_Manager {
             'kerbcycle_qr_settings',
             'kerbcycle_qr_main'
         );
+
+        add_settings_field(
+            'kerbcycle_qr_enable_sms',
+            __('Enable SMS Notifications', 'kerbcycle'),
+            array($this, 'render_enable_sms_field'),
+            'kerbcycle_qr_settings',
+            'kerbcycle_qr_main'
+        );
+
+        add_settings_field(
+            'kerbcycle_qr_enable_reminders',
+            __('Enable Automated Reminders', 'kerbcycle'),
+            array($this, 'render_enable_reminders_field'),
+            'kerbcycle_qr_settings',
+            'kerbcycle_qr_main'
+        );
     }
 
     public function render_enable_email_field() {
@@ -142,11 +165,28 @@ class KerbCycle_QR_Manager {
         <?php
     }
 
+    public function render_enable_sms_field() {
+        $value = get_option('kerbcycle_qr_enable_sms', 0);
+        ?>
+        <input type="checkbox" name="kerbcycle_qr_enable_sms" value="1" <?php checked(1, $value); ?> />
+        <span class="description"><?php esc_html_e('Send SMS when QR codes are assigned', 'kerbcycle'); ?></span>
+        <?php
+    }
+
+    public function render_enable_reminders_field() {
+        $value = get_option('kerbcycle_qr_enable_reminders', 0);
+        ?>
+        <input type="checkbox" name="kerbcycle_qr_enable_reminders" value="1" <?php checked(1, $value); ?> />
+        <span class="description"><?php esc_html_e('Schedule automated reminders after assignment', 'kerbcycle'); ?></span>
+        <?php
+    }
+
     // Admin dashboard page
     public function admin_page() {
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
         $available_codes = $wpdb->get_results("SELECT qr_code FROM $table WHERE status = 'available' ORDER BY id DESC");
+        $all_codes = $wpdb->get_results("SELECT qr_code, user_id, status FROM $table ORDER BY id DESC");
         ?>
         <div class="wrap">
             <h1>KerbCycle QR Code Manager</h1>
@@ -168,6 +208,8 @@ class KerbCycle_QR_Manager {
                     <?php endforeach; ?>
                 </select>
                 <label><input type="checkbox" id="send-email" <?php checked(get_option('kerbcycle_qr_enable_email', 1)); ?>> <?php esc_html_e('Send notification email', 'kerbcycle'); ?></label>
+                <label><input type="checkbox" id="send-sms" <?php checked(get_option('kerbcycle_qr_enable_sms', 0)); ?>> <?php esc_html_e('Send SMS', 'kerbcycle'); ?></label>
+                <label><input type="checkbox" id="send-reminder" <?php checked(get_option('kerbcycle_qr_enable_reminders', 0)); ?>> <?php esc_html_e('Schedule reminder', 'kerbcycle'); ?></label>
                 <p>
                     <button id="assign-qr-btn" class="button button-primary"><?php esc_html_e('Assign QR Code', 'kerbcycle'); ?></button>
                     <button id="release-qr-btn" class="button"><?php esc_html_e('Release QR Code', 'kerbcycle'); ?></button>
@@ -175,6 +217,24 @@ class KerbCycle_QR_Manager {
                 <div id="reader" style="width: 100%; max-width: 400px; margin-top: 20px;"></div>
                 <div id="scan-result" class="updated" style="display: none;"></div>
             </div>
+
+            <h2><?php esc_html_e('Manage QR Codes', 'kerbcycle'); ?></h2>
+            <p class="description"><?php esc_html_e('Drag and drop to reorder, select multiple codes for bulk actions, or click a code to edit.', 'kerbcycle'); ?></p>
+            <form id="qr-code-bulk-form">
+                <ul id="qr-code-list">
+                    <?php foreach ($all_codes as $code) : ?>
+                        <li class="qr-item" data-code="<?= esc_attr($code->qr_code); ?>">
+                            <input type="checkbox" class="qr-select" />
+                            <span class="qr-text" contenteditable="true"><?= esc_html($code->qr_code); ?></span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+                <select id="bulk-action">
+                    <option value=""><?php esc_html_e('Bulk actions', 'kerbcycle'); ?></option>
+                    <option value="release"><?php esc_html_e('Release', 'kerbcycle'); ?></option>
+                </select>
+                <button id="apply-bulk" class="button"><?php esc_html_e('Apply', 'kerbcycle'); ?></button>
+            </form>
         </div>
         <?php
     }
@@ -282,6 +342,8 @@ class KerbCycle_QR_Manager {
         $qr_code = sanitize_text_field($_POST['qr_code']);
         $user_id = intval($_POST['customer_id']);
         $send_email = !empty($_POST['send_email']) && get_option('kerbcycle_qr_enable_email', 1);
+        $send_sms = !empty($_POST['send_sms']) && get_option('kerbcycle_qr_enable_sms', 0);
+        $send_reminder = !empty($_POST['send_reminder']) && get_option('kerbcycle_qr_enable_reminders', 0);
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
 
         $result = $wpdb->insert(
@@ -298,6 +360,12 @@ class KerbCycle_QR_Manager {
         if ($result !== false) {
             if ($send_email) {
                 $this->send_notification_email($user_id, $qr_code);
+            }
+            if ($send_sms) {
+                $this->send_notification_sms($user_id, $qr_code);
+            }
+            if ($send_reminder) {
+                $this->schedule_reminder($user_id, $qr_code);
             }
             wp_send_json_success(array(
                 'message' => 'QR code assigned successfully',
@@ -341,6 +409,66 @@ class KerbCycle_QR_Manager {
         } else {
             wp_send_json_error(array('message' => 'Failed to release QR code'));
         }
+    }
+
+    // AJAX: Bulk release QR codes
+    public function bulk_release_qr_codes() {
+        check_ajax_referer('kerbcycle_qr_nonce', 'security');
+
+        $codes = isset($_POST['qr_codes']) ? explode(',', sanitize_text_field($_POST['qr_codes'])) : array();
+        if (empty($codes)) {
+            wp_send_json_error(array('message' => 'No QR codes provided'));
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'kerbcycle_qr_codes';
+        foreach ($codes as $code) {
+            $latest_id = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT id FROM $table WHERE qr_code = %s ORDER BY id DESC LIMIT 1",
+                    $code
+                )
+            );
+            if ($latest_id) {
+                $wpdb->query(
+                    $wpdb->prepare(
+                        "UPDATE $table SET user_id = NULL, status = %s, assigned_at = NULL WHERE id = %d",
+                        'available',
+                        $latest_id
+                    )
+                );
+            }
+        }
+
+        wp_send_json_success(array('message' => 'QR codes released'));
+    }
+
+    // AJAX: Inline update QR code text
+    public function update_qr_code() {
+        check_ajax_referer('kerbcycle_qr_nonce', 'security');
+
+        $old_code = sanitize_text_field($_POST['old_code']);
+        $new_code = sanitize_text_field($_POST['new_code']);
+
+        if (empty($old_code) || empty($new_code)) {
+            wp_send_json_error(array('message' => 'Invalid QR code'));
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'kerbcycle_qr_codes';
+        $result = $wpdb->update(
+            $table,
+            array('qr_code' => $new_code),
+            array('qr_code' => $old_code),
+            array('%s'),
+            array('%s')
+        );
+
+        if ($result !== false) {
+            wp_send_json_success(array('message' => 'QR code updated'));
+        }
+
+        wp_send_json_error(array('message' => 'Failed to update QR code'));
     }
 
     // REST API: Handle QR code scan
@@ -397,6 +525,22 @@ class KerbCycle_QR_Manager {
         );
 
         wp_mail($admin_email, $subject, $message);
+    }
+
+    private function send_notification_sms($user_id, $qr_code) {
+        // Placeholder for SMS logic
+        do_action('kerbcycle_qr_send_sms', $user_id, $qr_code);
+    }
+
+    private function schedule_reminder($user_id, $qr_code) {
+        if (!wp_next_scheduled('kerbcycle_qr_reminder', array($user_id, $qr_code))) {
+            wp_schedule_single_event(time() + DAY_IN_SECONDS, 'kerbcycle_qr_reminder', array($user_id, $qr_code));
+        }
+    }
+
+    public function handle_reminder($user_id, $qr_code) {
+        // By default send an email reminder
+        $this->send_notification_email($user_id, $qr_code);
     }
 }
 
