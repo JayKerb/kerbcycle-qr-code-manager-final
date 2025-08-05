@@ -90,7 +90,7 @@ function initKerbcycleScanner() {
 
     const bulkForm = document.getElementById('qr-code-bulk-form');
     if (bulkForm) {
-        jQuery('#qr-code-list').sortable({ items: 'li:not(.qr-header)' });
+        jQuery('#qr-code-list').sortable({ items: 'li:not(.qr-header)' }); // keep header fixed
 
         document.getElementById('apply-bulk').addEventListener('click', function(e) {
             e.preventDefault();

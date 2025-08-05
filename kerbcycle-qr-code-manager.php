@@ -186,6 +186,7 @@ class KerbCycle_QR_Manager {
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
         $available_codes = $wpdb->get_results("SELECT qr_code FROM $table WHERE status = 'available' ORDER BY id DESC");
+        // Fetch all codes with history fields for management list
         $all_codes = $wpdb->get_results("SELECT id, qr_code, user_id, status, assigned_at FROM $table ORDER BY id DESC");
         ?>
         <div class="wrap">
