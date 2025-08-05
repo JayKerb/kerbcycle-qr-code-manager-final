@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name: KerbCycle QR Code Manager
-Description: Manages QR code scanning and assignment for customers with frontend shortcode
-Version: 1.2
+Description: Manage QR code scanning and assignment with drag-and-drop, inline editing, bulk actions, and notification toggles
+Version: 1.3
 Author: Your Name
 */
 
@@ -207,9 +207,14 @@ class KerbCycle_QR_Manager {
                         <option value="<?= esc_attr($code->qr_code); ?>"><?= esc_html($code->qr_code); ?></option>
                     <?php endforeach; ?>
                 </select>
-                <label><input type="checkbox" id="send-email" <?php checked(get_option('kerbcycle_qr_enable_email', 1)); ?>> <?php esc_html_e('Send notification email', 'kerbcycle'); ?></label>
-                <label><input type="checkbox" id="send-sms" <?php checked(get_option('kerbcycle_qr_enable_sms', 0)); ?>> <?php esc_html_e('Send SMS', 'kerbcycle'); ?></label>
-                <label><input type="checkbox" id="send-reminder" <?php checked(get_option('kerbcycle_qr_enable_reminders', 0)); ?>> <?php esc_html_e('Schedule reminder', 'kerbcycle'); ?></label>
+                <?php
+                $email_enabled    = (bool) get_option('kerbcycle_qr_enable_email', 1);
+                $sms_enabled      = (bool) get_option('kerbcycle_qr_enable_sms', 0);
+                $reminder_enabled = (bool) get_option('kerbcycle_qr_enable_reminders', 0);
+                ?>
+                <label><input type="checkbox" id="send-email" <?php checked($email_enabled); ?> <?php disabled(!$email_enabled); ?>> <?php esc_html_e('Send notification email', 'kerbcycle'); ?></label>
+                <label><input type="checkbox" id="send-sms" <?php checked($sms_enabled); ?> <?php disabled(!$sms_enabled); ?>> <?php esc_html_e('Send SMS', 'kerbcycle'); ?></label>
+                <label><input type="checkbox" id="send-reminder" <?php checked($reminder_enabled); ?> <?php disabled(!$reminder_enabled); ?>> <?php esc_html_e('Schedule reminder', 'kerbcycle'); ?></label>
                 <p>
                     <button id="assign-qr-btn" class="button button-primary"><?php esc_html_e('Assign QR Code', 'kerbcycle'); ?></button>
                     <button id="release-qr-btn" class="button"><?php esc_html_e('Release QR Code', 'kerbcycle'); ?></button>
