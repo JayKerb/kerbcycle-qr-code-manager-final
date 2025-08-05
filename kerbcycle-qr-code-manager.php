@@ -2,7 +2,7 @@
 /*
 Plugin Name: KerbCycle QR Code Manager
 Description: Manages QR code scanning and assignment for customers with frontend shortcode
-Version: 1.1
+Version: 1.2
 Author: Your Name
 */
 
@@ -23,6 +23,7 @@ class KerbCycle_QR_Manager {
         // Admin hooks
         add_action('admin_menu', array($this, 'register_admin_menu'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
+        add_action('admin_init', array($this, 'register_settings'));
 
         // AJAX handlers
         add_action('wp_ajax_assign_qr_code', array($this, 'assign_qr_code'));
@@ -81,6 +82,15 @@ class KerbCycle_QR_Manager {
             'kerbcycle-qr-history',
             array($this, 'history_page')
         );
+
+        add_submenu_page(
+            'kerbcycle-qr-manager',
+            'Settings',
+            'Settings',
+            'manage_options',
+            'kerbcycle-qr-settings',
+            array($this, 'settings_page')
+        );
     }
 
     // Enqueue admin scripts
@@ -104,17 +114,64 @@ class KerbCycle_QR_Manager {
         ));
     }
 
+    // Register plugin settings
+    public function register_settings() {
+        register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_email');
+
+        add_settings_section(
+            'kerbcycle_qr_main',
+            __('General Settings', 'kerbcycle'),
+            '__return_false',
+            'kerbcycle_qr_settings'
+        );
+
+        add_settings_field(
+            'kerbcycle_qr_enable_email',
+            __('Enable Email Notifications', 'kerbcycle'),
+            array($this, 'render_enable_email_field'),
+            'kerbcycle_qr_settings',
+            'kerbcycle_qr_main'
+        );
+    }
+
+    public function render_enable_email_field() {
+        $value = get_option('kerbcycle_qr_enable_email', 1);
+        ?>
+        <input type="checkbox" name="kerbcycle_qr_enable_email" value="1" <?php checked(1, $value); ?> />
+        <span class="description"><?php esc_html_e('Send email when QR codes are assigned', 'kerbcycle'); ?></span>
+        <?php
+    }
+
     // Admin dashboard page
     public function admin_page() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'kerbcycle_qr_codes';
+        $available_codes = $wpdb->get_results("SELECT qr_code FROM $table WHERE status = 'available' ORDER BY id DESC");
         ?>
         <div class="wrap">
             <h1>KerbCycle QR Code Manager</h1>
             <div class="notice notice-info">
-                <p>Scan or enter customer ID to assign QR codes</p>
+                <p><?php esc_html_e('Select a customer and scan or choose a QR code to assign.', 'kerbcycle'); ?></p>
             </div>
             <div id="qr-scanner-container">
-                <input type="number" id="customer-id" class="regular-text" placeholder="Enter Customer ID" />
-                <button id="assign-qr-btn" class="button button-primary">Assign QR Code</button>
+                <?php
+                wp_dropdown_users(array(
+                    'name' => 'customer_id',
+                    'id' => 'customer-id',
+                    'show_option_none' => __('Select Customer', 'kerbcycle')
+                ));
+                ?>
+                <select id="qr-code-select">
+                    <option value=""><?php esc_html_e('Select QR Code', 'kerbcycle'); ?></option>
+                    <?php foreach ($available_codes as $code) : ?>
+                        <option value="<?= esc_attr($code->qr_code); ?>"><?= esc_html($code->qr_code); ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <label><input type="checkbox" id="send-email" <?php checked(get_option('kerbcycle_qr_enable_email', 1)); ?>> <?php esc_html_e('Send notification email', 'kerbcycle'); ?></label>
+                <p>
+                    <button id="assign-qr-btn" class="button button-primary"><?php esc_html_e('Assign QR Code', 'kerbcycle'); ?></button>
+                    <button id="release-qr-btn" class="button"><?php esc_html_e('Release QR Code', 'kerbcycle'); ?></button>
+                </p>
                 <div id="reader" style="width: 100%; max-width: 400px; margin-top: 20px;"></div>
                 <div id="scan-result" class="updated" style="display: none;"></div>
             </div>
@@ -164,6 +221,22 @@ class KerbCycle_QR_Manager {
         <?php
     }
 
+    // Plugin settings page
+    public function settings_page() {
+        ?>
+        <div class="wrap">
+            <h1><?php esc_html_e('KerbCycle QR Settings', 'kerbcycle'); ?></h1>
+            <form method="post" action="options.php">
+                <?php
+                settings_fields('kerbcycle_qr_settings');
+                do_settings_sections('kerbcycle_qr_settings');
+                submit_button();
+                ?>
+            </form>
+        </div>
+        <?php
+    }
+
     // Shortcode to render scanner on any page
     public function generate_frontend_scanner() {
         ob_start();
@@ -208,6 +281,7 @@ class KerbCycle_QR_Manager {
         global $wpdb;
         $qr_code = sanitize_text_field($_POST['qr_code']);
         $user_id = intval($_POST['customer_id']);
+        $send_email = !empty($_POST['send_email']) && get_option('kerbcycle_qr_enable_email', 1);
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
 
         $result = $wpdb->insert(
@@ -222,7 +296,9 @@ class KerbCycle_QR_Manager {
         );
 
         if ($result !== false) {
-            $this->send_notification_email($user_id, $qr_code);
+            if ($send_email) {
+                $this->send_notification_email($user_id, $qr_code);
+            }
             wp_send_json_success(array(
                 'message' => 'QR code assigned successfully',
                 'qr_code' => $qr_code,
