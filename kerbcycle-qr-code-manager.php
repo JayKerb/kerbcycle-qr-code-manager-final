@@ -228,6 +228,7 @@ class KerbCycle_QR_Manager {
             <form id="qr-code-bulk-form">
                 <ul id="qr-code-list">
                     <li class="qr-header">
+                        <input type="checkbox" class="qr-select" disabled style="visibility:hidden" aria-hidden="true" />
                         <span class="qr-id"><?php esc_html_e('ID', 'kerbcycle'); ?></span>
                         <span class="qr-text"><?php esc_html_e('QR Code', 'kerbcycle'); ?></span>
                         <span class="qr-user"><?php esc_html_e('User ID', 'kerbcycle'); ?></span>
