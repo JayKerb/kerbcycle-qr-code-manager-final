@@ -90,7 +90,11 @@ function initKerbcycleScanner() {
 
     const bulkForm = document.getElementById('qr-code-bulk-form');
     if (bulkForm) {
+ 88w0me-codex/update-plugin-with-new-features
         jQuery('#qr-code-list').sortable({ items: 'li:not(.qr-header)' }); // keep header fixed
+
+        jQuery('#qr-code-list').sortable({ items: 'li:not(.qr-header)' }); // keep header fixed
+ codex/locate-and-fix-typos-and-bugs
 
         document.getElementById('apply-bulk').addEventListener('click', function(e) {
             e.preventDefault();

@@ -186,8 +186,13 @@ class KerbCycle_QR_Manager {
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
         $available_codes = $wpdb->get_results("SELECT qr_code FROM $table WHERE status = 'available' ORDER BY id DESC");
+ 88w0me-codex/update-plugin-with-new-features
         // Fetch all codes with history fields for management list
         $all_codes = $wpdb->get_results("SELECT id, qr_code, user_id, status, assigned_at FROM $table ORDER BY id DESC");
+
+        // Fetch all codes with history fields for management list
+        $all_codes = $wpdb->get_results("SELECT id, qr_code, user_id, status, assigned_at FROM $table ORDER BY id DESC");
+codex/locate-and-fix-typos-and-bugs
         ?>
         <div class="wrap">
             <h1>KerbCycle QR Code Manager</h1>
@@ -223,21 +228,26 @@ class KerbCycle_QR_Manager {
             <p class="description"><?php esc_html_e('Drag and drop to reorder, select multiple codes for bulk actions, or click a code to edit.', 'kerbcycle'); ?></p>
             <form id="qr-code-bulk-form">
                 <ul id="qr-code-list">
+ 88w0me-codex/update-plugin-with-new-features
                     <li class="qr-header">
-                        <span><?php esc_html_e('ID', 'kerbcycle'); ?></span>
-                        <span><?php esc_html_e('QR Code', 'kerbcycle'); ?></span>
-                        <span><?php esc_html_e('User ID', 'kerbcycle'); ?></span>
-                        <span><?php esc_html_e('Status', 'kerbcycle'); ?></span>
-                        <span><?php esc_html_e('Assigned At', 'kerbcycle'); ?></span>
-                    </li>
-                    <?php foreach ($all_codes as $code) : ?>
-                        <li class="qr-item" data-code="<?= esc_attr($code->qr_code); ?>">
-                            <input type="checkbox" class="qr-select" />
-                            <span class="qr-id"><?= esc_html($code->id); ?></span>
-                            <span class="qr-text" contenteditable="true"><?= esc_html($code->qr_code); ?></span>
-                            <span class="qr-user"><?= $code->user_id ? esc_html($code->user_id) : '—'; ?></span>
-                            <span class="qr-status"><?= esc_html(ucfirst($code->status)); ?></span>
-                            <span class="qr-assigned"><?= $code->assigned_at ? esc_html($code->assigned_at) : '—'; ?></span>
+    <span><?php esc_html_e('ID', 'kerbcycle'); ?></span>
+    <span><?php esc_html_e('QR Code', 'kerbcycle'); ?></span>
+    <span><?php esc_html_e('User ID', 'kerbcycle'); ?></span>
+    <span><?php esc_html_e('Status', 'kerbcycle'); ?></span>
+    <span><?php esc_html_e('Assigned At', 'kerbcycle'); ?></span>
+</li>
+<?php foreach ($all_codes as $code) : ?>
+    <li class="qr-item" data-code="<?= esc_attr($code->qr_code); ?>">
+        <input type="checkbox" class="qr-select" />
+        <span class="qr-id"><?= esc_html($code->id); ?></span>
+        <span class="qr-text" contenteditable="true"><?= esc_html($code->qr_code); ?></span>
+        <span class="qr-user"><?= $code->user_id ? esc_html($code->user_id) : '—'; ?></span>
+        <span class="qr-status"><?= esc_html(ucfirst($code->status)); ?></span>
+        <span class="qr-assigned"><?= $code->assigned_at ? esc_html($code->assigned_at) : '—'; ?></span>
+    </li>
+<?php endforeach; ?>
+
+ codex/locate-and-fix-typos-and-bugs
                         </li>
                     <?php endforeach; ?>
                 </ul>
@@ -427,7 +437,11 @@ class KerbCycle_QR_Manager {
     public function bulk_release_qr_codes() {
         check_ajax_referer('kerbcycle_qr_nonce', 'security');
 
+ 88w0me-codex/update-plugin-with-new-features
         $codes = isset($_POST['qr_codes']) ? array_map('sanitize_text_field', explode(',', $_POST['qr_codes'])) : array();
+
+        $codes = isset($_POST['qr_codes']) ? array_map('sanitize_text_field', explode(',', $_POST['qr_codes'])) : array();
+ codex/locate-and-fix-typos-and-bugs
         if (empty($codes)) {
             wp_send_json_error(array('message' => 'No QR codes provided'));
         }
