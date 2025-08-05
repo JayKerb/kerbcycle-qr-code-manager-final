@@ -1,5 +1,5 @@
 function initKerbcycleScanner() {
-    const scanner = new Html5Qrcode("reader", true);
+    const scanner = new Html5Qrcode("reader");
     const scanResult = document.getElementById("scan-result");
     const qrSelect = document.getElementById("qr-code-select");
     const sendEmailCheckbox = document.getElementById("send-email");
