@@ -260,10 +260,39 @@ class KerbCycle_QR_Manager {
                 $email_enabled    = (bool) get_option('kerbcycle_qr_enable_email', 1);
                 $sms_enabled      = (bool) get_option('kerbcycle_qr_enable_sms', 0);
                 $reminder_enabled = (bool) get_option('kerbcycle_qr_enable_reminders', 0);
+                $settings_url     = admin_url('admin.php?page=kerbcycle-qr-settings');
                 ?>
                 <label><input type="checkbox" id="send-email" <?php checked($email_enabled); ?> <?php disabled(!$email_enabled); ?>> <?php esc_html_e('Send notification email', 'kerbcycle'); ?></label>
-                <label><input type="checkbox" id="send-sms" <?php checked($sms_enabled); ?> <?php disabled(!$sms_enabled); ?>> <?php esc_html_e('Send SMS', 'kerbcycle'); ?></label>
-                <label><input type="checkbox" id="send-reminder" <?php checked($reminder_enabled); ?> <?php disabled(!$reminder_enabled); ?>> <?php esc_html_e('Schedule reminder', 'kerbcycle'); ?></label>
+                <?php if ($sms_enabled) : ?>
+                    <label><input type="checkbox" id="send-sms" <?php checked($sms_enabled); ?>> <?php esc_html_e('Send SMS', 'kerbcycle'); ?></label>
+                <?php else : ?>
+                    <p class="description">
+                        <?php
+                        printf(
+                            wp_kses(
+                                __('SMS notifications are disabled. <a href="%s">Enable in settings</a>.', 'kerbcycle'),
+                                array('a' => array('href' => array()))
+                            ),
+                            esc_url($settings_url)
+                        );
+                        ?>
+                    </p>
+                <?php endif; ?>
+                <?php if ($reminder_enabled) : ?>
+                    <label><input type="checkbox" id="send-reminder" <?php checked($reminder_enabled); ?>> <?php esc_html_e('Schedule reminder', 'kerbcycle'); ?></label>
+                <?php else : ?>
+                    <p class="description">
+                        <?php
+                        printf(
+                            wp_kses(
+                                __('Automated reminders are disabled. <a href="%s">Enable in settings</a>.', 'kerbcycle'),
+                                array('a' => array('href' => array()))
+                            ),
+                            esc_url($settings_url)
+                        );
+                        ?>
+                    </p>
+                <?php endif; ?>
                 <p>
                     <button id="assign-qr-btn" class="button button-primary"><?php esc_html_e('Assign QR Code', 'kerbcycle'); ?></button>
                     <button id="release-qr-btn" class="button"><?php esc_html_e('Release QR Code', 'kerbcycle'); ?></button>
