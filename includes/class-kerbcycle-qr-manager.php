@@ -196,8 +196,9 @@ class KerbCycle_QR_Manager {
 
         $latest_id = $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT id FROM $table WHERE qr_code = %s ORDER BY id DESC LIMIT 1",
-                $qr_code
+                "SELECT id FROM $table WHERE qr_code = %s AND status = %s ORDER BY id DESC LIMIT 1",
+                $qr_code,
+                'assigned'
             )
         );
 
@@ -210,10 +211,10 @@ class KerbCycle_QR_Manager {
                 )
             );
         } else {
-            $result = false;
+            $result = 0;
         }
-        
-        if ($result !== false) {
+
+        if ($result > 0) {
             wp_send_json_success(array('message' => 'QR code released successfully'));
         } else {
             wp_send_json_error(array('message' => 'Failed to release QR code'));
