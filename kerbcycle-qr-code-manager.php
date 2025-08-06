@@ -476,10 +476,10 @@ class KerbCycle_QR_Manager {
                 )
             );
         } else {
-            $result = false;
+            $result = 0;
         }
 
-        if ($result !== false) {
+        if ($result > 0) {
             wp_send_json_success(array('message' => 'QR code released successfully'));
         } else {
             wp_send_json_error(array('message' => 'Failed to release QR code'));
