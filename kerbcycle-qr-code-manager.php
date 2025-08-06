@@ -402,21 +402,25 @@ class KerbCycle_QR_Manager {
         $qr_code = sanitize_text_field($_POST['qr_code']);
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
 
-        $latest_id = $wpdb->get_var(
+        $latest = $wpdb->get_row(
             $wpdb->prepare(
-                "SELECT id FROM $table WHERE qr_code = %s ORDER BY id DESC LIMIT 1",
+                "SELECT id, user_id FROM $table WHERE qr_code = %s ORDER BY id DESC LIMIT 1",
                 $qr_code
             )
         );
 
-        if ($latest_id) {
+        if ($latest) {
             $result = $wpdb->query(
                 $wpdb->prepare(
                     "UPDATE $table SET user_id = NULL, status = %s, assigned_at = NULL WHERE id = %d",
                     'available',
-                    $latest_id
+                    $latest->id
                 )
             );
+
+            if ($latest->user_id) {
+                wp_clear_scheduled_hook('kerbcycle_qr_reminder', array((int) $latest->user_id, $qr_code));
+            }
         } else {
             $result = false;
         }
@@ -440,20 +444,24 @@ class KerbCycle_QR_Manager {
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
         foreach ($codes as $code) {
-            $latest_id = $wpdb->get_var(
+            $latest = $wpdb->get_row(
                 $wpdb->prepare(
-                    "SELECT id FROM $table WHERE qr_code = %s ORDER BY id DESC LIMIT 1",
+                    "SELECT id, user_id FROM $table WHERE qr_code = %s ORDER BY id DESC LIMIT 1",
                     $code
                 )
             );
-            if ($latest_id) {
+            if ($latest) {
                 $wpdb->query(
                     $wpdb->prepare(
                         "UPDATE $table SET user_id = NULL, status = %s, assigned_at = NULL WHERE id = %d",
                         'available',
-                        $latest_id
+                        $latest->id
                     )
                 );
+
+                if ($latest->user_id) {
+                    wp_clear_scheduled_hook('kerbcycle_qr_reminder', array((int) $latest->user_id, $code));
+                }
             }
         }
 
@@ -544,20 +552,34 @@ class KerbCycle_QR_Manager {
         wp_mail($admin_email, $subject, $message);
     }
 
-    private function send_notification_sms($user_id, $qr_code) {
+    private function send_notification_sms($user_id, $qr_code, $message = '') {
         // Placeholder for SMS logic
-        do_action('kerbcycle_qr_send_sms', $user_id, $qr_code);
+        do_action('kerbcycle_qr_send_sms', $user_id, $qr_code, $message);
     }
 
     private function schedule_reminder($user_id, $qr_code) {
+        $delay = apply_filters('kerbcycle_qr_reminder_delay', DAY_IN_SECONDS, $user_id, $qr_code);
         if (!wp_next_scheduled('kerbcycle_qr_reminder', array($user_id, $qr_code))) {
-            wp_schedule_single_event(time() + DAY_IN_SECONDS, 'kerbcycle_qr_reminder', array($user_id, $qr_code));
+            wp_schedule_single_event(time() + (int) $delay, 'kerbcycle_qr_reminder', array($user_id, $qr_code));
         }
     }
 
     public function handle_reminder($user_id, $qr_code) {
-        // By default send an email reminder
-        $this->send_notification_email($user_id, $qr_code);
+        $user = get_userdata($user_id);
+        if (!$user) {
+            return;
+        }
+
+        $message = sprintf(__('Reminder: QR code %s is still assigned to you.', 'kerbcycle'), $qr_code);
+        $message = apply_filters('kerbcycle_qr_reminder_message', $message, $user_id, $qr_code);
+
+        if ((bool) get_option('kerbcycle_qr_enable_email', 1)) {
+            wp_mail($user->user_email, __('QR Code Reminder', 'kerbcycle'), $message);
+        }
+
+        if ((bool) get_option('kerbcycle_qr_enable_sms', 0)) {
+            $this->send_notification_sms($user_id, $qr_code, $message);
+        }
     }
 }
 
