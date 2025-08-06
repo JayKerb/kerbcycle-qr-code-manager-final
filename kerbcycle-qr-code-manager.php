@@ -475,15 +475,14 @@ class KerbCycle_QR_Manager {
                     $latest_id
                 )
             );
-        } else {
-            $result = false;
+
+            if ($result !== false && $wpdb->rows_affected > 0) {
+                wp_send_json_success(array('message' => 'QR code released successfully'));
+                return;
+            }
         }
 
-        if ($result !== false) {
-            wp_send_json_success(array('message' => 'QR code released successfully'));
-        } else {
-            wp_send_json_error(array('message' => 'Failed to release QR code'));
-        }
+        wp_send_json_error(array('message' => 'Failed to release QR code'));
     }
 
     // AJAX: Bulk release QR codes
