@@ -90,7 +90,7 @@ function initKerbcycleScanner() {
 
     const bulkForm = document.getElementById('qr-code-bulk-form');
     if (bulkForm) {
-        jQuery('#qr-code-list').sortable();
+        jQuery('#qr-code-list').sortable({ items: 'li.qr-item' });
 
         document.getElementById('apply-bulk').addEventListener('click', function(e) {
             e.preventDefault();
@@ -115,7 +115,7 @@ function initKerbcycleScanner() {
             }
         });
 
-        document.querySelectorAll('#qr-code-list .qr-text').forEach(span => {
+        document.querySelectorAll('#qr-code-list .qr-item .qr-text').forEach(span => {
             span.addEventListener('blur', function() {
                 const li = span.closest('li');
                 const oldCode = li.dataset.code;
