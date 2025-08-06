@@ -213,10 +213,12 @@ class KerbCycle_QR_Manager {
             $result = false;
         }
         
-        if ($result !== false) {
-            wp_send_json_success(array('message' => 'QR code released successfully'));
-        } else {
+        if ($result === false) {
             wp_send_json_error(array('message' => 'Failed to release QR code'));
+        } elseif ($result === 0) {
+            wp_send_json_error(array('message' => 'QR code not found or already released'));
+        } else {
+            wp_send_json_success(array('message' => 'QR code released successfully'));
         }
     }
 
