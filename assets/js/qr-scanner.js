@@ -8,6 +8,7 @@ function initKerbcycleScanner() {
     const assignBtn = document.getElementById("assign-qr-btn");
     const releaseBtn = document.getElementById("release-qr-btn");
     let scannedCode = '';
+    const escapeSelector = str => (window.CSS && CSS.escape) ? CSS.escape(str) : str.replace(/["\\]/g, '\\$&');
 
     if (assignBtn) {
         assignBtn.addEventListener("click", function () {
@@ -42,6 +43,18 @@ function initKerbcycleScanner() {
                         }
                     }
                     alert(msg);
+                    const li = document.querySelector(`#qr-code-list li[data-code="${escapeSelector(qrCode)}"]`);
+                    if (li) {
+                        li.querySelector('.qr-user').textContent = userId;
+                        li.querySelector('.qr-status').textContent = 'Assigned';
+                        li.querySelector('.qr-assigned').textContent = new Date().toLocaleString();
+                    }
+                    if (qrSelect) {
+                        const opt = qrSelect.querySelector(`option[value="${escapeSelector(qrCode)}"]`);
+                        if (opt) { opt.remove(); }
+                        qrSelect.value = '';
+                    }
+                    scannedCode = '';
                 } else {
                     const err = data.data && data.data.message ? data.data.message : "Failed to assign QR code.";
                     alert(err);
@@ -73,6 +86,21 @@ function initKerbcycleScanner() {
             .then(data => {
                 if (data.success) {
                     alert("QR code released successfully.");
+                    const li = document.querySelector(`#qr-code-list li[data-code="${escapeSelector(qrCode)}"]`);
+                    if (li) {
+                        li.querySelector('.qr-user').textContent = '—';
+                        li.querySelector('.qr-status').textContent = 'Available';
+                        li.querySelector('.qr-assigned').textContent = '—';
+                        li.querySelector('.qr-select').checked = false;
+                    }
+                    if (qrSelect && !qrSelect.querySelector(`option[value="${escapeSelector(qrCode)}"]`)) {
+                        const opt = document.createElement('option');
+                        opt.value = qrCode;
+                        opt.textContent = qrCode;
+                        qrSelect.appendChild(opt);
+                    }
+                    if (qrSelect) { qrSelect.value = ''; }
+                    scannedCode = '';
                 } else {
                     alert("Failed to release QR code.");
                 }
@@ -120,6 +148,25 @@ function initKerbcycleScanner() {
                 .then(res => res.json())
                 .then(data => {
                     alert(data.success ? 'QR codes released' : 'Failed to release codes');
+                    if (data.success) {
+                        codes.forEach(code => {
+                            const li = document.querySelector(`#qr-code-list li[data-code="${escapeSelector(code)}"]`);
+                            if (li) {
+                                li.querySelector('.qr-user').textContent = '—';
+                                li.querySelector('.qr-status').textContent = 'Available';
+                                li.querySelector('.qr-assigned').textContent = '—';
+                                li.querySelector('.qr-select').checked = false;
+                            }
+                            if (qrSelect && !qrSelect.querySelector(`option[value="${escapeSelector(code)}"]`)) {
+                                const opt = document.createElement('option');
+                                opt.value = code;
+                                opt.textContent = code;
+                                qrSelect.appendChild(opt);
+                            }
+                        });
+                        if (qrSelect) { qrSelect.value = ''; }
+                        scannedCode = '';
+                    }
                 });
             }
         });
