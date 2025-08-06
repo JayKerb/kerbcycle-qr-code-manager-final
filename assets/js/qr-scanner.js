@@ -33,9 +33,18 @@ function initKerbcycleScanner() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert("QR code assigned successfully.");
+                    let msg = "QR code assigned successfully.";
+                    if (data.data && typeof data.data.sms_sent !== 'undefined') {
+                        if (data.data.sms_sent) {
+                            msg += " SMS notification sent.";
+                        } else {
+                            msg += " SMS failed: " + (data.data.sms_error || "Unknown error") + ".";
+                        }
+                    }
+                    alert(msg);
                 } else {
-                    alert("Failed to assign QR code.");
+                    const err = data.data && data.data.message ? data.data.message : "Failed to assign QR code.";
+                    alert(err);
                 }
             })
             .catch(error => {

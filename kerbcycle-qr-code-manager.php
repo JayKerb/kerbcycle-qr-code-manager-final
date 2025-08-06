@@ -124,6 +124,9 @@ class KerbCycle_QR_Manager {
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_email');
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_sms');
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_reminders');
+        register_setting('kerbcycle_qr_settings', 'kerbcycle_twilio_sid');
+        register_setting('kerbcycle_qr_settings', 'kerbcycle_twilio_token');
+        register_setting('kerbcycle_qr_settings', 'kerbcycle_twilio_from');
 
         add_settings_section(
             'kerbcycle_qr_main',
@@ -155,6 +158,30 @@ class KerbCycle_QR_Manager {
             'kerbcycle_qr_settings',
             'kerbcycle_qr_main'
         );
+
+        add_settings_field(
+            'kerbcycle_twilio_sid',
+            __('Twilio Account SID', 'kerbcycle'),
+            array($this, 'render_twilio_sid_field'),
+            'kerbcycle_qr_settings',
+            'kerbcycle_qr_main'
+        );
+
+        add_settings_field(
+            'kerbcycle_twilio_token',
+            __('Twilio Auth Token', 'kerbcycle'),
+            array($this, 'render_twilio_token_field'),
+            'kerbcycle_qr_settings',
+            'kerbcycle_qr_main'
+        );
+
+        add_settings_field(
+            'kerbcycle_twilio_from',
+            __('Twilio From Number', 'kerbcycle'),
+            array($this, 'render_twilio_from_field'),
+            'kerbcycle_qr_settings',
+            'kerbcycle_qr_main'
+        );
     }
 
     public function render_enable_email_field() {
@@ -178,6 +205,28 @@ class KerbCycle_QR_Manager {
         ?>
         <input type="checkbox" name="kerbcycle_qr_enable_reminders" value="1" <?php checked(1, $value); ?> />
         <span class="description"><?php esc_html_e('Schedule automated reminders after assignment', 'kerbcycle'); ?></span>
+        <?php
+    }
+
+    public function render_twilio_sid_field() {
+        $value = get_option('kerbcycle_twilio_sid', '');
+        ?>
+        <input type="text" name="kerbcycle_twilio_sid" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+        <?php
+    }
+
+    public function render_twilio_token_field() {
+        $value = get_option('kerbcycle_twilio_token', '');
+        ?>
+        <input type="text" name="kerbcycle_twilio_token" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+        <?php
+    }
+
+    public function render_twilio_from_field() {
+        $value = get_option('kerbcycle_twilio_from', '');
+        ?>
+        <input type="text" name="kerbcycle_twilio_from" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+        <span class="description"><?php esc_html_e('Twilio phone number including country code', 'kerbcycle'); ?></span>
         <?php
     }
 
@@ -356,19 +405,19 @@ class KerbCycle_QR_Manager {
         check_ajax_referer('kerbcycle_qr_nonce', 'security');
 
         global $wpdb;
-        $qr_code = sanitize_text_field($_POST['qr_code']);
-        $user_id = intval($_POST['customer_id']);
-        $send_email = !empty($_POST['send_email']) && get_option('kerbcycle_qr_enable_email', 1);
-        $send_sms = !empty($_POST['send_sms']) && get_option('kerbcycle_qr_enable_sms', 0);
+        $qr_code      = sanitize_text_field($_POST['qr_code']);
+        $user_id      = intval($_POST['customer_id']);
+        $send_email   = !empty($_POST['send_email']) && get_option('kerbcycle_qr_enable_email', 1);
+        $send_sms     = !empty($_POST['send_sms']) && get_option('kerbcycle_qr_enable_sms', 0);
         $send_reminder = !empty($_POST['send_reminder']) && get_option('kerbcycle_qr_enable_reminders', 0);
-        $table = $wpdb->prefix . 'kerbcycle_qr_codes';
+        $table        = $wpdb->prefix . 'kerbcycle_qr_codes';
 
         $result = $wpdb->insert(
             $table,
             array(
-                'qr_code' => $qr_code,
-                'user_id' => $user_id,
-                'status' => 'assigned',
+                'qr_code'     => $qr_code,
+                'user_id'     => $user_id,
+                'status'      => 'assigned',
                 'assigned_at' => current_time('mysql')
             ),
             array('%s', '%d', '%s', '%s')
@@ -378,17 +427,26 @@ class KerbCycle_QR_Manager {
             if ($send_email) {
                 $this->send_notification_email($user_id, $qr_code);
             }
+            $sms_result = null;
             if ($send_sms) {
-                $this->send_notification_sms($user_id, $qr_code);
+                $sms_result = $this->send_notification_sms($user_id, $qr_code);
             }
             if ($send_reminder) {
                 $this->schedule_reminder($user_id, $qr_code);
             }
-            wp_send_json_success(array(
+
+            $response = array(
                 'message' => 'QR code assigned successfully',
                 'qr_code' => $qr_code,
-                'user_id' => $user_id
-            ));
+                'user_id' => $user_id,
+            );
+            if ($send_sms) {
+                $response['sms_sent'] = ($sms_result === true);
+                if ($sms_result !== true) {
+                    $response['sms_error'] = is_wp_error($sms_result) ? $sms_result->get_error_message() : __('Unknown error', 'kerbcycle');
+                }
+            }
+            wp_send_json_success($response);
         } else {
             wp_send_json_error(array('message' => 'Failed to assign QR code'));
         }
@@ -545,8 +603,46 @@ class KerbCycle_QR_Manager {
     }
 
     private function send_notification_sms($user_id, $qr_code) {
-        // Placeholder for SMS logic
-        do_action('kerbcycle_qr_send_sms', $user_id, $qr_code);
+        $sid   = get_option('kerbcycle_twilio_sid');
+        $token = get_option('kerbcycle_twilio_token');
+        $from  = get_option('kerbcycle_twilio_from');
+
+        $to = get_user_meta($user_id, 'phone_number', true);
+        if (empty($to)) {
+            $to = get_user_meta($user_id, 'billing_phone', true);
+        }
+
+        if (empty($sid) || empty($token) || empty($from) || empty($to)) {
+            return new WP_Error('sms_config', __('Missing SMS configuration or phone number', 'kerbcycle'));
+        }
+
+        $body = sprintf(__('You have been assigned QR code %s', 'kerbcycle'), $qr_code);
+
+        $response = wp_remote_post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", array(
+            'body'    => array(
+                'From' => $from,
+                'To'   => $to,
+                'Body' => $body,
+            ),
+            'headers' => array(
+                'Authorization' => 'Basic ' . base64_encode($sid . ':' . $token),
+            ),
+        ));
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $status_code = wp_remote_retrieve_response_code($response);
+        if ($status_code >= 200 && $status_code < 300) {
+            return true;
+        }
+
+        $resp_body = wp_remote_retrieve_body($response);
+        $decoded   = json_decode($resp_body, true);
+        $error     = is_array($decoded) && isset($decoded['message']) ? $decoded['message'] : __('Unknown error', 'kerbcycle');
+
+        return new WP_Error('sms_failed', $error);
     }
 
     private function schedule_reminder($user_id, $qr_code) {
