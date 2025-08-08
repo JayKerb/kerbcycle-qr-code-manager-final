@@ -490,7 +490,9 @@ class KerbCycle_QR_Manager {
     public function bulk_release_qr_codes() {
         check_ajax_referer('kerbcycle_qr_nonce', 'security');
 
-        $codes = isset($_POST['qr_codes']) ? explode(',', sanitize_text_field($_POST['qr_codes'])) : array();
+        $codes = isset($_POST['qr_codes'])
+            ? array_filter(array_map('sanitize_text_field', array_map('trim', explode(',', $_POST['qr_codes']))))
+            : array();
         if (empty($codes)) {
             wp_send_json_error(array('message' => 'No QR codes provided'));
         }
