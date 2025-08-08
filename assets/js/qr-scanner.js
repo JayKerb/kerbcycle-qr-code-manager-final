@@ -42,6 +42,7 @@ function initKerbcycleScanner() {
                         }
                     }
                     alert(msg);
+                    window.location.reload();
                 } else {
                     const err = data.data && data.data.message ? data.data.message : "Failed to assign QR code.";
                     alert(err);
@@ -73,6 +74,7 @@ function initKerbcycleScanner() {
             .then(data => {
                 if (data.success) {
                     alert("QR code released successfully.");
+                    window.location.reload();
                 } else {
                     alert("Failed to release QR code.");
                 }
@@ -120,6 +122,9 @@ function initKerbcycleScanner() {
                 .then(res => res.json())
                 .then(data => {
                     alert(data.success ? 'QR codes released' : 'Failed to release codes');
+                    if (data.success) {
+                        window.location.reload();
+                    }
                 });
             }
         });
