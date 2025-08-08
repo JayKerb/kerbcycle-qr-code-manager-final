@@ -102,39 +102,29 @@ function initKerbcycleScanner() {
         jQuery('#qr-code-list').sortable({ items: 'li.qr-item' });
 
         bulkForm.addEventListener('submit', function(e) {
-            e.preventDefault();
             const action = document.getElementById('bulk-action').value;
             if (action === 'release') {
-                const codes = Array.from(document.querySelectorAll('#qr-code-list .qr-select:checked')).map(cb => cb.closest('li').dataset.code);
+                const codes = Array.from(document.querySelectorAll('#qr-code-list .qr-select:checked'))
+                    .map(cb => cb.closest('li').dataset.code);
+
                 if (!codes.length) {
+                    e.preventDefault(); // Stop submission if no codes are selected
                     alert('Please select one or more QR codes to release.');
                     return;
                 }
 
-                if (!confirm('Are you sure you want to release the selected QR codes?')) {
-                    return;
-                }
+                // Add the list of codes to the hidden input field for the form submission
+                document.getElementById('qr_codes_for_action').value = codes.join(',');
 
-                fetch(kerbcycle_ajax.ajax_url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-                    },
-                    body: `action=bulk_release_qr_codes&qr_codes=${encodeURIComponent(codes.join(','))}&security=${kerbcycle_ajax.nonce}`
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.data.message);
-                        location.reload(true); // Force a reload from the server
-                    } else {
-                        alert('Error: ' + (data.data.message || 'Failed to release QR codes.'));
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('An unexpected error occurred. Please try again.');
-                });
+                // Confirm with the user before proceeding
+                if (!confirm('Are you sure you want to release the selected QR codes?')) {
+                    e.preventDefault(); // Stop submission if user cancels
+                }
+                // If user confirms, the form submits naturally to the server.
+            } else {
+                // If no bulk action is selected, prevent form submission
+                e.preventDefault();
+                alert('Please select a bulk action to perform.');
             }
         });
 

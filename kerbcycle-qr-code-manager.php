@@ -28,8 +28,11 @@ class KerbCycle_QR_Manager {
         // AJAX handlers
         add_action('wp_ajax_assign_qr_code', array($this, 'assign_qr_code'));
         add_action('wp_ajax_release_qr_code', array($this, 'release_qr_code'));
-        add_action('wp_ajax_bulk_release_qr_codes', array($this, 'bulk_release_qr_codes'));
         add_action('wp_ajax_update_qr_code', array($this, 'update_qr_code'));
+
+        // Server-side form handler
+        add_action('admin_init', array($this, 'handle_bulk_release_form_action'));
+        add_action('admin_notices', array($this, 'show_bulk_release_notices'));
 
         // REST API endpoint
         add_action('rest_api_init', array($this, 'register_rest_endpoints'));
@@ -274,7 +277,10 @@ class KerbCycle_QR_Manager {
 
             <h2><?php esc_html_e('Manage QR Codes', 'kerbcycle'); ?></h2>
             <p class="description"><?php esc_html_e('Drag and drop to reorder, select multiple codes for bulk actions, or click a code to edit.', 'kerbcycle'); ?></p>
-            <form id="qr-code-bulk-form">
+            <form id="qr-code-bulk-form" method="POST">
+                <?php wp_nonce_field('kerbcycle_bulk_release_action', 'kerbcycle_bulk_release_nonce'); ?>
+                <input type="hidden" name="qr_codes_for_action" id="qr_codes_for_action" />
+
                 <ul id="qr-code-list">
                     <li class="qr-header">
                         <input type="checkbox" class="qr-select" disabled style="visibility:hidden" aria-hidden="true" />
@@ -295,11 +301,11 @@ class KerbCycle_QR_Manager {
                         </li>
                     <?php endforeach; ?>
                 </ul>
-                <select id="bulk-action">
+                <select id="bulk-action" name="bulk_action">
                     <option value=""><?php esc_html_e('Bulk actions', 'kerbcycle'); ?></option>
                     <option value="release"><?php esc_html_e('Release', 'kerbcycle'); ?></option>
                 </select>
-                <button id="apply-bulk" class="button"><?php esc_html_e('Apply', 'kerbcycle'); ?></button>
+                <button type="submit" id="apply-bulk" name="apply_bulk" class="button"><?php esc_html_e('Apply', 'kerbcycle'); ?></button>
             </form>
         </div>
         <?php
@@ -486,71 +492,80 @@ class KerbCycle_QR_Manager {
         }
     }
 
-    // AJAX: Bulk release QR codes
-    public function bulk_release_qr_codes() {
-        check_ajax_referer('kerbcycle_qr_nonce', 'security');
-
-        if (empty($_POST['qr_codes'])) {
-            wp_send_json_error(array('message' => 'No QR codes were selected.'));
+    public function handle_bulk_release_form_action() {
+        // Check if our form was submitted by checking the nonce and the apply button
+        if (!isset($_POST['apply_bulk']) || !isset($_POST['kerbcycle_bulk_release_nonce'])) {
+            return;
         }
 
-        // Sanitize each code individually and remove whitespace.
-        $raw_codes = explode(',', $_POST['qr_codes']);
-        $codes = array_map('trim', array_map('sanitize_text_field', $raw_codes));
-        $codes = array_filter($codes); // Remove any empty values
-
-        if (empty($codes)) {
-            wp_send_json_error(array('message' => 'No valid QR codes provided.'));
+        // Verify the nonce for security
+        if (!wp_verify_nonce($_POST['kerbcycle_bulk_release_nonce'], 'kerbcycle_bulk_release_action')) {
+            wp_die('Security check failed.');
         }
 
-        global $wpdb;
-        $table = $wpdb->prefix . 'kerbcycle_qr_codes';
-        $released_count = 0;
+        // Process the release action
+        if (isset($_POST['bulk_action']) && $_POST['bulk_action'] === 'release') {
+            if (empty($_POST['qr_codes_for_action'])) {
+                set_transient('kerbcycle_bulk_action_notice', 'Error: No QR codes were selected.', 45);
+                return; // No need to redirect, just show notice on current page view
+            }
 
-        foreach ($codes as $code) {
-            // Find the latest *assigned* entry for this QR code.
-            $latest_id = $wpdb->get_var(
-                $wpdb->prepare(
-                    "SELECT id FROM $table WHERE qr_code = %s AND status = 'assigned' ORDER BY id DESC LIMIT 1",
-                    $code
-                )
-            );
+            // Sanitize and prepare codes
+            $raw_codes = explode(',', $_POST['qr_codes_for_action']);
+            $codes = array_map('trim', array_map('sanitize_text_field', $raw_codes));
+            $codes = array_filter($codes);
 
-            if ($latest_id) {
-                // Use wpdb->update for a safe and clear update operation.
-                $result = $wpdb->update(
-                    $table,
-                    array( // Data
-                        'user_id' => null,
-                        'status' => 'available',
-                        'assigned_at' => null,
-                    ),
-                    array('id' => $latest_id), // Where
-                    array( // Data format
-                        '%d',
-                        '%s',
-                        '%s',
-                    ),
-                    array('%d') // Where format
-                );
+            if (empty($codes)) {
+                set_transient('kerbcycle_bulk_action_notice', 'Error: No valid QR codes were provided.', 45);
+                return;
+            }
 
-                if ($result !== false) {
-                    // $result is number of rows affected, should be 1.
-                    $released_count += $result;
+            global $wpdb;
+            $table = $wpdb->prefix . 'kerbcycle_qr_codes';
+            $released_count = 0;
+
+            foreach ($codes as $code) {
+                $latest_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE qr_code = %s AND status = 'assigned' ORDER BY id DESC LIMIT 1", $code));
+                if ($latest_id) {
+                    $result = $wpdb->update(
+                        $table,
+                        ['user_id' => null, 'status' => 'available', 'assigned_at' => null],
+                        ['id' => $latest_id],
+                        ['%d', '%s', '%s'],
+                        ['%d']
+                    );
+                    if ($result !== false) {
+                        $released_count += $result;
+                    }
                 }
             }
-        }
 
-        if ($released_count > 0) {
-            wp_send_json_success(array(
-                'message' => sprintf(
-                    '%d of %d selected QR code(s) have been successfully released.',
-                    $released_count,
-                    count($codes)
-                )
-            ));
-        } else {
-            wp_send_json_error(array('message' => 'Could not find or release any of the selected QR codes. They may have already been released or do not exist.'));
+            // Set the admin notice transient
+            if ($released_count > 0) {
+                $message = sprintf('%d of %d selected QR code(s) have been successfully released.', $released_count, count($codes));
+                set_transient('kerbcycle_bulk_action_notice', $message, 45);
+            } else {
+                $message = 'Could not find or release any of the selected QR codes. They may have already been released or do not exist.';
+                set_transient('kerbcycle_bulk_action_notice', $message, 45);
+            }
+
+            // Redirect back to the same page to show the result and prevent form resubmission
+            wp_safe_redirect(wp_get_referer());
+            exit();
+        }
+    }
+
+    public function show_bulk_release_notices() {
+        if ($notice = get_transient('kerbcycle_bulk_action_notice')) {
+            // Determine class based on whether the notice string contains 'Error'
+            $is_error = strpos($notice, 'Error:') !== false;
+            $class = $is_error ? 'notice-error' : 'notice-success';
+            ?>
+            <div class="notice <?php echo $class; ?> is-dismissible">
+                <p><?php echo esc_html($notice); ?></p>
+            </div>
+            <?php
+            delete_transient('kerbcycle_bulk_action_notice');
         }
     }
 
