@@ -107,9 +107,14 @@ function initKerbcycleScanner() {
             if (action === 'release') {
                 const codes = Array.from(document.querySelectorAll('#qr-code-list .qr-select:checked')).map(cb => cb.closest('li').dataset.code);
                 if (!codes.length) {
-                    alert('Select codes first');
+                    alert('Please select one or more QR codes to release.');
                     return;
                 }
+
+                if (!confirm('Are you sure you want to release the selected QR codes?')) {
+                    return;
+                }
+
                 fetch(kerbcycle_ajax.ajax_url, {
                     method: 'POST',
                     headers: {
@@ -119,7 +124,16 @@ function initKerbcycleScanner() {
                 })
                 .then(res => res.json())
                 .then(data => {
-                    alert(data.success ? 'QR codes released' : 'Failed to release codes');
+                    if (data.success) {
+                        alert(data.data.message);
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (data.data.message || 'Failed to release QR codes.'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An unexpected error occurred. Please try again.');
                 });
             }
         });

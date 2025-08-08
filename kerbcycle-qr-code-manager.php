@@ -490,32 +490,54 @@ class KerbCycle_QR_Manager {
     public function bulk_release_qr_codes() {
         check_ajax_referer('kerbcycle_qr_nonce', 'security');
 
-        $codes = isset($_POST['qr_codes']) ? explode(',', sanitize_text_field($_POST['qr_codes'])) : array();
+        if (empty($_POST['qr_codes'])) {
+            wp_send_json_error(array('message' => 'No QR codes were selected.'));
+        }
+
+        // Sanitize each code individually and remove whitespace.
+        $raw_codes = explode(',', $_POST['qr_codes']);
+        $codes = array_map('trim', array_map('sanitize_text_field', $raw_codes));
+        $codes = array_filter($codes); // Remove any empty values
+
         if (empty($codes)) {
-            wp_send_json_error(array('message' => 'No QR codes provided'));
+            wp_send_json_error(array('message' => 'No valid QR codes provided.'));
         }
 
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
-        foreach ($codes as $code) {
-            $latest_id = $wpdb->get_var(
-                $wpdb->prepare(
-                    "SELECT id FROM $table WHERE qr_code = %s ORDER BY id DESC LIMIT 1",
-                    $code
-                )
-            );
-            if ($latest_id) {
-                $wpdb->query(
-                    $wpdb->prepare(
-                        "UPDATE $table SET user_id = NULL, status = %s, assigned_at = NULL WHERE id = %d",
-                        'available',
-                        $latest_id
-                    )
-                );
-            }
+
+        // To release codes, we need to find the latest assignment for each code and update it.
+        $code_placeholders = implode(', ', array_fill(0, count($codes), '%s'));
+
+        // This subquery finds the max(id) for each qr_code in the provided list.
+        $latest_ids_sql = $wpdb->prepare(
+            "SELECT MAX(id) FROM {$table} WHERE qr_code IN ({$code_placeholders}) GROUP BY qr_code",
+            $codes
+        );
+
+        $latest_ids = $wpdb->get_col($latest_ids_sql);
+
+        if (empty($latest_ids)) {
+            wp_send_json_error(array('message' => 'Could not find any matching assigned QR codes to release.'));
         }
 
-        wp_send_json_success(array('message' => 'QR codes released'));
+        $id_placeholders = implode(', ', array_fill(0, count($latest_ids), '%d'));
+
+        // Now, update the rows with these IDs.
+        $update_query = $wpdb->prepare(
+            "UPDATE {$table} SET user_id = NULL, status = 'available', assigned_at = NULL WHERE id IN ({$id_placeholders})",
+            $latest_ids
+        );
+
+        $result = $wpdb->query($update_query);
+
+        if ($result !== false) {
+            wp_send_json_success(array(
+                'message' => sprintf('%d QR code(s) have been successfully released.', $result)
+            ));
+        } else {
+            wp_send_json_error(array('message' => 'An error occurred while releasing the QR codes.'));
+        }
     }
 
     // AJAX: Inline update QR code text
