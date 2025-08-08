@@ -32,24 +32,25 @@ function initKerbcycleScanner() {
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    let msg = "QR code assigned successfully.";
-                    if (data.data && typeof data.data.sms_sent !== 'undefined') {
-                        if (data.data.sms_sent) {
-                            msg += " SMS notification sent.";
-                        } else {
-                            msg += " SMS failed: " + (data.data.sms_error || "Unknown error") + ".";
-                        }
+                let msg = "QR code assigned successfully.";
+                if (data.data && typeof data.data.sms_sent !== 'undefined') {
+                    if (data.data.sms_sent) {
+                        msg += " SMS notification sent.";
+                    } else {
+                        msg += " SMS failed: " + (data.data.sms_error || "Unknown error") + "."; 
                     }
-                    alert(msg);
-                } else {
-                    const err = data.data && data.data.message ? data.data.message : "Failed to assign QR code.";
-                    alert(err);
                 }
+                if (!data.success) {
+                    msg = data.data && data.data.message ? data.data.message : "Failed to assign QR code.";
+                }
+                alert(msg);
             })
             .catch(error => {
                 console.error('Error:', error);
                 alert("An error occurred while assigning the QR code.");
+            })
+            .finally(() => {
+                window.location.reload();
             });
         });
     }
@@ -71,15 +72,15 @@ function initKerbcycleScanner() {
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    alert("QR code released successfully.");
-                } else {
-                    alert("Failed to release QR code.");
-                }
+                const msg = data.success ? "QR code released successfully." : "Failed to release QR code.";
+                alert(msg);
             })
             .catch(error => {
                 console.error('Error:', error);
                 alert("An error occurred while releasing the QR code.");
+            })
+            .finally(() => {
+                window.location.reload();
             });
         });
     }
@@ -115,14 +116,21 @@ function initKerbcycleScanner() {
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
                     },
-                    body: `action=bulk_release_qr_codes&qr_codes=${encodeURIComponent(codes.join(','))}&security=${kerbcycle_ajax.nonce}`
-                })
-                .then(res => res.json())
-                .then(data => {
-                    alert(data.success ? 'QR codes released' : 'Failed to release codes');
-                });
-            }
-        });
+                  body: `action=bulk_release_qr_codes&qr_codes=${encodeURIComponent(codes.join(','))}&security=${kerbcycle_ajax.nonce}`
+                  })
+                  .then(res => res.json())
+                  .then(data => {
+                      alert(data.success ? 'QR codes released' : 'Failed to release codes');
+                  })
+                  .catch(error => {
+                      console.error('Error:', error);
+                      alert('An error occurred while releasing QR codes');
+                  })
+                  .finally(() => {
+                      window.location.reload();
+                  });
+              }
+          });
 
         document.querySelectorAll('#qr-code-list .qr-item .qr-text').forEach(span => {
             span.addEventListener('blur', function() {
