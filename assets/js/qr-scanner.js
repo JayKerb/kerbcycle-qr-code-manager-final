@@ -101,7 +101,7 @@ function initKerbcycleScanner() {
     if (bulkForm) {
         jQuery('#qr-code-list').sortable({ items: 'li.qr-item' });
 
-        document.getElementById('apply-bulk').addEventListener('click', function(e) {
+        bulkForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const action = document.getElementById('bulk-action').value;
             if (action === 'release') {
@@ -126,9 +126,7 @@ function initKerbcycleScanner() {
                 .then(data => {
                     if (data.success) {
                         alert(data.data.message);
-                        setTimeout(function() {
-                            location.reload();
-                        }, 100);
+                        location.reload(true); // Force a reload from the server
                     } else {
                         alert('Error: ' + (data.data.message || 'Failed to release QR codes.'));
                     }
