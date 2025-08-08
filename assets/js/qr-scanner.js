@@ -126,7 +126,9 @@ function initKerbcycleScanner() {
                 .then(data => {
                     if (data.success) {
                         alert(data.data.message);
-                        location.reload();
+                        setTimeout(function() {
+                            location.reload();
+                        }, 100);
                     } else {
                         alert('Error: ' + (data.data.message || 'Failed to release QR codes.'));
                     }
