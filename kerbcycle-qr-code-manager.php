@@ -111,6 +111,7 @@ class KerbCycle_QR_Manager {
     // Enqueue admin scripts
     public function enqueue_admin_scripts($hook) {
         if ($hook === 'kerbcycle-qr-manager_page_kerbcycle-qr-reports') {
+            die('Hook is firing!');
             wp_enqueue_script('chartjs', 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js', [], '3.9.1', true);
             wp_enqueue_script(
                 'kerbcycle-qr-reports',
