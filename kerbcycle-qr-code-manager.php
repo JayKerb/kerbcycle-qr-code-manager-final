@@ -110,9 +110,7 @@ class KerbCycle_QR_Manager {
 
     // Enqueue admin scripts
     public function enqueue_admin_scripts($hook) {
-        echo '<div style="position: absolute; top: 50px; left: 200px; padding: 10px; background: #fff; border: 1px solid #000; z-index: 9999;">Hook name: ' . esc_html($hook) . '</div>';
-
-        if ($hook === 'kerbcycle-qr-manager_page_kerbcycle-qr-reports') {
+        if ($hook === 'qr-codes_page_kerbcycle-qr-reports') {
             wp_enqueue_script('chartjs', 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js', [], '3.9.1', true);
             wp_enqueue_script(
                 'kerbcycle-qr-reports',
