@@ -115,7 +115,7 @@ class KerbCycle_QR_Manager {
             wp_enqueue_script(
                 'kerbcycle-qr-reports',
                 KERBCYCLE_QR_URL . 'assets/js/qr-reports.js',
-                array('chartjs'),
+                array(),
                 '1.0',
                 true
             );
