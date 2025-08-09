@@ -177,4 +177,3 @@ if (document.readyState === 'loading') {
 } else {
     initKerbcycleScanner();
 }
-
