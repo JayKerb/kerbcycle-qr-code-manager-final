@@ -120,39 +120,7 @@ class KerbCycle_QR_Manager {
                 true
             );
 
-            global $wpdb;
-            $table = $wpdb->prefix . 'kerbcycle_qr_codes';
-
-            // Weekly assignment counts
-            $results = $wpdb->get_results("SELECT DATE(assigned_at) AS date, COUNT(*) AS count FROM $table WHERE assigned_at IS NOT NULL GROUP BY DATE(assigned_at) ORDER BY date DESC LIMIT 7");
-            $labels  = array();
-            $counts  = array();
-            if ($results) {
-                foreach (array_reverse($results) as $row) {
-                    $labels[] = $row->date;
-                    $counts[] = (int) $row->count;
-                }
-            }
-
-            // Today's assignment counts by hour
-            $hour_results = $wpdb->get_results("SELECT HOUR(assigned_at) AS hour, COUNT(*) AS count FROM $table WHERE assigned_at >= CURDATE() GROUP BY HOUR(assigned_at) ORDER BY hour");
-            $daily_labels = array();
-            $daily_counts = array();
-            if ($hour_results) {
-                foreach ($hour_results as $row) {
-                    $daily_labels[] = sprintf('%02d:00', $row->hour);
-                    $daily_counts[] = (int) $row->count;
-                }
-            }
-
-            $report_data = array(
-                'labels'       => $labels,
-                'counts'       => $counts,
-                'daily_labels' => $daily_labels,
-                'daily_counts' => $daily_counts,
-                'ajax_url'     => admin_url('admin-ajax.php'),
-                'nonce'        => wp_create_nonce('kerbcycle_qr_report_nonce'),
-            );
+            $report_data = $this->get_report_data();
 
             // Use wp_add_inline_script to make data available to the chart script
             wp_add_inline_script(
@@ -410,10 +378,59 @@ class KerbCycle_QR_Manager {
         <?php
     }
 
+    public function get_report_data() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'kerbcycle_qr_codes';
+
+        // Weekly assignment counts
+        $results = $wpdb->get_results("SELECT DATE(assigned_at) AS date, COUNT(*) AS count FROM $table WHERE assigned_at IS NOT NULL GROUP BY DATE(assigned_at) ORDER BY date DESC LIMIT 7");
+        $labels  = array();
+        $counts  = array();
+        if ($results) {
+            foreach (array_reverse($results) as $row) {
+                $labels[] = $row->date;
+                $counts[] = (int) $row->count;
+            }
+        }
+
+        // Today's assignment counts by hour
+        $hour_results = $wpdb->get_results("SELECT HOUR(assigned_at) AS hour, COUNT(*) AS count FROM $table WHERE assigned_at >= CURDATE() GROUP BY HOUR(assigned_at) ORDER BY hour");
+        $daily_labels = array();
+        $daily_counts = array();
+        if ($hour_results) {
+            foreach ($hour_results as $row) {
+                $daily_labels[] = sprintf('%02d:00', $row->hour);
+                $daily_counts[] = (int) $row->count;
+            }
+        }
+
+        return array(
+            'labels'       => $labels,
+            'counts'       => $counts,
+            'daily_labels' => $daily_labels,
+            'daily_counts' => $daily_counts,
+            'ajax_url'     => admin_url('admin-ajax.php'),
+            'nonce'        => wp_create_nonce('kerbcycle_qr_report_nonce'),
+        );
+    }
+
     public function reports_page() {
         ?>
         <div class="wrap">
             <h1><?php esc_html_e('QR Code Reports', 'kerbcycle'); ?></h1>
+
+            <div id="js-debug-output" style="border: 2px solid blue; padding: 10px; margin-bottom: 20px;">
+                <h2>JavaScript Debug Output</h2>
+            </div>
+
+            <?php
+            $report_data = $this->get_report_data();
+            echo '<h2>PHP Debug Output</h2>';
+            echo '<pre style="border: 1px solid #ccc; padding: 10px; background: #f9f9f9;">';
+            print_r($report_data);
+            echo '</pre>';
+            ?>
+
             <h2><?php esc_html_e('Today\'s Assignments', 'kerbcycle'); ?></h2>
             <canvas id="qr-daily-chart" style="max-width:600px;width:100%;"></canvas>
             <h2><?php esc_html_e('Weekly Assignments', 'kerbcycle'); ?></h2>
