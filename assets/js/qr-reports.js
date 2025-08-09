@@ -1,20 +1,4 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const debugOutput = document.getElementById('js-debug-output');
-    if (debugOutput) {
-        debugOutput.innerHTML += '<p style="margin:0;"><strong>JS Status:</strong> Loaded `qr-reports.js`.</p>';
-        if (typeof Chart !== 'undefined') {
-            debugOutput.innerHTML += '<p style="margin:0; color:green;">&check; Chart object is available.</p>';
-        } else {
-            debugOutput.innerHTML += '<p style="margin:0; color:red;">&times; Chart object NOT found.</p>';
-        }
-        if (typeof kerbcycleReportData !== 'undefined') {
-            debugOutput.innerHTML += '<p style="margin:0; color:green;">&check; kerbcycleReportData object is available.</p>';
-            debugOutput.innerHTML += '<pre style="font-size: 12px; background: #f0f0f0; padding: 5px;">' + JSON.stringify(kerbcycleReportData, null, 2) + '</pre>';
-        } else {
-            debugOutput.innerHTML += '<p style="margin:0; color:red;">&times; kerbcycleReportData object NOT found.</p>';
-        }
-    }
-
     if (typeof Chart === 'undefined' || typeof kerbcycleReportData === 'undefined') {
         return;
     }

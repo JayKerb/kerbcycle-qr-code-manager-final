@@ -110,13 +110,14 @@ class KerbCycle_QR_Manager {
 
     // Enqueue admin scripts
     public function enqueue_admin_scripts($hook) {
+        echo '<div style="position: absolute; top: 50px; left: 200px; padding: 10px; background: #fff; border: 1px solid #000; z-index: 9999;">Hook name: ' . esc_html($hook) . '</div>';
+
         if ($hook === 'kerbcycle-qr-manager_page_kerbcycle-qr-reports') {
-            die('Hook is firing!');
             wp_enqueue_script('chartjs', 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js', [], '3.9.1', true);
             wp_enqueue_script(
                 'kerbcycle-qr-reports',
                 KERBCYCLE_QR_URL . 'assets/js/qr-reports.js',
-                array(),
+                array('chartjs'),
                 '1.0',
                 true
             );
@@ -419,19 +420,6 @@ class KerbCycle_QR_Manager {
         ?>
         <div class="wrap">
             <h1><?php esc_html_e('QR Code Reports', 'kerbcycle'); ?></h1>
-
-            <div id="js-debug-output" style="border: 2px solid blue; padding: 10px; margin-bottom: 20px;">
-                <h2>JavaScript Debug Output</h2>
-            </div>
-
-            <?php
-            $report_data = $this->get_report_data();
-            echo '<h2>PHP Debug Output</h2>';
-            echo '<pre style="border: 1px solid #ccc; padding: 10px; background: #f9f9f9;">';
-            print_r($report_data);
-            echo '</pre>';
-            ?>
-
             <h2><?php esc_html_e('Today\'s Assignments', 'kerbcycle'); ?></h2>
             <canvas id="qr-daily-chart" style="max-width:600px;width:100%;"></canvas>
             <h2><?php esc_html_e('Weekly Assignments', 'kerbcycle'); ?></h2>
