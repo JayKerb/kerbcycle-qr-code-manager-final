@@ -42,6 +42,11 @@ function initKerbcycleScanner() {
                         }
                     }
                     alert(msg);
+                    try {
+                        localStorage.setItem('kerbcycleAssignment', Date.now().toString());
+                    } catch (e) {
+                        console.warn('LocalStorage unavailable', e);
+                    }
                 } else {
                     const err = data.data && data.data.message ? data.data.message : "Failed to assign QR code.";
                     alert(err);
