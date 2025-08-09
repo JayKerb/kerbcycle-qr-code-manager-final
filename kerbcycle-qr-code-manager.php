@@ -2,7 +2,7 @@
 /*
 Plugin Name: KerbCycle QR Code Manager
 Description: Manage QR code scanning and assignment with drag-and-drop, inline editing, bulk actions, and notification toggles
-Version: 1.3
+Version: 1.4
 Author: Your Name
 */
 
@@ -30,6 +30,7 @@ class KerbCycle_QR_Manager {
         add_action('wp_ajax_release_qr_code', array($this, 'release_qr_code'));
         add_action('wp_ajax_bulk_release_qr_codes', array($this, 'bulk_release_qr_codes'));
         add_action('wp_ajax_update_qr_code', array($this, 'update_qr_code'));
+        add_action('wp_ajax_kerbcycle_qr_report_data', array($this, 'ajax_report_data'));
 
         // REST API endpoint
         add_action('rest_api_init', array($this, 'register_rest_endpoints'));
@@ -90,6 +91,15 @@ class KerbCycle_QR_Manager {
 
         add_submenu_page(
             'kerbcycle-qr-manager',
+            'QR Code Reports',
+            'Reports',
+            'manage_options',
+            'kerbcycle-qr-reports',
+            array($this, 'reports_page')
+        );
+
+        add_submenu_page(
+            'kerbcycle-qr-manager',
             'Settings',
             'Settings',
             'manage_options',
@@ -100,6 +110,51 @@ class KerbCycle_QR_Manager {
 
     // Enqueue admin scripts
     public function enqueue_admin_scripts($hook) {
+        if ($hook === 'kerbcycle-qr-manager_page_kerbcycle-qr-reports') {
+            wp_enqueue_script('chartjs', 'https://cdn.jsdelivr.net/npm/chart.js', [], null, true);
+            wp_enqueue_script(
+                'kerbcycle-qr-reports',
+                KERBCYCLE_QR_URL . 'assets/js/qr-reports.js',
+                array('chartjs'),
+                '1.0',
+                true
+            );
+
+            global $wpdb;
+            $table = $wpdb->prefix . 'kerbcycle_qr_codes';
+
+            // Weekly assignment counts
+            $results = $wpdb->get_results("SELECT DATE(assigned_at) AS date, COUNT(*) AS count FROM $table WHERE assigned_at IS NOT NULL GROUP BY DATE(assigned_at) ORDER BY date DESC LIMIT 7");
+            $labels  = array();
+            $counts  = array();
+            if ($results) {
+                foreach (array_reverse($results) as $row) {
+                    $labels[] = $row->date;
+                    $counts[] = (int) $row->count;
+                }
+            }
+
+            // Today's assignment counts by hour
+            $hour_results = $wpdb->get_results("SELECT HOUR(assigned_at) AS hour, COUNT(*) AS count FROM $table WHERE assigned_at >= CURDATE() GROUP BY HOUR(assigned_at) ORDER BY hour");
+            $daily_labels = array();
+            $daily_counts = array();
+            if ($hour_results) {
+                foreach ($hour_results as $row) {
+                    $daily_labels[] = sprintf('%02d:00', $row->hour);
+                    $daily_counts[] = (int) $row->count;
+                }
+            }
+
+            wp_localize_script('kerbcycle-qr-reports', 'kerbcycleReportData', array(
+                'labels'       => $labels,
+                'counts'       => $counts,
+                'daily_labels' => $daily_labels,
+                'daily_counts' => $daily_counts,
+                'ajax_url'     => admin_url('admin-ajax.php'),
+            ));
+            return;
+        }
+
         if (!in_array($hook, ['toplevel_page_kerbcycle-qr-manager', 'kerbcycle-qr-manager_page_kerbcycle-qr-history'])) {
             return;
         }
@@ -345,6 +400,50 @@ class KerbCycle_QR_Manager {
             </table>
         </div>
         <?php
+    }
+
+    public function reports_page() {
+        ?>
+        <div class="wrap">
+            <h1><?php esc_html_e('QR Code Reports', 'kerbcycle'); ?></h1>
+            <h2><?php esc_html_e('Weekly Assignments', 'kerbcycle'); ?></h2>
+            <canvas id="qr-report-chart" style="max-width:600px;width:100%;"></canvas>
+            <h2><?php esc_html_e('Today\'s Assignments', 'kerbcycle'); ?></h2>
+            <canvas id="qr-daily-chart" style="max-width:600px;width:100%;"></canvas>
+        </div>
+        <?php
+    }
+
+    public function ajax_report_data() {
+        global $wpdb;
+        $table = $wpdb->prefix . 'kerbcycle_qr_codes';
+
+        $results = $wpdb->get_results("SELECT DATE(assigned_at) AS date, COUNT(*) AS count FROM $table WHERE assigned_at IS NOT NULL GROUP BY DATE(assigned_at) ORDER BY date DESC LIMIT 7");
+        $labels  = array();
+        $counts  = array();
+        if ($results) {
+            foreach (array_reverse($results) as $row) {
+                $labels[] = $row->date;
+                $counts[] = (int) $row->count;
+            }
+        }
+
+        $hour_results = $wpdb->get_results("SELECT HOUR(assigned_at) AS hour, COUNT(*) AS count FROM $table WHERE assigned_at >= CURDATE() GROUP BY HOUR(assigned_at) ORDER BY hour");
+        $daily_labels = array();
+        $daily_counts = array();
+        if ($hour_results) {
+            foreach ($hour_results as $row) {
+                $daily_labels[] = sprintf('%02d:00', $row->hour);
+                $daily_counts[] = (int) $row->count;
+            }
+        }
+
+        wp_send_json(array(
+            'labels'       => $labels,
+            'counts'       => $counts,
+            'daily_labels' => $daily_labels,
+            'daily_counts' => $daily_counts,
+        ));
     }
 
     // Plugin settings page
