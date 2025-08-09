@@ -145,13 +145,21 @@ class KerbCycle_QR_Manager {
                 }
             }
 
-            wp_localize_script('kerbcycle-qr-reports', 'kerbcycleReportData', array(
+            $report_data = array(
                 'labels'       => $labels,
                 'counts'       => $counts,
                 'daily_labels' => $daily_labels,
                 'daily_counts' => $daily_counts,
                 'ajax_url'     => admin_url('admin-ajax.php'),
-            ));
+                'nonce'        => wp_create_nonce('kerbcycle_qr_report_nonce'),
+            );
+
+            // Use wp_add_inline_script to make data available to the chart script
+            wp_add_inline_script(
+                'chartjs',
+                'const kerbcycleReportData = ' . wp_json_encode($report_data) . ';',
+                'after'
+            );
             return;
         }
 
@@ -415,6 +423,8 @@ class KerbCycle_QR_Manager {
     }
 
     public function ajax_report_data() {
+        check_ajax_referer('kerbcycle_qr_report_nonce', 'security');
+
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
 

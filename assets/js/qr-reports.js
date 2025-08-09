@@ -66,12 +66,21 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function refreshCharts() {
+        const body = new URLSearchParams();
+        body.append('action', 'kerbcycle_qr_report_data');
+        body.append('security', kerbcycleReportData.nonce);
+
         fetch(kerbcycleReportData.ajax_url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-            body: 'action=kerbcycle_qr_report_data'
+            body: body.toString(),
         })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return res.json();
+            })
             .then(data => {
                 renderCharts(data);
             })
