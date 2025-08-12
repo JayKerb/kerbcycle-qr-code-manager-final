@@ -504,9 +504,9 @@ class KerbCycle_QR_Manager {
         exit;
     }
 
-    // Redirect to TeraWallet user wallets page
+    // Redirect to TeraWallet wallet page
     public function terawallet_page() {
-        wp_redirect(admin_url('admin.php?page=woo-wallet-users'));
+        wp_redirect(admin_url('admin.php?page=woo-wallet'));
         exit;
     }
 
