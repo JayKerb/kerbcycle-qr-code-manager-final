@@ -101,6 +101,32 @@ class KerbCycle_QR_Manager {
             array($this, 'reports_page')
         );
 
+        // Shortcut to Bookly appointments if Bookly is active
+        $bookly_active = class_exists('Bookly\\Lib\\Plugin') || defined('BOOKLY_VERSION');
+        if ($bookly_active) {
+            add_submenu_page(
+                'kerbcycle-qr-manager',
+                'Bookly Appointments',
+                'Appointments',
+                'manage_options',
+                'kerbcycle-bookly-appointments',
+                array($this, 'bookly_appointments_page')
+            );
+        }
+
+        // Shortcut to TeraWallet user wallets if TeraWallet is active
+        $wallet_active = function_exists('woo_wallet') || class_exists('Woo_Wallet');
+        if ($wallet_active) {
+            add_submenu_page(
+                'kerbcycle-qr-manager',
+                'TeraWallet',
+                'TeraWallet',
+                'manage_options',
+                'kerbcycle-terawallet',
+                array($this, 'terawallet_page')
+            );
+        }
+
         add_submenu_page(
             'kerbcycle-qr-manager',
             'Settings',
@@ -470,6 +496,18 @@ class KerbCycle_QR_Manager {
             'daily_labels' => $daily_labels,
             'daily_counts' => $daily_counts,
         ));
+    }
+
+    // Redirect to Bookly appointments page
+    public function bookly_appointments_page() {
+        wp_redirect(admin_url('admin.php?page=bookly-appointments'));
+        exit;
+    }
+
+    // Redirect to TeraWallet user wallets page
+    public function terawallet_page() {
+        wp_redirect(admin_url('admin.php?page=woo-wallet-users'));
+        exit;
     }
 
     // Plugin settings page
