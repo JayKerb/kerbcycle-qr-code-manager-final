@@ -41,6 +41,9 @@ class KerbCycle_QR_Manager {
         // Shortcode support
         add_shortcode('kerbcycle_scanner', array($this, 'generate_frontend_scanner'));
         add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_scripts'));
+
+        // Bookly integration
+        add_action('bookly_new_booking', array($this, 'bookly_assign_qr_code'), 10, 1);
     }
 
     // Plugin activation
@@ -792,6 +795,67 @@ class KerbCycle_QR_Manager {
         $error     = is_array($decoded) && isset($decoded['message']) ? $decoded['message'] : __('Unknown error', 'kerbcycle');
 
         return new WP_Error('sms_failed', $error);
+    }
+
+    // Bookly: assign a QR code to each new booking
+    public function bookly_assign_qr_code($booking) {
+        if (!$booking) {
+            return;
+        }
+
+        $qr_code = $this->generate_unique_qr_code();
+
+        $user_id = 0;
+        $email   = '';
+
+        if (method_exists($booking, 'getCustomer')) {
+            $customer = $booking->getCustomer();
+            if ($customer) {
+                if (method_exists($customer, 'getWpUserId')) {
+                    $user_id = (int) $customer->getWpUserId();
+                }
+                if (method_exists($customer, 'getEmail')) {
+                    $email = $customer->getEmail();
+                }
+            }
+        } elseif (method_exists($booking, 'getCustomerId') && class_exists('\\Bookly\\Lib\\Entities\\Customer')) {
+            $customer = \Bookly\Lib\Entities\Customer::query()->find($booking->getCustomerId());
+            if ($customer) {
+                if (method_exists($customer, 'getWpUserId')) {
+                    $user_id = (int) $customer->getWpUserId();
+                }
+                if (method_exists($customer, 'getEmail')) {
+                    $email = $customer->getEmail();
+                }
+            }
+        }
+
+        global $wpdb;
+        $table = $wpdb->prefix . 'kerbcycle_qr_codes';
+        $wpdb->insert(
+            $table,
+            array(
+                'qr_code'     => $qr_code,
+                'user_id'     => $user_id,
+                'status'      => 'assigned',
+                'assigned_at' => current_time('mysql'),
+            ),
+            array('%s', '%d', '%s', '%s')
+        );
+
+        if (!empty($email)) {
+            $this->send_bookly_qr_email($email, $qr_code);
+        }
+    }
+
+    private function generate_unique_qr_code() {
+        return wp_generate_uuid4();
+    }
+
+    private function send_bookly_qr_email($email, $qr_code) {
+        $subject = __('Your booking QR code', 'kerbcycle');
+        $message = sprintf(__('Use this code at your appointment: %s', 'kerbcycle'), $qr_code);
+        wp_mail($email, $subject, $message);
     }
 
     private function schedule_reminder($user_id, $qr_code) {
