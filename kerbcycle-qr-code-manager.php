@@ -16,6 +16,9 @@ if (!defined('KERBCYCLE_QR_URL')) {
     define('KERBCYCLE_QR_URL', plugin_dir_url(__FILE__));
 }
 
+// Load integrations helper
+require_once plugin_dir_path(__FILE__) . 'includes/class-kerbcycle-plugin-integrations.php';
+
 // Main plugin class
 class KerbCycle_QR_Manager {
 
@@ -98,6 +101,32 @@ class KerbCycle_QR_Manager {
             array($this, 'reports_page')
         );
 
+        // Shortcut to Bookly appointments if Bookly is active
+        $bookly_active = class_exists('Bookly\\Lib\\Plugin') || defined('BOOKLY_VERSION');
+        if ($bookly_active) {
+            add_submenu_page(
+                'kerbcycle-qr-manager',
+                'Bookly Appointments',
+                'Appointments',
+                'manage_options',
+                'kerbcycle-bookly-appointments',
+                array($this, 'bookly_appointments_page')
+            );
+        }
+
+        // Shortcut to TeraWallet user wallets if TeraWallet is active
+        $wallet_active = function_exists('woo_wallet') || class_exists('Woo_Wallet');
+        if ($wallet_active) {
+            add_submenu_page(
+                'kerbcycle-qr-manager',
+                'TeraWallet',
+                'TeraWallet',
+                'manage_options',
+                'kerbcycle-terawallet',
+                array($this, 'terawallet_page')
+            );
+        }
+
         add_submenu_page(
             'kerbcycle-qr-manager',
             'Settings',
@@ -105,6 +134,15 @@ class KerbCycle_QR_Manager {
             'manage_options',
             'kerbcycle-qr-settings',
             array($this, 'settings_page')
+        );
+
+        add_submenu_page(
+            'kerbcycle-qr-manager',
+            'Plugin Integrations',
+            'Integrations',
+            'manage_options',
+            'kerbcycle-plugin-integrations',
+            array($this, 'integrations_page')
         );
     }
 
@@ -460,6 +498,18 @@ class KerbCycle_QR_Manager {
         ));
     }
 
+    // Redirect to Bookly appointments page
+    public function bookly_appointments_page() {
+        wp_redirect(admin_url('admin.php?page=bookly-appointments'));
+        exit;
+    }
+
+    // Redirect to TeraWallet wallet page
+    public function terawallet_page() {
+        wp_redirect(admin_url('admin.php?page=woo-wallet'));
+        exit;
+    }
+
     // Plugin settings page
     public function settings_page() {
         ?>
@@ -472,6 +522,34 @@ class KerbCycle_QR_Manager {
                 submit_button();
                 ?>
             </form>
+        </div>
+        <?php
+    }
+
+    // Display summaries of third-party plugin integrations
+    public function integrations_page() {
+        $summaries = KerbCycle_Plugin_Integrations::get_summaries();
+        ?>
+        <div class="wrap">
+            <h1><?php esc_html_e('Plugin Integrations', 'kerbcycle'); ?></h1>
+            <table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th><?php esc_html_e('Plugin', 'kerbcycle'); ?></th>
+                        <th><?php esc_html_e('Status', 'kerbcycle'); ?></th>
+                        <th><?php esc_html_e('Summary', 'kerbcycle'); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($summaries as $summary) : ?>
+                        <tr>
+                            <td><?php echo esc_html($summary['name']); ?></td>
+                            <td><?php echo $summary['active'] ? esc_html__('Active', 'kerbcycle') : esc_html__('Inactive', 'kerbcycle'); ?></td>
+                            <td><?php echo esc_html($summary['summary']); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
         <?php
     }
