@@ -16,6 +16,9 @@ if (!defined('KERBCYCLE_QR_URL')) {
     define('KERBCYCLE_QR_URL', plugin_dir_url(__FILE__));
 }
 
+// Load integrations helper
+require_once plugin_dir_path(__FILE__) . 'includes/class-kerbcycle-plugin-integrations.php';
+
 // Main plugin class
 class KerbCycle_QR_Manager {
 
@@ -105,6 +108,15 @@ class KerbCycle_QR_Manager {
             'manage_options',
             'kerbcycle-qr-settings',
             array($this, 'settings_page')
+        );
+
+        add_submenu_page(
+            'kerbcycle-qr-manager',
+            'Plugin Integrations',
+            'Integrations',
+            'manage_options',
+            'kerbcycle-plugin-integrations',
+            array($this, 'integrations_page')
         );
     }
 
@@ -472,6 +484,34 @@ class KerbCycle_QR_Manager {
                 submit_button();
                 ?>
             </form>
+        </div>
+        <?php
+    }
+
+    // Display summaries of third-party plugin integrations
+    public function integrations_page() {
+        $summaries = KerbCycle_Plugin_Integrations::get_summaries();
+        ?>
+        <div class="wrap">
+            <h1><?php esc_html_e('Plugin Integrations', 'kerbcycle'); ?></h1>
+            <table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <th><?php esc_html_e('Plugin', 'kerbcycle'); ?></th>
+                        <th><?php esc_html_e('Status', 'kerbcycle'); ?></th>
+                        <th><?php esc_html_e('Summary', 'kerbcycle'); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($summaries as $summary) : ?>
+                        <tr>
+                            <td><?php echo esc_html($summary['name']); ?></td>
+                            <td><?php echo $summary['active'] ? esc_html__('Active', 'kerbcycle') : esc_html__('Inactive', 'kerbcycle'); ?></td>
+                            <td><?php echo esc_html($summary['summary']); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         </div>
         <?php
     }
