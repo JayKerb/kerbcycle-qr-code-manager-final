@@ -148,6 +148,14 @@ class KerbCycle_QR_Manager {
 
     // Enqueue admin scripts
     public function enqueue_admin_scripts($hook) {
+        if ($hook === 'toplevel_page_kerbcycle-qr-manager') {
+            wp_enqueue_style(
+                'kerbcycle-admin-styles',
+                KERBCYCLE_QR_URL . 'assets/css/admin-styles.css',
+                array(),
+                '1.4'
+            );
+        }
         if ($hook === 'qr-codes_page_kerbcycle-qr-reports') {
             wp_enqueue_script('chartjs', 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js', [], '3.9.1', true);
             wp_enqueue_script(
