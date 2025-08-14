@@ -144,27 +144,34 @@ function initKerbcycleScanner() {
         });
 
         document.querySelectorAll('#qr-code-list .qr-item .qr-text').forEach(span => {
+            // Store original value to compare on blur
+            let originalCode = span.textContent.trim();
+
             span.addEventListener('blur', function() {
                 const li = span.closest('li');
-                const oldCode = li.dataset.code;
+                const id = li.dataset.id;
                 const newCode = span.textContent.trim();
-                if (oldCode === newCode) {
+
+                if (originalCode === newCode) {
                     return;
                 }
+
                 fetch(kerbcycle_ajax.ajax_url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
                     },
-                    body: `action=update_qr_code&old_code=${encodeURIComponent(oldCode)}&new_code=${encodeURIComponent(newCode)}&security=${kerbcycle_ajax.nonce}`
+                    body: `action=update_qr_code&id=${encodeURIComponent(id)}&new_code=${encodeURIComponent(newCode)}&security=${kerbcycle_ajax.nonce}`
                 })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
+                        // Update originalCode and data-attribute for future edits
+                        originalCode = newCode;
                         li.dataset.code = newCode;
                     } else {
-                        alert('Failed to update QR code');
-                        span.textContent = oldCode;
+                        alert('Failed to update QR code: ' + (data.data.message || 'Please try again.'));
+                        span.textContent = originalCode; // Revert
                     }
                 });
             });

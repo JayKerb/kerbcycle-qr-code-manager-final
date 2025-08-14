@@ -757,28 +757,42 @@ class KerbCycle_QR_Manager {
     public function update_qr_code() {
         check_ajax_referer('kerbcycle_qr_nonce', 'security');
 
-        $old_code = sanitize_text_field($_POST['old_code']);
-        $new_code = sanitize_text_field($_POST['new_code']);
+        // Use the unique ID for a precise and safe update.
+        $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+        $new_code = isset($_POST['new_code']) ? sanitize_text_field($_POST['new_code']) : '';
 
-        if (empty($old_code) || empty($new_code)) {
-            wp_send_json_error(array('message' => 'Invalid QR code'));
+        if (empty($id) || empty($new_code)) {
+            wp_send_json_error(array('message' => 'Invalid ID or QR code provided.'));
         }
 
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
-        $result = $wpdb->update(
-            $table,
-            array('qr_code' => $new_code),
-            array('qr_code' => $old_code),
-            array('%s'),
-            array('%s')
-        );
 
-        if ($result !== false) {
-            wp_send_json_success(array('message' => 'QR code updated'));
+        // Ensure the new QR code isn't already in use by another record.
+        $existing = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM $table WHERE qr_code = %s AND id != %d",
+            $new_code,
+            $id
+        ));
+
+        if ($existing) {
+            wp_send_json_error(array('message' => 'This QR code is already in use. Please choose a different one.'));
         }
 
-        wp_send_json_error(array('message' => 'Failed to update QR code'));
+        $result = $wpdb->update(
+            $table,
+            array('qr_code' => $new_code), // Data
+            array('id' => $id),             // Where
+            array('%s'),                   // Data format
+            array('%d')                    // Where format
+        );
+
+        // $result is the number of rows updated. It can be 0 if the new value is the same as the old one.
+        if ($result !== false) {
+            wp_send_json_success(array('message' => 'QR code updated successfully.'));
+        }
+
+        wp_send_json_error(array('message' => 'Failed to update QR code. The database returned an error.'));
     }
 
     // REST API: Handle QR code scan
