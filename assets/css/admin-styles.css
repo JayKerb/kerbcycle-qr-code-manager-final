@@ -1,0 +1,59 @@
+/*
+ * QR Code List Styling
+ *
+ * Use an inline-block layout to prevent conflicts with JavaScript,
+ * particularly for contenteditable fields and jQuery UI Sortable.
+ */
+
+#qr-code-list .qr-header,
+#qr-code-list .qr-item {
+    border-bottom: 1px solid #eee;
+    padding: 8px 0;
+    /* White-space is set to nowrap to prevent inline-block elements from wrapping,
+       and then reset in child elements. */
+    white-space: nowrap;
+    font-size: 0; /* a trick to remove space between inline-block elements */
+}
+
+#qr-code-list .qr-header {
+    font-weight: bold;
+}
+
+/* Style all direct children of the list items (inputs and spans) */
+#qr-code-list .qr-header > *,
+#qr-code-list .qr-item > * {
+    display: inline-block;
+    vertical-align: middle;
+    padding: 0 5px;
+    box-sizing: border-box;
+    white-space: normal; /* Reset white-space for content */
+    font-size: 13px; /* Reset font-size for content */
+}
+
+#qr-code-list .qr-select {
+    width: 30px;
+}
+
+#qr-code-list .qr-id {
+    width: 60px;
+}
+
+#qr-code-list .qr-text {
+    /* Calculate width to fill remaining space.
+     * Total width is 100%. Subtract the fixed widths of other columns.
+     * 30px (select) + 60px (id) + 120px (user) + 100px (status) + 160px (assigned) = 470px
+     */
+    width: calc(100% - 470px);
+}
+
+#qr-code-list .qr-user {
+    width: 120px;
+}
+
+#qr-code-list .qr-status {
+    width: 100px;
+}
+
+#qr-code-list .qr-assigned {
+    width: 160px;
+}

@@ -34,7 +34,7 @@ class KerbCycle_QR_Manager {
         
         $sql = "CREATE TABLE $table (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
-            qr_code varchar(255) NOT NULL UNIQUE,
+            qr_code varchar(255) NOT NULL,
             user_id mediumint(9),
             status varchar(20) DEFAULT 'available',
             assigned_at datetime DEFAULT NULL,
@@ -163,20 +163,18 @@ class KerbCycle_QR_Manager {
         $qr_code = sanitize_text_field($_POST['qr_code']);
         $user_id = intval($_POST['customer_id']);
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
-        
-        // Update QR code assignment
-        $result = $wpdb->update(
+
+        $result = $wpdb->insert(
             $table,
             array(
+                'qr_code' => $qr_code,
                 'user_id' => $user_id,
                 'status' => 'assigned',
                 'assigned_at' => current_time('mysql')
             ),
-            array('qr_code' => $qr_code),
-            array('%d', '%s', '%s'),
-            array('%s')
+            array('%s', '%d', '%s', '%s')
         );
-        
+
         if ($result !== false) {
             $this->send_notification_email($user_id, $qr_code);
             wp_send_json_success(array(
@@ -195,18 +193,25 @@ class KerbCycle_QR_Manager {
         global $wpdb;
         $qr_code = sanitize_text_field($_POST['qr_code']);
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
-        
-        $result = $wpdb->update(
-            $table,
-            array(
-                'user_id' => null,
-                'status' => 'available',
-                'assigned_at' => null
-            ),
-            array('qr_code' => $qr_code),
-            array('%d', '%s', '%s'),
-            array('%s')
+
+        $latest_id = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT id FROM $table WHERE qr_code = %s ORDER BY id DESC LIMIT 1",
+                $qr_code
+            )
         );
+
+        if ($latest_id) {
+            $result = $wpdb->query(
+                $wpdb->prepare(
+                    "UPDATE $table SET user_id = NULL, status = %s, assigned_at = NULL WHERE id = %d",
+                    'available',
+                    $latest_id
+                )
+            );
+        } else {
+            $result = false;
+        }
         
         if ($result !== false) {
             wp_send_json_success(array('message' => 'QR code released successfully'));
@@ -216,7 +221,7 @@ class KerbCycle_QR_Manager {
     }
 
     public function register_rest_endpoints() {
-        register_rest_route('qrmgmt2/v1', '/qr-code/scanned', array(
+        register_rest_route('kerbcycle/v1', '/qr-code/scanned', array(
             'methods' => 'POST',
             'callback' => array($this, 'handle_qr_code_scan'),
             'permission_callback' => '__return_true',
@@ -236,19 +241,25 @@ class KerbCycle_QR_Manager {
         // Update QR code status
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
-        
-        $wpdb->update(
+
+        $result = $wpdb->insert(
             $table,
             array(
+                'qr_code' => $qr_code,
                 'user_id' => $user_id,
                 'status' => 'assigned',
                 'assigned_at' => current_time('mysql')
             ),
-            array('qr_code' => $qr_code),
-            array('%d', '%s', '%s'),
-            array('%s')
+            array('%s', '%d', '%s', '%s')
         );
-        
+
+        if ($result === false) {
+            return new WP_REST_Response(array(
+                'success' => false,
+                'message' => 'Failed to process QR code'
+            ), 500);
+        }
+
         return new WP_REST_Response(array(
             'success' => true,
             'message' => 'QR code processed',
