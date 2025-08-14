@@ -792,7 +792,13 @@ class KerbCycle_QR_Manager {
             wp_send_json_success(array('message' => 'QR code updated successfully.'));
         }
 
-        wp_send_json_error(array('message' => 'Failed to update QR code. The database returned an error.'));
+        // If the update failed, provide a detailed error message for debugging.
+        $db_error = $wpdb->last_error;
+        $error_message = 'Failed to update QR code.';
+        if (!empty($db_error)) {
+            $error_message .= ' Database error: ' . $db_error;
+        }
+        wp_send_json_error(array('message' => $error_message));
     }
 
     // REST API: Handle QR code scan
