@@ -193,8 +193,8 @@ class KerbCycle_QR_Manager {
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_email');
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_sms');
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_reminders');
-        register_setting('kerbcycle_qr_settings', 'kerbcycle_twilio_sid');
-        register_setting('kerbcycle_qr_settings', 'kerbcycle_twilio_token');
+        register_setting('kerbcycle_qr_settings', 'kerbcycle_twilio_api_key');
+        register_setting('kerbcycle_qr_settings', 'kerbcycle_twilio_api_secret');
         register_setting('kerbcycle_qr_settings', 'kerbcycle_twilio_from');
 
         add_settings_section(
@@ -229,17 +229,17 @@ class KerbCycle_QR_Manager {
         );
 
         add_settings_field(
-            'kerbcycle_twilio_sid',
-            __('Twilio Account SID', 'kerbcycle'),
-            array($this, 'render_twilio_sid_field'),
+            'kerbcycle_twilio_api_key',
+            __('Twilio API Key', 'kerbcycle'),
+            array($this, 'render_twilio_api_key_field'),
             'kerbcycle_qr_settings',
             'kerbcycle_qr_main'
         );
 
         add_settings_field(
-            'kerbcycle_twilio_token',
-            __('Twilio Auth Token', 'kerbcycle'),
-            array($this, 'render_twilio_token_field'),
+            'kerbcycle_twilio_api_secret',
+            __('Twilio API Secret', 'kerbcycle'),
+            array($this, 'render_twilio_api_secret_field'),
             'kerbcycle_qr_settings',
             'kerbcycle_qr_main'
         );
@@ -277,17 +277,17 @@ class KerbCycle_QR_Manager {
         <?php
     }
 
-    public function render_twilio_sid_field() {
-        $value = get_option('kerbcycle_twilio_sid', '');
+    public function render_twilio_api_key_field() {
+        $value = get_option('kerbcycle_twilio_api_key', '');
         ?>
-        <input type="text" name="kerbcycle_twilio_sid" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+        <input type="text" name="kerbcycle_twilio_api_key" value="<?php echo esc_attr($value); ?>" class="regular-text" />
         <?php
     }
 
-    public function render_twilio_token_field() {
-        $value = get_option('kerbcycle_twilio_token', '');
+    public function render_twilio_api_secret_field() {
+        $value = get_option('kerbcycle_twilio_api_secret', '');
         ?>
-        <input type="text" name="kerbcycle_twilio_token" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+        <input type="password" name="kerbcycle_twilio_api_secret" value="<?php echo esc_attr($value); ?>" class="regular-text" />
         <?php
     }
 
@@ -830,29 +830,29 @@ class KerbCycle_QR_Manager {
     }
 
     private function send_notification_sms($user_id, $qr_code) {
-        $sid   = get_option('kerbcycle_twilio_sid');
-        $token = get_option('kerbcycle_twilio_token');
-        $from  = get_option('kerbcycle_twilio_from');
+        $api_key    = get_option('kerbcycle_twilio_api_key');
+        $api_secret = get_option('kerbcycle_twilio_api_secret');
+        $from       = get_option('kerbcycle_twilio_from');
 
         $to = get_user_meta($user_id, 'phone_number', true);
         if (empty($to)) {
             $to = get_user_meta($user_id, 'billing_phone', true);
         }
 
-        if (empty($sid) || empty($token) || empty($from) || empty($to)) {
+        if (empty($api_key) || empty($api_secret) || empty($from) || empty($to)) {
             return new WP_Error('sms_config', __('Missing SMS configuration or phone number', 'kerbcycle'));
         }
 
         $body = sprintf(__('You have been assigned QR code %s', 'kerbcycle'), $qr_code);
 
-        $response = wp_remote_post("https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json", array(
+        $response = wp_remote_post("https://api.twilio.com/2010-04-01/Accounts/{$api_key}/Messages.json", array(
             'body'    => array(
                 'From' => $from,
                 'To'   => $to,
                 'Body' => $body,
             ),
             'headers' => array(
-                'Authorization' => 'Basic ' . base64_encode($sid . ':' . $token),
+                'Authorization' => 'Basic ' . base64_encode($api_key . ':' . $api_secret),
             ),
         ));
 
