@@ -47,6 +47,7 @@ function initKerbcycleScanner() {
                     } catch (e) {
                         console.warn('LocalStorage unavailable', e);
                     }
+                    location.reload();
                 } else {
                     const err = data.data && data.data.message ? data.data.message : "Failed to assign QR code.";
                     alert(err);
@@ -78,6 +79,7 @@ function initKerbcycleScanner() {
             .then(data => {
                 if (data.success) {
                     alert("QR code released successfully.");
+                    location.reload();
                 } else {
                     alert("Failed to release QR code.");
                 }
