@@ -306,6 +306,46 @@ class KerbCycle_QR_Manager {
         $available_codes = $wpdb->get_results("SELECT qr_code FROM $table WHERE status = 'available' ORDER BY id DESC");
         $all_codes = $wpdb->get_results("SELECT id, qr_code, user_id, status, assigned_at FROM $table ORDER BY id DESC");
         ?>
+        <style>
+            #qr-code-list {
+                display: flex;
+                flex-direction: column;
+                padding: 0;
+                border: 1px solid #c3c4c7;
+                box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+                background: #fff;
+            }
+            .qr-header, .qr-item {
+                display: flex;
+                align-items: center;
+                border-bottom: 1px solid #c3c4c7;
+                padding: 8px 10px;
+            }
+            .qr-header {
+                font-weight: 600;
+                background: #f0f0f1;
+            }
+            .qr-item:last-child {
+                border-bottom: none;
+            }
+            .qr-select {
+                flex-basis: 30px;
+                flex-shrink: 0;
+                margin-right: 10px;
+            }
+            .qr-id, .qr-user, .qr-status {
+                flex-basis: 80px;
+                padding: 0 8px;
+            }
+            .qr-text {
+                flex-grow: 1;
+                padding: 0 8px;
+            }
+            .qr-assigned {
+                flex-basis: 150px;
+                padding: 0 8px;
+            }
+        </style>
         <div class="wrap">
             <h1>KerbCycle QR Code Manager</h1>
             <div class="notice notice-info">
