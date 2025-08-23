@@ -196,6 +196,7 @@ class KerbCycle_QR_Manager {
         register_setting('kerbcycle_qr_settings', 'kerbcycle_twilio_api_key');
         register_setting('kerbcycle_qr_settings', 'kerbcycle_twilio_api_secret');
         register_setting('kerbcycle_qr_settings', 'kerbcycle_twilio_from');
+        register_setting('kerbcycle_qr_settings', 'kerbcycle_sms_gateway_url');
 
         add_settings_section(
             'kerbcycle_qr_main',
@@ -251,6 +252,14 @@ class KerbCycle_QR_Manager {
             'kerbcycle_qr_settings',
             'kerbcycle_qr_main'
         );
+
+        add_settings_field(
+            'kerbcycle_sms_gateway_url',
+            __('Custom SMS Gateway URL', 'kerbcycle'),
+            array($this, 'render_sms_gateway_url_field'),
+            'kerbcycle_qr_settings',
+            'kerbcycle_qr_main'
+        );
     }
 
     public function render_enable_email_field() {
@@ -296,6 +305,14 @@ class KerbCycle_QR_Manager {
         ?>
         <input type="text" name="kerbcycle_twilio_from" value="<?php echo esc_attr($value); ?>" class="regular-text" />
         <span class="description"><?php esc_html_e('Twilio phone number including country code', 'kerbcycle'); ?></span>
+        <?php
+    }
+
+    public function render_sms_gateway_url_field() {
+        $value = get_option('kerbcycle_sms_gateway_url', '');
+        ?>
+        <input type="text" name="kerbcycle_sms_gateway_url" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+        <span class="description"><?php esc_html_e('Optional custom gateway URL using placeholders {to}, {from}, {message}', 'kerbcycle'); ?></span>
         <?php
     }
 
@@ -873,28 +890,43 @@ class KerbCycle_QR_Manager {
         $api_key    = get_option('kerbcycle_twilio_api_key');
         $api_secret = get_option('kerbcycle_twilio_api_secret');
         $from       = get_option('kerbcycle_twilio_from');
+        $custom_url = get_option('kerbcycle_sms_gateway_url');
 
         $to = get_user_meta($user_id, 'phone_number', true);
         if (empty($to)) {
             $to = get_user_meta($user_id, 'billing_phone', true);
         }
 
-        if (empty($api_key) || empty($api_secret) || empty($from) || empty($to)) {
-            return new WP_Error('sms_config', __('Missing SMS configuration or phone number', 'kerbcycle'));
-        }
-
         $body = sprintf(__('You have been assigned QR code %s', 'kerbcycle'), $qr_code);
 
-        $response = wp_remote_post("https://api.twilio.com/2010-04-01/Accounts/{$api_key}/Messages.json", array(
-            'body'    => array(
-                'From' => $from,
-                'To'   => $to,
-                'Body' => $body,
-            ),
-            'headers' => array(
-                'Authorization' => 'Basic ' . base64_encode($api_key . ':' . $api_secret),
-            ),
-        ));
+        if (!empty($custom_url)) {
+            if (empty($from) || empty($to)) {
+                return new WP_Error('sms_config', __('Missing SMS configuration or phone number', 'kerbcycle'));
+            }
+
+            $url = str_replace(
+                array('{api_key}', '{api_secret}', '{from}', '{to}', '{message}'),
+                array(rawurlencode($api_key), rawurlencode($api_secret), rawurlencode($from), rawurlencode($to), rawurlencode($body)),
+                $custom_url
+            );
+
+            $response = wp_remote_get($url);
+        } else {
+            if (empty($api_key) || empty($api_secret) || empty($from) || empty($to)) {
+                return new WP_Error('sms_config', __('Missing SMS configuration or phone number', 'kerbcycle'));
+            }
+
+            $response = wp_remote_post("https://api.twilio.com/2010-04-01/Accounts/{$api_key}/Messages.json", array(
+                'body'    => array(
+                    'From' => $from,
+                    'To'   => $to,
+                    'Body' => $body,
+                ),
+                'headers' => array(
+                    'Authorization' => 'Basic ' . base64_encode($api_key . ':' . $api_secret),
+                ),
+            ));
+        }
 
         if (is_wp_error($response)) {
             return $response;
@@ -907,9 +939,9 @@ class KerbCycle_QR_Manager {
 
         $resp_body = wp_remote_retrieve_body($response);
         $decoded   = json_decode($resp_body, true);
-        $error     = is_array($decoded) && isset($decoded['message']) ? $decoded['message'] : __('Unknown error', 'kerbcycle');
+        $error     = is_array($decoded) && isset($decoded['message']) ? $decoded['message'] : $resp_body;
 
-        return new WP_Error('sms_failed', $error);
+        return new WP_Error('sms_failed', !empty($error) ? $error : __('Unknown error', 'kerbcycle'));
     }
 
     private function schedule_reminder($user_id, $qr_code) {
