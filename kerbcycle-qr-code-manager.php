@@ -22,6 +22,9 @@ require_once plugin_dir_path(__FILE__) . 'includes/class-kerbcycle-plugin-integr
 // Load SMS settings and sender
 require_once plugin_dir_path(__FILE__) . 'includes/class-kerbcycle-sms.php';
 
+// Load message templates page
+require_once plugin_dir_path(__FILE__) . 'includes/class-kerbcycle-messages.php';
+
 // Main plugin class
 class KerbCycle_QR_Manager {
 
