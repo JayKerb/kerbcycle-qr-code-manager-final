@@ -23,22 +23,41 @@ function initKerbcycleScanner() {
                 return;
             }
 
+            const params = new URLSearchParams({
+                action: 'assign_qr_code',
+                qr_code: qrCode,
+                customer_id: userId,
+                send_email: sendEmail ? 1 : 0,
+                send_sms: sendSms ? 1 : 0,
+                send_reminder: sendReminder ? 1 : 0,
+                security: kerbcycle_ajax.nonce
+            });
+
             fetch(kerbcycle_ajax.ajax_url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
                 },
-                body: `action=assign_qr_code&qr_code=${encodeURIComponent(qrCode)}&customer_id=${encodeURIComponent(userId)}&send_email=${sendEmail ? 1 : 0}&send_sms=${sendSms ? 1 : 0}&send_reminder=${sendReminder ? 1 : 0}&security=${kerbcycle_ajax.nonce}`
+                body: params.toString()
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     let msg = "QR code assigned successfully.";
-                    if (data.data && typeof data.data.sms_sent !== 'undefined') {
-                        if (data.data.sms_sent) {
-                            msg += " SMS notification sent.";
-                        } else {
-                            msg += " SMS failed: " + (data.data.sms_error || "Unknown error") + ".";
+                    if (data.data) {
+                        if (typeof data.data.email_sent !== 'undefined') {
+                            if (data.data.email_sent) {
+                                msg += " Email notification sent.";
+                            } else {
+                                msg += " Email failed: " + (data.data.email_error || "Unknown error") + ".";
+                            }
+                        }
+                        if (typeof data.data.sms_sent !== 'undefined') {
+                            if (data.data.sms_sent) {
+                                msg += " SMS notification sent.";
+                            } else {
+                                msg += " SMS failed: " + (data.data.sms_error || "Unknown error") + ".";
+                            }
                         }
                     }
                     alert(msg);
@@ -70,12 +89,20 @@ function initKerbcycleScanner() {
                 return;
             }
 
+            const releaseParams = new URLSearchParams({
+                action: 'release_qr_code',
+                qr_code: qrCode,
+                send_email: sendEmail ? 1 : 0,
+                send_sms: sendSms ? 1 : 0,
+                security: kerbcycle_ajax.nonce
+            });
+
             fetch(kerbcycle_ajax.ajax_url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
                 },
-                body: `action=release_qr_code&qr_code=${encodeURIComponent(qrCode)}&send_email=${sendEmail ? 1 : 0}&send_sms=${sendSms ? 1 : 0}&security=${kerbcycle_ajax.nonce}`
+                body: releaseParams.toString()
             })
             .then(response => response.json())
             .then(data => {
