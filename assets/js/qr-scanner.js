@@ -50,16 +50,15 @@ function initKerbcycleScanner() {
                             }
                         }
                     }
-                    alert(msg);
-                    try {
-                        localStorage.setItem('kerbcycleAssignment', Date.now().toString());
-                    } catch (e) {
-                        console.warn('LocalStorage unavailable', e);
-                    }
-                    location.reload();
+                    scanResult.innerHTML = msg;
+                    scanResult.style.display = 'block';
+                    setTimeout(() => location.reload(), 3000);
                 } else {
                     const err = data.data && data.data.message ? data.data.message : "Failed to assign QR code.";
-                    alert(err);
+                    scanResult.innerHTML = err;
+                    scanResult.style.display = 'block';
+                    scanResult.classList.remove('updated');
+                    scanResult.classList.add('error');
                 }
             })
             .catch(error => {
@@ -88,8 +87,9 @@ function initKerbcycleScanner() {
             })
             .then(response => response.json())
             .then(data => {
+                let msg = '';
                 if (data.success) {
-                    let msg = "QR code released successfully.";
+                    msg = "QR code released successfully.";
                     if (data.data) {
                         if (typeof data.data.email_sent !== 'undefined') {
                             if (data.data.email_sent) {
@@ -106,10 +106,15 @@ function initKerbcycleScanner() {
                             }
                         }
                     }
-                    alert(msg);
-                    location.reload();
+                    scanResult.innerHTML = msg;
+                    scanResult.style.display = 'block';
+                    setTimeout(() => location.reload(), 3000);
                 } else {
-                    alert("Failed to release QR code.");
+                    msg = "Failed to release QR code.";
+                    scanResult.innerHTML = msg;
+                    scanResult.style.display = 'block';
+                    scanResult.classList.remove('updated');
+                    scanResult.classList.add('error');
                 }
             })
             .catch(error => {
