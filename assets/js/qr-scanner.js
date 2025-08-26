@@ -33,15 +33,24 @@ function initKerbcycleScanner() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    let msg = "QR code assigned successfully.";
-                    if (data.data && typeof data.data.sms_sent !== 'undefined') {
-                        if (data.data.sms_sent) {
-                            msg += " SMS notification sent.";
-                        } else {
-                            msg += " SMS failed: " + (data.data.sms_error || "Unknown error") + ".";
-                        }
-                    }
-                    alert(msg);
+                    const sms = data.sms || {};
+                    const email = data.email || {};
+
+                    const lines = [];
+                    lines.push(`QR Assignment: ${data.assignment && data.assignment.ok ? '✅ Success' : '❌ Failed'}`);
+                    lines.push(`• Code: ${data.assignment ? data.assignment.qr_code : 'n/a'}`);
+                    lines.push('');
+
+                    lines.push(`SMS: ${sms.ok ? '✅ Sent' : '❌ Not sent'}`);
+                    if (sms.message) lines.push(`  - ${sms.message}`);
+                    if (sms.http_code) lines.push(`  - HTTP: ${sms.http_code}`);
+                    if (sms.provider_code) lines.push(`  - Code: ${sms.provider_code}`);
+                    lines.push('');
+
+                    lines.push(`Email: ${email.ok ? '✅ Sent' : '❌ Not sent'}`);
+                    if (email.message) lines.push(`  - ${email.message}`);
+
+                    alert(lines.join('\n'));
                     try {
                         localStorage.setItem('kerbcycleAssignment', Date.now().toString());
                     } catch (e) {
@@ -49,7 +58,7 @@ function initKerbcycleScanner() {
                     }
                     location.reload();
                 } else {
-                    const err = data.data && data.data.message ? data.data.message : "Failed to assign QR code.";
+                    const err = data.message ? data.message : "Failed to assign QR code.";
                     alert(err);
                 }
             })

@@ -612,33 +612,55 @@ class KerbCycle_QR_Manager {
             array('%s', '%d', '%s', '%s')
         );
 
-        if ($result !== false) {
-            if ($send_email) {
-                $this->send_notification_email($user_id, $qr_code, 'assigned');
-            }
-            $sms_result = null;
-            if ($send_sms) {
-                $sms_result = $this->send_notification_sms($user_id, $qr_code, 'assigned');
-            }
-            if ($send_reminder) {
-                $this->schedule_reminder($user_id, $qr_code);
-            }
+        $assignment_ok = ($result !== false);
 
-            $response = array(
-                'message' => 'QR code assigned successfully',
+        $email_result = array('ok' => false, 'message' => __('Email not sent', 'kerbcycle'));
+        if ($send_email) {
+            $email_send = $this->send_notification_email($user_id, $qr_code, 'assigned');
+            if ($email_send === true) {
+                $email_result = array('ok' => true, 'message' => __('Email sent.', 'kerbcycle'));
+            } else {
+                $email_result = array(
+                    'ok'      => false,
+                    'message' => is_wp_error($email_send) ? $email_send->get_error_message() : __('Unknown error', 'kerbcycle'),
+                );
+            }
+        }
+
+        $sms_result = array('ok' => false, 'message' => __('SMS not sent', 'kerbcycle'));
+        if ($send_sms) {
+            $sms_send = $this->send_notification_sms($user_id, $qr_code, 'assigned');
+            if ($sms_send === true) {
+                $sms_result = array('ok' => true, 'message' => __('SMS sent.', 'kerbcycle'));
+            } else {
+                $sms_result = array(
+                    'ok'      => false,
+                    'message' => is_wp_error($sms_send) ? $sms_send->get_error_message() : __('Unknown error', 'kerbcycle'),
+                );
+            }
+        }
+
+        if ($assignment_ok && $send_reminder) {
+            $this->schedule_reminder($user_id, $qr_code);
+        }
+
+        $response = array(
+            'success'    => $assignment_ok,
+            'assignment' => array(
+                'ok'      => $assignment_ok,
                 'qr_code' => $qr_code,
                 'user_id' => $user_id,
-            );
-            if ($send_sms) {
-                $response['sms_sent'] = ($sms_result === true);
-                if ($sms_result !== true) {
-                    $response['sms_error'] = is_wp_error($sms_result) ? $sms_result->get_error_message() : __('Unknown error', 'kerbcycle');
-                }
-            }
-            wp_send_json_success($response);
-        } else {
-            wp_send_json_error(array('message' => 'Failed to assign QR code'));
+            ),
+            'sms'   => $sms_result,
+            'email' => $email_result,
+        );
+
+        if ($assignment_ok) {
+            wp_send_json($response);
         }
+
+        $response['message'] = __('Failed to assign QR code', 'kerbcycle');
+        wp_send_json($response, 500);
     }
 
     // AJAX: Release QR code
