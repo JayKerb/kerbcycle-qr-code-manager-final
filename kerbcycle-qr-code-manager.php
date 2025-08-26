@@ -25,6 +25,12 @@ require_once plugin_dir_path(__FILE__) . 'includes/class-kerbcycle-sms.php';
 // Load message templates page
 require_once plugin_dir_path(__FILE__) . 'includes/class-kerbcycle-messages.php';
 
+// Load messages history page
+require_once plugin_dir_path(__FILE__) . 'includes/class-kerbcycle-messages-history.php';
+
+// Instantiate messages history handler
+$kerbcycle_messages_history = new KerbCycle_Messages_History();
+
 // Main plugin class
 class KerbCycle_QR_Manager {
 
@@ -97,6 +103,12 @@ class KerbCycle_QR_Manager {
             'kerbcycle-qr-history',
             array($this, 'history_page')
         );
+
+        // Messages history page
+        global $kerbcycle_messages_history;
+        if ($kerbcycle_messages_history instanceof KerbCycle_Messages_History) {
+            $kerbcycle_messages_history->register_admin_menu();
+        }
 
         add_submenu_page(
             'kerbcycle-qr-manager',
