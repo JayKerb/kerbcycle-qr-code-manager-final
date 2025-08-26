@@ -613,12 +613,13 @@ class KerbCycle_QR_Manager {
         );
 
         if ($result !== false) {
+            $email_result = null;
             if ($send_email) {
-                $this->send_notification_email($user_id, $qr_code);
+                $email_result = $this->send_notification_email($user_id, $qr_code, 'assigned');
             }
             $sms_result = null;
             if ($send_sms) {
-                $sms_result = $this->send_notification_sms($user_id, $qr_code);
+                $sms_result = $this->send_notification_sms($user_id, $qr_code, 'assigned');
             }
             if ($send_reminder) {
                 $this->schedule_reminder($user_id, $qr_code);
@@ -629,6 +630,12 @@ class KerbCycle_QR_Manager {
                 'qr_code' => $qr_code,
                 'user_id' => $user_id,
             );
+            if ($send_email) {
+                $response['email_sent'] = ($email_result === true);
+                if ($email_result !== true) {
+                    $response['email_error'] = is_wp_error($email_result) ? $email_result->get_error_message() : __('Unknown error', 'kerbcycle');
+                }
+            }
             if ($send_sms) {
                 $response['sms_sent'] = ($sms_result === true);
                 if ($sms_result !== true) {
@@ -646,22 +653,24 @@ class KerbCycle_QR_Manager {
         check_ajax_referer('kerbcycle_qr_nonce', 'security');
 
         global $wpdb;
-        $qr_code = sanitize_text_field($_POST['qr_code']);
-        $table = $wpdb->prefix . 'kerbcycle_qr_codes';
+        $qr_code   = sanitize_text_field($_POST['qr_code']);
+        $send_email = !empty($_POST['send_email']) && get_option('kerbcycle_qr_enable_email', 1);
+        $send_sms   = !empty($_POST['send_sms']) && get_option('kerbcycle_qr_enable_sms', 0);
+        $table     = $wpdb->prefix . 'kerbcycle_qr_codes';
 
-        $latest_id = $wpdb->get_var(
+        $row = $wpdb->get_row(
             $wpdb->prepare(
-                "SELECT id FROM $table WHERE qr_code = %s ORDER BY id DESC LIMIT 1",
+                "SELECT id, user_id FROM $table WHERE qr_code = %s ORDER BY id DESC LIMIT 1",
                 $qr_code
             )
         );
 
-        if ($latest_id) {
+        if ($row) {
             $result = $wpdb->query(
                 $wpdb->prepare(
                     "UPDATE $table SET user_id = NULL, status = %s, assigned_at = NULL WHERE id = %d",
                     'available',
-                    $latest_id
+                    $row->id
                 )
             );
         } else {
@@ -669,7 +678,23 @@ class KerbCycle_QR_Manager {
         }
 
         if ($result !== false) {
-            wp_send_json_success(array('message' => 'QR code released successfully'));
+            $sms_result = null;
+            if ($row && $row->user_id) {
+                if ($send_email) {
+                    $this->send_notification_email($row->user_id, $qr_code, 'released');
+                }
+                if ($send_sms) {
+                    $sms_result = $this->send_notification_sms($row->user_id, $qr_code, 'released');
+                }
+            }
+            $response = array('message' => 'QR code released successfully');
+            if ($send_sms) {
+                $response['sms_sent'] = ($sms_result === true);
+                if ($sms_result !== true) {
+                    $response['sms_error'] = is_wp_error($sms_result) ? $sms_result->get_error_message() : __('Unknown error', 'kerbcycle');
+                }
+            }
+            wp_send_json_success($response);
         } else {
             wp_send_json_error(array('message' => 'Failed to release QR code'));
         }
@@ -813,21 +838,29 @@ class KerbCycle_QR_Manager {
         ), 200);
     }
 
-    // Helper: Send email notification
-    private function send_notification_email($user_id, $qr_code) {
-        $admin_email = get_option('admin_email');
-        $subject = 'QR Code Assignment Notification';
-        $message = sprintf(
-            "User #%d has been assigned QR code %s\n\nTimestamp: %s",
-            $user_id,
-            $qr_code,
-            current_time('mysql')
-        );
+    // Helper: Send notification email using templates
+    private function send_notification_email($user_id, $qr_code, $type = 'assigned') {
+        $user = get_userdata($user_id);
+        if (!$user || empty($user->user_email)) {
+            return new WP_Error('email_config', __('Missing user email', 'kerbcycle'));
+        }
 
-        wp_mail($admin_email, $subject, $message);
+        $rendered = KerbCycle_Messages::render($type, [
+            'user' => $user->display_name ?: $user->user_login,
+            'code' => $qr_code,
+        ]);
+
+        $subject = 'KerbCycle: ' . ucfirst($type);
+        $sent    = wp_mail($user->user_email, $subject, $rendered['email']);
+
+        if (!$sent) {
+            return new WP_Error('email_send', __('Failed to send email', 'kerbcycle'));
+        }
+
+        return true;
     }
 
-    private function send_notification_sms($user_id, $qr_code) {
+    private function send_notification_sms($user_id, $qr_code, $type = 'assigned') {
         $to = get_user_meta($user_id, 'phone_number', true);
         if (empty($to)) {
             $to = get_user_meta($user_id, 'billing_phone', true);
@@ -837,8 +870,13 @@ class KerbCycle_QR_Manager {
             return new WP_Error('sms_config', __('Missing phone number', 'kerbcycle'));
         }
 
-        $body = sprintf(__('You have been assigned QR code %s', 'kerbcycle'), $qr_code);
+        $user     = get_userdata($user_id);
+        $rendered = KerbCycle_Messages::render($type, [
+            'user' => $user ? ($user->display_name ?: $user->user_login) : '',
+            'code' => $qr_code,
+        ]);
 
+        $body   = $rendered['sms'];
         $result = kerbcycle_sms_send($to, $body);
 
         if (is_wp_error($result)) {
