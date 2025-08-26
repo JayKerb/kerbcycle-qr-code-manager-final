@@ -613,8 +613,9 @@ class KerbCycle_QR_Manager {
         );
 
         if ($result !== false) {
+            $email_result = null;
             if ($send_email) {
-                $this->send_notification_email($user_id, $qr_code, 'assigned');
+                $email_result = $this->send_notification_email($user_id, $qr_code, 'assigned');
             }
             $sms_result = null;
             if ($send_sms) {
@@ -629,6 +630,12 @@ class KerbCycle_QR_Manager {
                 'qr_code' => $qr_code,
                 'user_id' => $user_id,
             );
+            if ($send_email) {
+                $response['email_sent'] = ($email_result === true);
+                if ($email_result !== true) {
+                    $response['email_error'] = is_wp_error($email_result) ? $email_result->get_error_message() : __('Unknown error', 'kerbcycle');
+                }
+            }
             if ($send_sms) {
                 $response['sms_sent'] = ($sms_result === true);
                 if ($sms_result !== true) {
