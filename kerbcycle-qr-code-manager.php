@@ -27,8 +27,7 @@ require_once plugin_dir_path(__FILE__) . 'includes/class-kerbcycle-messages.php'
 
 // Load messages history page
 require_once plugin_dir_path(__FILE__) . 'includes/class-kerbcycle-messages-history.php';
-
-// Instantiate messages history handler
+register_activation_hook(__FILE__, ['KerbCycle_Messages_History', 'activate']);
 $kerbcycle_messages_history = new KerbCycle_Messages_History();
 
 // Main plugin class
@@ -104,7 +103,7 @@ class KerbCycle_QR_Manager {
             array($this, 'history_page')
         );
 
-        // Messages history page
+        // Insert Messages History submenu after History
         global $kerbcycle_messages_history;
         if ($kerbcycle_messages_history instanceof KerbCycle_Messages_History) {
             $kerbcycle_messages_history->register_admin_menu();
