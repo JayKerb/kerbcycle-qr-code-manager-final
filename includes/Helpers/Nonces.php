@@ -15,5 +15,17 @@ if (!defined('ABSPATH')) {
  */
 class Nonces
 {
-    // Methods for creating and verifying nonces will be added here.
+    /**
+     * Verify a nonce value.
+     *
+     * @param string $action The nonce action.
+     * @param string $field  The request field containing the nonce.
+     *
+     * @return bool True when the nonce is valid, false otherwise.
+     */
+    public static function verify($action, $field)
+    {
+        $nonce = isset($_REQUEST[$field]) ? sanitize_text_field(wp_unslash($_REQUEST[$field])) : '';
+        return (bool)wp_verify_nonce($nonce, $action);
+    }
 }
