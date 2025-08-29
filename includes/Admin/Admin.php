@@ -23,6 +23,7 @@ class Admin
     public function __construct()
     {
         add_action('admin_menu', [$this, 'register_admin_menu']);
+        add_action('admin_init', ['\\Kerbcycle\\QrCode\\Services\\SmsService', 'register_settings']);
     }
 
     /**
