@@ -2,14 +2,6 @@
 
 namespace Kerbcycle\QrCode\Services;
 
-/**
- * KerbCycle SMS Settings and Sender
- *
- * Provides a configurable SMS gateway interface with a settings page
- * located under the WordPress “Settings” menu. Supports multiple
- * providers through a generic HTTP request builder.
- */
-
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -17,13 +9,15 @@ if (!defined('ABSPATH')) {
 use Kerbcycle\QrCode\Services\MessagesService;
 use Kerbcycle\QrCode\Data\Repositories\MessageLogRepository;
 
-class SmsService {
+class SmsService
+{
 
     const OPT = 'kerbcycle_sms_options';
 
     /* ---------------- Admin ---------------- */
 
-    public static function admin_menu() {
+    public static function admin_menu()
+    {
         add_submenu_page(
             'kerbcycle-qr-manager',
             'SMS Settings',
@@ -34,7 +28,8 @@ class SmsService {
         );
     }
 
-    public static function defaults() {
+    public static function defaults()
+    {
         return [
             'provider'       => 'webex', // webex|twilio|textbelt|messagebird|webhook|email2sms
             'api_key'        => '',
@@ -53,12 +48,14 @@ class SmsService {
         ];
     }
 
-    public static function get_opts() {
+    public static function get_opts()
+    {
         $opts = get_option(self::OPT, []);
         return wp_parse_args(is_array($opts) ? $opts : [], self::defaults());
     }
 
-    public static function register_settings() {
+    public static function register_settings()
+    {
         register_setting(self::OPT, self::OPT, [__CLASS__, 'sanitize']);
 
         add_settings_section('kc_sms_main', 'Provider & Authentication', function () {
@@ -82,13 +79,19 @@ class SmsService {
         });
 
         self::add_field('api_key', 'API Key / Service Key', function ($o) {
-            printf('<input type="text" name="%s[api_key]" value="%s" style="width:380px" />',
-                esc_attr(self::OPT), esc_attr($o['api_key']));
+            printf(
+                '<input type="text" name="%s[api_key]" value="%s" style="width:380px" />',
+                esc_attr(self::OPT),
+                esc_attr($o['api_key'])
+            );
         });
 
         self::add_field('api_secret', 'API Secret / Token (if needed)', function ($o) {
-            printf('<input type="password" name="%s[api_secret]" value="%s" style="width:380px" />',
-                esc_attr(self::OPT), esc_attr($o['api_secret']));
+            printf(
+                '<input type="password" name="%s[api_secret]" value="%s" style="width:380px" />',
+                esc_attr(self::OPT),
+                esc_attr($o['api_secret'])
+            );
         });
 
         self::add_field('auth_method', 'Auth Method', function ($o) {
@@ -109,19 +112,28 @@ class SmsService {
         add_settings_section('kc_sms_routing', 'Routing & Templates', '__return_null', self::OPT);
 
         self::add_field('from_number', 'Default From (Sender ID/Number)', function ($o) {
-            printf('<input type="text" name="%s[from_number]" value="%s" placeholder="+15551234567 or ALPHASENDER" style="width:280px" />',
-                esc_attr(self::OPT), esc_attr($o['from_number']));
+            printf(
+                '<input type="text" name="%s[from_number]" value="%s" placeholder="+15551234567 or ALPHASENDER" style="width:280px" />',
+                esc_attr(self::OPT),
+                esc_attr($o['from_number'])
+            );
             echo '<p class="description">Webex sandbox often uses a pre-provisioned number; Twilio requires a purchased number; MessageBird can accept up to 11-char alphanumeric.</p>';
         });
 
         self::add_field('country_code', 'Default Country Code', function ($o) {
-            printf('<input type="text" name="%s[country_code]" value="%s" placeholder="+1" style="width:120px" />',
-                esc_attr(self::OPT), esc_attr($o['country_code']));
+            printf(
+                '<input type="text" name="%s[country_code]" value="%s" placeholder="+1" style="width:120px" />',
+                esc_attr(self::OPT),
+                esc_attr($o['country_code'])
+            );
         });
 
         self::add_field('gateway_url', 'Gateway URL', function ($o) {
-            printf('<input type="url" name="%s[gateway_url]" value="%s" style="width:520px" />',
-                esc_attr(self::OPT), esc_attr($o['gateway_url']));
+            printf(
+                '<input type="url" name="%s[gateway_url]" value="%s" style="width:520px" />',
+                esc_attr(self::OPT),
+                esc_attr($o['gateway_url'])
+            );
         });
 
         self::add_field('method', 'HTTP Method', function ($o) {
@@ -133,25 +145,37 @@ class SmsService {
         });
 
         self::add_field('body_template', 'Request Body Template (JSON or form-encoded)', function ($o) {
-            printf('<textarea name="%s[body_template]" rows="8" style="width:520px">%s</textarea>',
-                esc_attr(self::OPT), esc_textarea($o['body_template']));
+            printf(
+                '<textarea name="%s[body_template]" rows="8" style="width:520px">%s</textarea>',
+                esc_attr(self::OPT),
+                esc_textarea($o['body_template'])
+            );
             echo '<p class="description">Placeholders: {to} {from} {message} {api_key} {api_secret}</p>';
         });
 
         self::add_field('headers', 'Custom Headers (one per line)', function ($o) {
-            printf('<textarea name="%s[headers]" rows="5" style="width:520px">%s</textarea>',
-                esc_attr(self::OPT), esc_textarea($o['headers']));
+            printf(
+                '<textarea name="%s[headers]" rows="5" style="width:520px">%s</textarea>',
+                esc_attr(self::OPT),
+                esc_textarea($o['headers'])
+            );
             echo '<p class="description">Example:<br>Content-Type: application/json<br>key: {api_key}<br>Authorization: Bearer {api_key}</p>';
         });
 
         self::add_field('email_gateway', 'Email-to-SMS Gateway (if used)', function ($o) {
-            printf('<input type="text" name="%s[email_gateway]" value="%s" placeholder="vtext.com" style="width:240px" />',
-                esc_attr(self::OPT), esc_attr($o['email_gateway']));
+            printf(
+                '<input type="text" name="%s[email_gateway]" value="%s" placeholder="vtext.com" style="width:240px" />',
+                esc_attr(self::OPT),
+                esc_attr($o['email_gateway'])
+            );
         });
 
         self::add_field('debug', 'Debug Logging', function ($o) {
-            printf('<label><input type="checkbox" name="%s[debug]" value="1" %s /> Log requests/responses to error_log</label>',
-                esc_attr(self::OPT), checked('1', $o['debug'], false));
+            printf(
+                '<label><input type="checkbox" name="%s[debug]" value="1" %s /> Log requests/responses to error_log</label>',
+                esc_attr(self::OPT),
+                checked('1', $o['debug'], false)
+            );
         });
 
         // Quick test sender (same screen)
@@ -164,13 +188,15 @@ class SmsService {
         }, self::OPT, 'kc_sms_test');
     }
 
-    private static function add_field($key, $label, $cb) {
+    private static function add_field($key, $label, $cb)
+    {
         add_settings_field($key, $label, function () use ($cb) {
             $cb(self::get_opts());
         }, self::OPT, 'kc_sms_main' === $key || 'kc_sms_routing' === $key ? $key : (strpos($key, 'kc_sms_') === 0 ? 'kc_sms_test' : 'kc_sms_routing'));
     }
 
-    public static function sanitize($in) {
+    public static function sanitize($in)
+    {
         $out = self::defaults();
         foreach ($out as $k => $v) {
             if (!isset($in[$k])) {
@@ -197,7 +223,8 @@ class SmsService {
         return $out;
     }
 
-    public static function render_settings_page() {
+    public static function render_settings_page()
+    {
         if (!current_user_can('manage_options')) {
             return;
         }
@@ -212,7 +239,8 @@ class SmsService {
 
     /* ---------------- Sender ---------------- */
 
-    public static function normalize_phone($to, $opts) {
+    public static function normalize_phone($to, $opts)
+    {
         $to = trim($to);
         if (strpos($to, '+') !== 0 && !empty($opts['country_code'])) {
             $cc = preg_replace('/\s+/', '', $opts['country_code']);
@@ -225,7 +253,8 @@ class SmsService {
     }
 
     // Build headers array from textarea lines + auth_method
-    private static function build_headers($opts, $map) {
+    private static function build_headers($opts, $map)
+    {
         $headers = [];
         // 1) Auth method helpers
         switch ($opts['auth_method']) {
@@ -257,18 +286,19 @@ class SmsService {
         return $headers;
     }
 
-    public static function send($to, $message, $args = []) {
+    public static function send($to, $message, $args = [])
+    {
         $opts = self::get_opts();
 
         // Email-to-SMS pathway (optional)
         if ($opts['provider'] === 'email2sms') {
             if (empty($opts['email_gateway'])) {
-                return new WP_Error('kc_sms_email_gateway', 'Email-to-SMS gateway domain is missing.');
+                return new \WP_Error('kc_sms_email_gateway', 'Email-to-SMS gateway domain is missing.');
             }
             $digits = preg_replace('/\D+/', '', $to);
             $addr   = $digits . '@' . $opts['email_gateway'];
             $sent = wp_mail($addr, '', wp_strip_all_tags($message));
-            return $sent ? ['ok' => true, 'to' => $addr] : new WP_Error('kc_sms_email_fail', 'wp_mail failed.');
+            return $sent ? ['ok' => true, 'to' => $addr] : new \WP_Error('kc_sms_email_fail', 'wp_mail failed.');
         }
 
         $to_norm = self::normalize_phone($to, $opts);
@@ -339,13 +369,9 @@ class SmsService {
         if ($code >= 200 && $code < 300) {
             return ['ok' => true, 'http' => $code, 'body' => $resp_body];
         }
-        return new WP_Error('kc_sms_http', 'SMS gateway error', ['http' => $code, 'body' => $resp_body]);
+        return new \WP_Error('kc_sms_http', 'SMS gateway error', ['http' => $code, 'body' => $resp_body]);
     }
-}
 
-/**
- * Public helper your plugin can call anywhere.
- */
     /**
      * Send a notification SMS.
      *
@@ -400,4 +426,3 @@ function kerbcycle_sms_send($to, $message, $args = [])
 {
     return SmsService::send($to, $message, $args);
 }
-
