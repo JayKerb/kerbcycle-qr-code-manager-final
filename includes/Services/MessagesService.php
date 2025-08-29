@@ -1,14 +1,12 @@
 <?php
+
+namespace Kerbcycle\QrCode\Services;
+
 if (!defined('ABSPATH')) exit;
 
-class KerbCycle_Messages {
+class MessagesService {
 
     const OPT = 'kerbcycle_messages'; // stores an array of message templates
-
-    public static function boot() {
-        // Load after the main QR Codes menu so we don't override the default page
-        add_action('admin_menu', [__CLASS__, 'admin_menu'], 20);
-    }
 
     public static function defaults() {
         // Each type has: ['sms' => '', 'email' => '']
@@ -348,6 +346,5 @@ class KerbCycle_Messages {
     }
 }
 
-// boot the page
-KerbCycle_Messages::boot();
+// No boot needed, admin menu is registered in Admin class.
 

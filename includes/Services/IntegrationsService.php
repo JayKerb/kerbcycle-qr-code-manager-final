@@ -1,10 +1,13 @@
 <?php
+
+namespace Kerbcycle\QrCode\Services;
+
 // Handle third-party plugin integrations and summaries
 if (!defined('ABSPATH')) {
     exit;
 }
 
-class KerbCycle_Plugin_Integrations {
+class IntegrationsService {
     public static function get_summaries() {
         $user_id   = get_current_user_id();
         $summaries = array();

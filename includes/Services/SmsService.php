@@ -1,4 +1,7 @@
 <?php
+
+namespace Kerbcycle\QrCode\Services;
+
 /**
  * KerbCycle SMS Settings and Sender
  *
@@ -11,14 +14,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class KerbCycle_SMS {
+use Kerbcycle\QrCode\Services\MessagesService;
+use Kerbcycle\QrCode\Data\Repositories\MessageLogRepository;
+
+class SmsService {
 
     const OPT = 'kerbcycle_sms_options';
-
-    public static function boot() {
-        add_action('admin_menu', [__CLASS__, 'admin_menu'], 20);
-        add_action('admin_init', [__CLASS__, 'register_settings']);
-    }
 
     /* ---------------- Admin ---------------- */
 
@@ -342,12 +343,61 @@ class KerbCycle_SMS {
     }
 }
 
-KerbCycle_SMS::boot();
+/**
+ * Public helper your plugin can call anywhere.
+ */
+    /**
+     * Send a notification SMS.
+     *
+     * @param int    $user_id The user ID.
+     * @param string $qr_code The QR code.
+     * @param string $type    The type of notification (e.g., 'assigned', 'released').
+     *
+     * @return bool|\WP_Error True on success, WP_Error on failure.
+     */
+    public function send_notification($user_id, $qr_code, $type = 'assigned')
+    {
+        $to = get_user_meta($user_id, 'phone_number', true);
+        if (empty($to)) {
+            $to = get_user_meta($user_id, 'billing_phone', true);
+        }
+
+        if (empty($to)) {
+            return new \WP_Error('sms_config', __('Missing phone number', 'kerbcycle'));
+        }
+
+        $user     = get_userdata($user_id);
+        $rendered = MessagesService::render($type, [
+            'user' => $user ? ($user->display_name ?: $user->user_login) : '',
+            'code' => $qr_code,
+        ]);
+
+        $body   = $rendered['sms'];
+        $result = self::send($to, $body);
+
+        // Log the SMS
+        MessageLogRepository::log_message([
+            'type'     => 'sms',
+            'to'       => $to,
+            'body'     => $body,
+            'status'   => is_wp_error($result) ? 'failed' : 'sent',
+            'provider' => self::get_opts()['provider'] ?? 'unknown',
+            'response' => is_wp_error($result) ? $result->get_error_message() : json_encode($result),
+        ]);
+
+        if (is_wp_error($result)) {
+            return $result;
+        }
+
+        return true;
+    }
+}
 
 /**
  * Public helper your plugin can call anywhere.
  */
-function kerbcycle_sms_send($to, $message, $args = []) {
-    return KerbCycle_SMS::send($to, $message, $args);
+function kerbcycle_sms_send($to, $message, $args = [])
+{
+    return SmsService::send($to, $message, $args);
 }
 
