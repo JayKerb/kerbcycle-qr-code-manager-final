@@ -152,9 +152,14 @@ class MessagesHistoryPage
                 .kc-msg-history .col-subject,
                 .kc-msg-history .col-body {
                     white-space: normal;
+                }
+
+                /* Clip body/subject previews inside a wrapper, not the table cell */
+                .kc-msg-history .kc-clip {
+                    max-height: 4.8em;   /* ~3 lines at 1.6 line-height */
                     overflow: hidden;
-                    max-height: 4.8em;
-                    line-height: 1.6em;
+                    white-space: normal;
+                    word-break: break-word;
                 }
 
                 .kc-msg-history .filters input[type="search"] {
@@ -272,9 +277,14 @@ class MessagesHistoryPage
                                         <td class="col-type"><?php echo esc_html(strtoupper($row->type)); ?></td>
                                         <td class="col-recipient"><?php echo esc_html($row->recipient); ?></td>
                                         <?php if ($active_tab === 'email') : ?>
-                                            <td class="col-subject"><?php echo esc_html($row->subject); ?></td>
+                                            <td class="col-subject"><div class="kc-clip"><?php echo esc_html($row->subject); ?></div></td>
                                         <?php endif; ?>
-                                        <td class="col-body"><?php echo wp_kses_post(wp_trim_words($row->body, 24, '…')); ?></td>
+                                        <?php
+                                        // Render a clipped, plain-text preview to avoid huge rows from HTML/margins
+                                        $body_text = wp_strip_all_tags((string) $row->body);
+                                        $body_snip = wp_trim_words($body_text, 40, '…'); // ~40 words
+                                        ?>
+                                        <td class="col-body"><div class="kc-clip"><?php echo esc_html($body_snip); ?></div></td>
                                         <td class="col-status"><?php echo esc_html($row->status); ?></td>
                                         <td class="col-provider" title="<?php echo esc_attr(wp_strip_all_tags((string)$row->response)); ?>">
                                             <?php echo esc_html($row->provider); ?>
