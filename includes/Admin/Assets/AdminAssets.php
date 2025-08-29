@@ -62,13 +62,13 @@ class AdminAssets
             return;
         }
 
-        if (!in_array($hook, ['toplevel_page_kerbcycle-qr-manager', 'kerbcycle-qr-manager_page_kerbcycle-qr-history'])) {
+        if (strpos($hook, 'kerbcycle-qr-manager') === false && strpos($hook, 'kerbcycle-qr-history') === false) {
             return;
         }
 
         wp_register_script(
             'html5-qrcode',
-            KERBCYCLE_QR_URL . 'assets/js/vendor/html5-qrcode.min.js',
+            'https://unpkg.com/html5-qrcode@2.3.8/dist/html5-qrcode.min.js',
             [],
             null,
             true
@@ -77,7 +77,7 @@ class AdminAssets
         wp_enqueue_script(
             'kerbcycle-qr-js',
             KERBCYCLE_QR_URL . 'assets/js/qr-scanner.js',
-            ['html5-qrcode', 'jquery-ui-sortable'],
+            ['html5-qrcode', 'jquery', 'jquery-ui-sortable'],
             '1.0',
             true
         );
