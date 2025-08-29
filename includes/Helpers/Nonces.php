@@ -15,5 +15,33 @@ if (!defined('ABSPATH')) {
  */
 class Nonces
 {
-    // Methods for creating and verifying nonces will be added here.
+    /**
+     * Verify a nonce value.
+     *
+     * @param string               $action  Action name.
+     * @param string               $field   Field name containing the nonce.
+     * @param \WP_REST_Request|null $request Optional REST request.
+     *
+     * @return bool|\WP_Error True if valid, WP_Error otherwise (REST).
+     */
+    public static function verify($action, $field = '_wpnonce', $request = null)
+    {
+        $nonce = '';
+        if ($request instanceof \WP_REST_Request) {
+            $nonce = $request->get_param($field);
+        } elseif (isset($_REQUEST[$field])) {
+            $nonce = $_REQUEST[$field];
+        }
+
+        $nonce = sanitize_text_field($nonce);
+
+        if (!wp_verify_nonce($nonce, $action)) {
+            if ($request instanceof \WP_REST_Request) {
+                return new \WP_Error('rest_nonce_invalid', __('Security check failed', 'kerbcycle'), ['status' => 403]);
+            }
+            wp_die(__('Security check failed', 'kerbcycle'), __('Error', 'kerbcycle'), 403);
+        }
+
+        return true;
+    }
 }

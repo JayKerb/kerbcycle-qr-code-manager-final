@@ -23,7 +23,7 @@ class QrCodeRepository
         $this->table = $wpdb->prefix . 'kerbcycle_qr_codes';
     }
 
-    public function assign($qr_code, $user_id)
+    public function insert_assigned($qr_code, $user_id)
     {
         global $wpdb;
         return $wpdb->insert(
@@ -38,19 +38,25 @@ class QrCodeRepository
         );
     }
 
-    public function release($qr_code)
+    public function release_latest_assigned($qr_code)
     {
         global $wpdb;
-        $row = $this->find_by_qr_code($qr_code);
-        if ($row) {
+        $latest_id = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT id FROM $this->table WHERE qr_code = %s AND status = 'assigned' ORDER BY id DESC LIMIT 1",
+                $qr_code
+            )
+        );
+
+        if ($latest_id) {
             return $wpdb->update(
                 $this->table,
                 [
                     'user_id'     => null,
                     'status'      => 'available',
-                    'assigned_at' => null
+                    'assigned_at' => null,
                 ],
-                ['id' => $row->id],
+                ['id' => $latest_id],
                 ['%d', '%s', '%s'],
                 ['%d']
             );
@@ -91,7 +97,7 @@ class QrCodeRepository
         return $released_count;
     }
 
-    public function update($old_code, $new_code)
+    public function update_code($old_code, $new_code)
     {
         global $wpdb;
         return $wpdb->update(
@@ -109,15 +115,48 @@ class QrCodeRepository
         return $wpdb->get_row($wpdb->prepare("SELECT * FROM $this->table WHERE qr_code = %s ORDER BY id DESC LIMIT 1", $qr_code));
     }
 
-    public function get_available_codes()
+    public function list_available()
     {
         global $wpdb;
         return $wpdb->get_results("SELECT qr_code FROM $this->table WHERE status = 'available' ORDER BY id DESC");
     }
 
-    public function get_all_codes()
+    public function list_all()
     {
         global $wpdb;
         return $wpdb->get_results("SELECT id, qr_code, user_id, status, assigned_at FROM $this->table ORDER BY id DESC");
+    }
+
+    public function recent_history($limit)
+    {
+        global $wpdb;
+        $limit = absint($limit);
+        return $wpdb->get_results($wpdb->prepare("SELECT * FROM $this->table ORDER BY assigned_at DESC LIMIT %d", $limit));
+    }
+
+    // Legacy wrappers
+    public function assign($qr_code, $user_id)
+    {
+        return $this->insert_assigned($qr_code, $user_id);
+    }
+
+    public function release($qr_code)
+    {
+        return $this->release_latest_assigned($qr_code);
+    }
+
+    public function update($old_code, $new_code)
+    {
+        return $this->update_code($old_code, $new_code);
+    }
+
+    public function get_available_codes()
+    {
+        return $this->list_available();
+    }
+
+    public function get_all_codes()
+    {
+        return $this->list_all();
     }
 }

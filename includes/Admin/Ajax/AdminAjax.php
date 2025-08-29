@@ -8,6 +8,8 @@ if (!defined('ABSPATH')) {
 
 use Kerbcycle\QrCode\Services\ReportService;
 use Kerbcycle\QrCode\Services\QrService;
+use Kerbcycle\QrCode\Helpers\Nonces;
+use Kerbcycle\QrCode\Data\Repositories\MessageLogRepository;
 
 /**
  * The admin ajax.
@@ -34,11 +36,15 @@ class AdminAjax
         add_action('wp_ajax_bulk_release_qr_codes', [$this, 'bulk_release_qr_codes']);
         add_action('wp_ajax_update_qr_code', [$this, 'update_qr_code']);
         add_action('wp_ajax_kerbcycle_qr_report_data', [$this, 'ajax_report_data']);
+        add_action('wp_ajax_kerbcycle_delete_logs', [$this, 'delete_logs']);
     }
 
     public function assign_qr_code()
     {
-        check_ajax_referer('kerbcycle_qr_nonce', 'security');
+        Nonces::verify('kerbcycle_qr_nonce', 'security');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Unauthorized'], 403);
+        }
 
         $qr_code      = sanitize_text_field($_POST['qr_code']);
         $user_id      = intval($_POST['customer_id']);
@@ -68,7 +74,10 @@ class AdminAjax
 
     public function release_qr_code()
     {
-        check_ajax_referer('kerbcycle_qr_nonce', 'security');
+        Nonces::verify('kerbcycle_qr_nonce', 'security');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Unauthorized'], 403);
+        }
 
         $qr_code   = sanitize_text_field($_POST['qr_code']);
         $send_email = !empty($_POST['send_email']) && get_option('kerbcycle_qr_enable_email', 1);
@@ -92,7 +101,10 @@ class AdminAjax
 
     public function bulk_release_qr_codes()
     {
-        check_ajax_referer('kerbcycle_qr_nonce', 'security');
+        Nonces::verify('kerbcycle_qr_nonce', 'security');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Unauthorized'], 403);
+        }
 
         if (empty($_POST['qr_codes'])) {
             wp_send_json_error(['message' => 'No QR codes were selected.']);
@@ -123,7 +135,10 @@ class AdminAjax
 
     public function update_qr_code()
     {
-        check_ajax_referer('kerbcycle_qr_nonce', 'security');
+        Nonces::verify('kerbcycle_qr_nonce', 'security');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Unauthorized'], 403);
+        }
 
         $old_code = sanitize_text_field($_POST['old_code']);
         $new_code = sanitize_text_field($_POST['new_code']);
@@ -143,9 +158,30 @@ class AdminAjax
 
     public function ajax_report_data()
     {
-        check_ajax_referer('kerbcycle_qr_report_nonce', 'security');
+        Nonces::verify('kerbcycle_qr_report_nonce', 'security');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Unauthorized'], 403);
+        }
         $report_service = new ReportService();
         $data = $report_service->get_report_data();
         wp_send_json($data);
+    }
+
+    public function delete_logs()
+    {
+        Nonces::verify('kerbcycle_delete_logs', 'security');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Unauthorized'], 403);
+        }
+
+        $ids = isset($_POST['log_ids']) && is_array($_POST['log_ids']) ? array_map('absint', $_POST['log_ids']) : [];
+        if (!$ids) {
+            wp_send_json_error(['message' => 'No logs selected']);
+        }
+
+        $repo = new MessageLogRepository();
+        $deleted = $repo->delete_by_ids($ids);
+
+        wp_send_json_success(['deleted' => (int) $deleted]);
     }
 }

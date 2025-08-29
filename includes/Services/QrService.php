@@ -28,7 +28,7 @@ class QrService
 
     public function assign($qr_code, $user_id, $send_email, $send_sms, $send_reminder)
     {
-        $result = $this->repository->assign($qr_code, $user_id);
+        $result = $this->repository->insert_assigned($qr_code, $user_id);
 
         if ($result === false) {
             return new \WP_Error('db_error', 'Failed to assign QR code in database.');
@@ -54,7 +54,7 @@ class QrService
             return new \WP_Error('not_found', 'QR code not found.');
         }
 
-        $result = $this->repository->release($qr_code);
+        $result = $this->repository->release_latest_assigned($qr_code);
 
         if ($result === false) {
             return new \WP_Error('db_error', 'Failed to release QR code in database.');
@@ -80,6 +80,6 @@ class QrService
 
     public function update($old_code, $new_code)
     {
-        return $this->repository->update($old_code, $new_code);
+        return $this->repository->update_code($old_code, $new_code);
     }
 }
