@@ -68,7 +68,7 @@ class AdminAssets
 
         wp_register_script(
             'html5-qrcode',
-            KERBCYCLE_QR_URL . 'assets/js/vendor/html5-qrcode.min.js',
+            'https://unpkg.com/html5-qrcode@2.3.8/minified/html5-qrcode.min.js',
             [],
             null,
             true
