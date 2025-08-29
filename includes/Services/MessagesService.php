@@ -111,8 +111,8 @@ class MessagesService {
             $test_preview_email = $rendered['email'];
 
             // SMS send (optional)
-            if ($do_send_sms && $t_to_sms && function_exists('kerbcycle_sms_send')) {
-                $r = kerbcycle_sms_send($t_to_sms, $test_preview_sms);
+            if ($do_send_sms && $t_to_sms) {
+                $r = \Kerbcycle\QrCode\Services\SmsService::send($t_to_sms, $test_preview_sms);
                 if (is_wp_error($r)) {
                     $d = $r->get_error_data();
                     $http = (is_array($d) && isset($d['http'])) ? ' HTTP='.$d['http'] : '';

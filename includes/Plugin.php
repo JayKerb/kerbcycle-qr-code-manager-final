@@ -50,6 +50,7 @@ class Plugin
             new \Kerbcycle\QrCode\Admin\Assets\AdminAssets();
             new \Kerbcycle\QrCode\Admin\Ajax\AdminAjax();
             new \Kerbcycle\QrCode\Admin\Pages\SettingsPage();
+            new \Kerbcycle\QrCode\Services\SmsService();
         }
 
         // Load public components

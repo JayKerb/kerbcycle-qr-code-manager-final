@@ -14,19 +14,12 @@ class SmsService
 
     const OPT = 'kerbcycle_sms_options';
 
-    /* ---------------- Admin ---------------- */
-
-    public static function admin_menu()
+    public function __construct()
     {
-        add_submenu_page(
-            'kerbcycle-qr-manager',
-            'SMS Settings',
-            'SMS Settings',
-            'manage_options',
-            'kerbcycle-sms',
-            [__CLASS__, 'render_settings_page']
-        );
+        add_action('admin_init', [$this, 'register_settings']);
     }
+
+    /* ---------------- Admin ---------------- */
 
     public static function defaults()
     {
@@ -54,15 +47,15 @@ class SmsService
         return wp_parse_args(is_array($opts) ? $opts : [], self::defaults());
     }
 
-    public static function register_settings()
+    public function register_settings()
     {
-        register_setting(self::OPT, self::OPT, [__CLASS__, 'sanitize']);
+        register_setting(self::OPT, self::OPT, [$this, 'sanitize']);
 
         add_settings_section('kc_sms_main', 'Provider & Authentication', function () {
             echo '<p>Configure a generic SMS gateway. Works with Webex Connect, Twilio-compatible, Textbelt, MessageBird, or any custom webhook.</p>';
         }, self::OPT);
 
-        self::add_field('provider', 'Provider', function ($o) {
+        $this->add_field('provider', 'Provider', function ($o) {
             $map = [
                 'webex'       => 'Webex Connect (Sandbox/Prod)',
                 'twilio'      => 'Twilio-compatible',
@@ -78,7 +71,7 @@ class SmsService
             echo '</select>';
         });
 
-        self::add_field('api_key', 'API Key / Service Key', function ($o) {
+        $this->add_field('api_key', 'API Key / Service Key', function ($o) {
             printf(
                 '<input type="text" name="%s[api_key]" value="%s" style="width:380px" />',
                 esc_attr(self::OPT),
@@ -86,7 +79,7 @@ class SmsService
             );
         });
 
-        self::add_field('api_secret', 'API Secret / Token (if needed)', function ($o) {
+        $this->add_field('api_secret', 'API Secret / Token (if needed)', function ($o) {
             printf(
                 '<input type="password" name="%s[api_secret]" value="%s" style="width:380px" />',
                 esc_attr(self::OPT),
@@ -94,7 +87,7 @@ class SmsService
             );
         });
 
-        self::add_field('auth_method', 'Auth Method', function ($o) {
+        $this->add_field('auth_method', 'Auth Method', function ($o) {
             $methods = [
                 'none'       => 'None',
                 'basic'      => 'HTTP Basic (user=API Key, pass=Secret)',
@@ -111,7 +104,7 @@ class SmsService
 
         add_settings_section('kc_sms_routing', 'Routing & Templates', '__return_null', self::OPT);
 
-        self::add_field('from_number', 'Default From (Sender ID/Number)', function ($o) {
+        $this->add_field('from_number', 'Default From (Sender ID/Number)', function ($o) {
             printf(
                 '<input type="text" name="%s[from_number]" value="%s" placeholder="+15551234567 or ALPHASENDER" style="width:280px" />',
                 esc_attr(self::OPT),
@@ -120,7 +113,7 @@ class SmsService
             echo '<p class="description">Webex sandbox often uses a pre-provisioned number; Twilio requires a purchased number; MessageBird can accept up to 11-char alphanumeric.</p>';
         });
 
-        self::add_field('country_code', 'Default Country Code', function ($o) {
+        $this->add_field('country_code', 'Default Country Code', function ($o) {
             printf(
                 '<input type="text" name="%s[country_code]" value="%s" placeholder="+1" style="width:120px" />',
                 esc_attr(self::OPT),
@@ -128,7 +121,7 @@ class SmsService
             );
         });
 
-        self::add_field('gateway_url', 'Gateway URL', function ($o) {
+        $this->add_field('gateway_url', 'Gateway URL', function ($o) {
             printf(
                 '<input type="url" name="%s[gateway_url]" value="%s" style="width:520px" />',
                 esc_attr(self::OPT),
@@ -136,7 +129,7 @@ class SmsService
             );
         });
 
-        self::add_field('method', 'HTTP Method', function ($o) {
+        $this->add_field('method', 'HTTP Method', function ($o) {
             echo '<select name="' . esc_attr(self::OPT) . '[method]">';
             foreach (['POST', 'GET'] as $m) {
                 printf('<option %s>%s</option>', selected($o['method'], $m, false), $m);
@@ -144,7 +137,7 @@ class SmsService
             echo '</select>';
         });
 
-        self::add_field('body_template', 'Request Body Template (JSON or form-encoded)', function ($o) {
+        $this->add_field('body_template', 'Request Body Template (JSON or form-encoded)', function ($o) {
             printf(
                 '<textarea name="%s[body_template]" rows="8" style="width:520px">%s</textarea>',
                 esc_attr(self::OPT),
@@ -153,7 +146,7 @@ class SmsService
             echo '<p class="description">Placeholders: {to} {from} {message} {api_key} {api_secret}</p>';
         });
 
-        self::add_field('headers', 'Custom Headers (one per line)', function ($o) {
+        $this->add_field('headers', 'Custom Headers (one per line)', function ($o) {
             printf(
                 '<textarea name="%s[headers]" rows="5" style="width:520px">%s</textarea>',
                 esc_attr(self::OPT),
@@ -162,7 +155,7 @@ class SmsService
             echo '<p class="description">Example:<br>Content-Type: application/json<br>key: {api_key}<br>Authorization: Bearer {api_key}</p>';
         });
 
-        self::add_field('email_gateway', 'Email-to-SMS Gateway (if used)', function ($o) {
+        $this->add_field('email_gateway', 'Email-to-SMS Gateway (if used)', function ($o) {
             printf(
                 '<input type="text" name="%s[email_gateway]" value="%s" placeholder="vtext.com" style="width:240px" />',
                 esc_attr(self::OPT),
@@ -170,7 +163,7 @@ class SmsService
             );
         });
 
-        self::add_field('debug', 'Debug Logging', function ($o) {
+        $this->add_field('debug', 'Debug Logging', function ($o) {
             printf(
                 '<label><input type="checkbox" name="%s[debug]" value="1" %s /> Log requests/responses to error_log</label>',
                 esc_attr(self::OPT),
@@ -188,14 +181,14 @@ class SmsService
         }, self::OPT, 'kc_sms_test');
     }
 
-    private static function add_field($key, $label, $cb)
+    private function add_field($key, $label, $cb)
     {
         add_settings_field($key, $label, function () use ($cb) {
-            $cb(self::get_opts());
+            $cb($this->get_opts());
         }, self::OPT, 'kc_sms_main' === $key || 'kc_sms_routing' === $key ? $key : (strpos($key, 'kc_sms_') === 0 ? 'kc_sms_test' : 'kc_sms_routing'));
     }
 
-    public static function sanitize($in)
+    public function sanitize($in)
     {
         $out = self::defaults();
         foreach ($out as $k => $v) {
