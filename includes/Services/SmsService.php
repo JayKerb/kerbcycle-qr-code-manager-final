@@ -8,6 +8,7 @@ if (!defined('ABSPATH')) {
 
 use Kerbcycle\QrCode\Services\MessagesService;
 use Kerbcycle\QrCode\Data\Repositories\MessageLogRepository;
+use Kerbcycle\QrCode\Helpers\Nonces;
 
 class SmsService
 {
@@ -199,7 +200,8 @@ class SmsService
             $out[$k] = is_string($val) ? wp_kses_post($val) : $val;
         }
         // Handle in-page test send
-        if (!empty($_POST['kc_sms_do_test']) && check_admin_referer('kc_sms_test', 'kc_sms_test_nonce')) {
+        if (!empty($_POST['kc_sms_do_test'])) {
+            Nonces::verify('kc_sms_test', 'kc_sms_test_nonce');
             $to  = isset($_POST['kc_sms_test_to']) ? sanitize_text_field($_POST['kc_sms_test_to']) : '';
             $msg = isset($_POST['kc_sms_test_msg']) ? sanitize_text_field($_POST['kc_sms_test_msg']) : '';
             if ($to && $msg) {

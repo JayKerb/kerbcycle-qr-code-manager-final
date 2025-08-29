@@ -133,4 +133,15 @@ class MessageLogRepository
         }
         return true;
     }
+
+    public function delete_by_ids(array $ids)
+    {
+        if (empty($ids)) {
+            return 0;
+        }
+
+        global $wpdb;
+        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
+        return $wpdb->query($wpdb->prepare("DELETE FROM {$this->table} WHERE id IN ($placeholders)", $ids));
+    }
 }

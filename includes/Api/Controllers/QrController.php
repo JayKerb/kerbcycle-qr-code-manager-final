@@ -8,6 +8,7 @@ if (!defined('ABSPATH')) {
 
 use WP_REST_Request;
 use WP_REST_Response;
+use Kerbcycle\QrCode\Helpers\Nonces;
 
 /**
  * The qr controller.
@@ -31,6 +32,11 @@ class QrController
     {
         $qr_code = sanitize_text_field($request->get_param('qr_code'));
         $user_id = intval($request->get_param('user_id'));
+
+        $nonce_check = Nonces::verify('kerbcycle_qr_nonce', 'nonce', $request);
+        if (is_wp_error($nonce_check)) {
+            return $nonce_check;
+        }
 
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
@@ -74,7 +80,9 @@ class QrController
     {
         global $wpdb;
         $qr_code = sanitize_text_field($request['qr_code']);
-        $result = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}kerbcycle_qr_codes WHERE qr_code = %s", $qr_code));
-        return $result ? rest_ensure_response($result) : new \WP_Error('not_found', 'QR Code not found', ['status' => 404]);
+        $table   = $wpdb->prefix . 'kerbcycle_qr_codes';
+        $result  = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE qr_code = %s", $qr_code));
+        return $result ? rest_ensure_response($result)
+                       : new \WP_Error('not_found', 'QR Code not found', ['status' => 404]);
     }
 }

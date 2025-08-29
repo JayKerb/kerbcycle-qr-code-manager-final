@@ -2,6 +2,8 @@
 
 namespace Kerbcycle\QrCode\Services;
 
+use Kerbcycle\QrCode\Helpers\Nonces;
+
 if (!defined('ABSPATH')) exit;
 
 class MessagesService {
@@ -67,7 +69,8 @@ class MessagesService {
         /** =========================
          *  SAVE HANDLER (Templates)
          *  ========================= */
-        if (!empty($_POST['kc_msgs_save']) && check_admin_referer('kc_msgs_save_nonce', 'kc_msgs_nonce')) {
+        if (!empty($_POST['kc_msgs_save'])) {
+            Nonces::verify('kc_msgs_save_nonce', 'kc_msgs_nonce');
             $sel = sanitize_text_field($_POST['kc_msg_type'] ?? 'assigned');
 
             $sms   = isset($_POST['kc_sms'])   ? wp_unslash($_POST['kc_sms'])   : '';
@@ -89,7 +92,8 @@ class MessagesService {
          *  ========================= */
         $test_preview_sms = '';
         $test_preview_email = '';
-        if (!empty($_POST['kc_msgs_test']) && check_admin_referer('kc_msgs_test_nonce', 'kc_msgs_test_nonce_f')) {
+        if (!empty($_POST['kc_msgs_test'])) {
+            Nonces::verify('kc_msgs_test_nonce', 'kc_msgs_test_nonce_f');
             $t_type   = sanitize_text_field($_POST['kc_test_type'] ?? 'assigned');
             $t_user   = sanitize_text_field($_POST['kc_test_user'] ?? '');
             $t_code   = sanitize_text_field($_POST['kc_test_code'] ?? '');

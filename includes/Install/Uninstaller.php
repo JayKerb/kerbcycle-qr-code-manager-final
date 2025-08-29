@@ -26,6 +26,9 @@ class Uninstaller
      */
     public static function deactivate()
     {
-        // Optional: Add cleanup logic here.
+        $timestamp = wp_next_scheduled('kerbcycle_qr_reminder');
+        if ($timestamp) {
+            wp_unschedule_event($timestamp, 'kerbcycle_qr_reminder');
+        }
     }
 }

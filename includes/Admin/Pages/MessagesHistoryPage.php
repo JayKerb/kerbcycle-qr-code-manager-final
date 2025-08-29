@@ -7,6 +7,7 @@ if (!defined('ABSPATH')) {
 }
 
 use Kerbcycle\QrCode\Data\Repositories\MessageLogRepository;
+use Kerbcycle\QrCode\Helpers\Nonces;
 
 /**
  * The messages history page.
@@ -33,7 +34,7 @@ class MessagesHistoryPage
     public function handle_clear_logs()
     {
         if (!current_user_can('manage_options')) wp_die(__('Access denied.', 'kerbcycle'));
-        check_admin_referer('kerbcycle_clear_logs');
+        Nonces::verify('kerbcycle_clear_logs');
 
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_message_logs';
@@ -46,16 +47,10 @@ class MessagesHistoryPage
     public function handle_bulk_delete()
     {
         if (!current_user_can('manage_options')) wp_die(__('Access denied.', 'kerbcycle'));
-        check_admin_referer('kerbcycle_delete_logs');
+        Nonces::verify('kerbcycle_delete_logs');
 
         $ids = isset($_POST['log_ids']) && is_array($_POST['log_ids']) ? array_map('absint', $_POST['log_ids']) : [];
-        $deleted = 0;
-        if ($ids) {
-            global $wpdb;
-            $table = $wpdb->prefix . 'kerbcycle_message_logs';
-            $in = implode(',', array_fill(0, count($ids), '%d'));
-            $deleted = $wpdb->query($wpdb->prepare("DELETE FROM $table WHERE id IN ($in)", $ids));
-        }
+        $deleted = $this->repository->delete_by_ids($ids);
 
         wp_redirect(add_query_arg(['page' => $this->page_slug, 'deleted' => (int)$deleted], admin_url('admin.php')));
         exit;
@@ -64,7 +59,7 @@ class MessagesHistoryPage
     public function handle_repair_logs()
     {
         if (!current_user_can('manage_options')) wp_die(__('Access denied.', 'kerbcycle'));
-        check_admin_referer('kerbcycle_repair_logs');
+        Nonces::verify('kerbcycle_repair_logs');
 
         // The activation logic will handle the repair
         \Kerbcycle\QrCode\Install\Activator::activate();
