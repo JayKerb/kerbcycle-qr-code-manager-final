@@ -10,6 +10,10 @@ function initKerbcycleScanner() {
     const releaseBtn = document.getElementById("release-qr-btn");
     let scannedCode = '';
 
+    if (typeof window.kerbcycle_i18n === 'undefined') {
+        window.kerbcycle_i18n = {};
+    }
+
     if (typeof Html5Qrcode !== 'undefined' && reader) {
         try {
             scanner = new Html5Qrcode("reader", true);

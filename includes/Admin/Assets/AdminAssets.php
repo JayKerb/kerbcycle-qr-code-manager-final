@@ -62,7 +62,7 @@ class AdminAssets
             return;
         }
 
-        if (!in_array($hook, ['toplevel_page_kerbcycle-qr-manager', 'kerbcycle-qr-manager_page_kerbcycle-qr-history'])) {
+        if (strpos($hook, 'kerbcycle-qr-manager') === false && strpos($hook, 'kerbcycle-qr-history') === false) {
             return;
         }
 
@@ -77,7 +77,7 @@ class AdminAssets
         wp_enqueue_script(
             'kerbcycle-qr-js',
             KERBCYCLE_QR_URL . 'assets/js/qr-scanner.js',
-            ['html5-qrcode', 'jquery-ui-sortable'],
+            ['html5-qrcode', 'jquery', 'jquery-ui-sortable'],
             '1.0',
             true
         );
