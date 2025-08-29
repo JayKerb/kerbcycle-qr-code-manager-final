@@ -74,6 +74,45 @@ class MessagesHistoryPage
         exit;
     }
 
+    /** Build a safe, clipped preview with smart fallbacks (subject/body) */
+    protected function preview_text($primary, $row, $max_words = 40)
+    {
+        // 1) Primary field first
+        $text = is_scalar($primary) ? (string) $primary : '';
+
+        // 2) If empty, try to salvage from provider "response" (JSON or string)
+        if ($text === '' && isset($row->response) && $row->response !== '') {
+            $resp  = (string) $row->response;
+            $maybe = null;
+
+            // Try JSON first
+            $decoded = json_decode($resp, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                // common keys gateways return
+                foreach (['body', 'message', 'error', 'detail', 'statusMessage'] as $k) {
+                    if (!empty($decoded[$k]) && is_scalar($decoded[$k])) {
+                        $maybe = (string) $decoded[$k];
+                        break;
+                    }
+                }
+            }
+            if ($maybe === null) {
+                // Fallback: extract a readable snippet from raw response
+                $maybe = $resp;
+            }
+            $text = $maybe;
+        }
+
+        // 3) Normalize → plain text, then trim
+        $text = wp_strip_all_tags($text);
+        $text = trim(preg_replace('/\s+/', ' ', $text)); // collapse whitespace
+
+        if ($text === '') {
+            return '—'; // visible em dash if truly empty
+        }
+        return wp_trim_words($text, $max_words, '…');
+    }
+
     /**
      * Render the messages history page.
      *
@@ -276,14 +315,12 @@ class MessagesHistoryPage
                                         <td class="col-date"><?php echo esc_html($row->created_at); ?></td>
                                         <td class="col-type"><?php echo esc_html(strtoupper($row->type)); ?></td>
                                         <td class="col-recipient"><?php echo esc_html($row->recipient); ?></td>
-                                        <?php if ($active_tab === 'email') : ?>
-                                            <td class="col-subject"><div class="kc-clip"><?php echo esc_html($row->subject); ?></div></td>
+                                        <?php if ($active_tab === 'email'): ?>
+                                            <?php $subject_snip = $this->preview_text($row->subject ?? '', $row, 24); ?>
+                                            <td class="col-subject"><div class="kc-clip"><?php echo esc_html($subject_snip); ?></div></td>
                                         <?php endif; ?>
-                                        <?php
-                                        // Render a clipped, plain-text preview to avoid huge rows from HTML/margins
-                                        $body_text = wp_strip_all_tags((string) $row->body);
-                                        $body_snip = wp_trim_words($body_text, 40, '…'); // ~40 words
-                                        ?>
+
+                                        <?php $body_snip = $this->preview_text($row->body ?? '', $row, 40); ?>
                                         <td class="col-body"><div class="kc-clip"><?php echo esc_html($body_snip); ?></div></td>
                                         <td class="col-status"><?php echo esc_html($row->status); ?></td>
                                         <td class="col-provider" title="<?php echo esc_attr(wp_strip_all_tags((string)$row->response)); ?>">
