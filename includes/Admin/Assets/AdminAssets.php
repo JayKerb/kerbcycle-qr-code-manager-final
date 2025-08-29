@@ -76,7 +76,7 @@ class AdminAssets
         wp_enqueue_script('html5-qrcode');
         wp_enqueue_script(
             'kerbcycle-qr-js',
-            KERBCYCLE_QR_URL . 'assets/js/qr-scanner.js',
+            KERBCYCLE_QR_URL . 'assets/js/admin.js',
             ['html5-qrcode', 'jquery-ui-sortable'],
             '1.0',
             true

@@ -60,7 +60,7 @@ class QrCodeRepository
                 'assigned_at' => null,
             ],
             ['id' => $id],
-            ['%d', '%s', '%s'],
+            [null, '%s', null],
             ['%d']
         );
     }
@@ -91,11 +91,24 @@ class QrCodeRepository
     public function bulk_release(array $codes)
     {
         global $wpdb;
-        if (empty($codes)) {
-            return 0;
+        $released_count = 0;
+
+        foreach ($codes as $code) {
+            $latest_id = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT id FROM {$this->table} WHERE qr_code = %s AND status = 'assigned' ORDER BY id DESC LIMIT 1",
+                    $code
+                )
+            );
+
+            if ($latest_id) {
+                $result = $this->release_by_id($latest_id);
+                if ($result !== false) {
+                    $released_count++;
+                }
+            }
         }
-        $placeholders = implode(',', array_fill(0, count($codes), '%s'));
-        $sql = "UPDATE {$this->table} SET user_id = NULL, status = 'available', assigned_at = NULL WHERE qr_code IN ($placeholders)";
-        return $wpdb->query($wpdb->prepare($sql, $codes));
+
+        return $released_count;
     }
 }
