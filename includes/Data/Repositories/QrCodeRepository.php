@@ -76,4 +76,26 @@ class QrCodeRepository
             ['%s']
         );
     }
+
+    public function find_by_code($qr_code)
+    {
+        global $wpdb;
+        return $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$this->table} WHERE qr_code = %s",
+                $qr_code
+            )
+        );
+    }
+
+    public function bulk_release(array $codes)
+    {
+        global $wpdb;
+        if (empty($codes)) {
+            return 0;
+        }
+        $placeholders = implode(',', array_fill(0, count($codes), '%s'));
+        $sql = "UPDATE {$this->table} SET user_id = NULL, status = 'available', assigned_at = NULL WHERE qr_code IN ($placeholders)";
+        return $wpdb->query($wpdb->prepare($sql, $codes));
+    }
 }

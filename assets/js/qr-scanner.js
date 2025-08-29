@@ -19,7 +19,7 @@ function initKerbcycleScanner() {
             const sendReminder = sendReminderCheckbox ? sendReminderCheckbox.checked : false;
 
             if (!userId || !qrCode) {
-                alert("Please select a user and scan or choose a QR code.");
+                alert(kerbcycle_i18n.select_user);
                 return;
             }
 
@@ -33,12 +33,12 @@ function initKerbcycleScanner() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    let msg = "QR code assigned successfully.";
+                    let msg = kerbcycle_i18n.assign_success;
                     if (data.data && typeof data.data.sms_sent !== 'undefined') {
                         if (data.data.sms_sent) {
-                            msg += " SMS notification sent.";
+                            msg += ' ' + kerbcycle_i18n.sms_sent;
                         } else {
-                            msg += " SMS failed: " + (data.data.sms_error || "Unknown error") + ".";
+                            msg += ' ' + kerbcycle_i18n.sms_failed + ' ' + (data.data.sms_error || kerbcycle_i18n.unknown_error) + '.';
                         }
                     }
                     alert(msg);
@@ -49,13 +49,13 @@ function initKerbcycleScanner() {
                     }
                     location.reload();
                 } else {
-                    const err = data.data && data.data.message ? data.data.message : "Failed to assign QR code.";
+                    const err = data.data && data.data.message ? data.data.message : kerbcycle_i18n.assign_failed;
                     alert(err);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert("An error occurred while assigning the QR code.");
+                alert(kerbcycle_i18n.assign_error);
             });
         });
     }
@@ -66,7 +66,7 @@ function initKerbcycleScanner() {
             const sendEmail = sendEmailCheckbox ? sendEmailCheckbox.checked : false;
             const sendSms = sendSmsCheckbox ? sendSmsCheckbox.checked : false;
             if (!qrCode) {
-                alert("Please scan or select a QR code to release.");
+                alert(kerbcycle_i18n.scan_or_select);
                 return;
             }
 
@@ -80,23 +80,23 @@ function initKerbcycleScanner() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    let msg = "QR code released successfully.";
+                    let msg = kerbcycle_i18n.release_success;
                     if (data.data && typeof data.data.sms_sent !== 'undefined') {
                         if (data.data.sms_sent) {
-                            msg += " SMS notification sent.";
+                            msg += ' ' + kerbcycle_i18n.sms_sent;
                         } else {
-                            msg += " SMS failed: " + (data.data.sms_error || "Unknown error") + ".";
+                            msg += ' ' + kerbcycle_i18n.sms_failed + ' ' + (data.data.sms_error || kerbcycle_i18n.unknown_error) + '.';
                         }
                     }
                     alert(msg);
                     location.reload();
                 } else {
-                    alert("Failed to release QR code.");
+                    alert(kerbcycle_i18n.release_failed);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert("An error occurred while releasing the QR code.");
+                alert(kerbcycle_i18n.release_error);
             });
         });
     }
@@ -106,7 +106,11 @@ function initKerbcycleScanner() {
         scannedCode = decodedText;
         scanResult.style.display = 'block'; // Make the result visible
         scanResult.classList.add('updated'); // Use WordPress success styles
-        scanResult.innerHTML = `<strong>✅ QR Code Scanned Successfully!</strong><br>Content: <code>${decodedText}</code>`;
+        scanResult.innerHTML = `<strong>✅ ${kerbcycle_i18n.scan_success}</strong><br>${kerbcycle_i18n.content_label} <code></code>`;
+        const codeEl = scanResult.querySelector('code');
+        if (codeEl) {
+            codeEl.textContent = decodedText;
+        }
         if (qrSelect) {
             qrSelect.value = decodedText;
         }
@@ -124,11 +128,11 @@ function initKerbcycleScanner() {
             if (action === 'release') {
                 const codes = Array.from(document.querySelectorAll('#qr-code-list .qr-select:checked')).map(cb => cb.closest('li').dataset.code);
                 if (!codes.length) {
-                    alert('Please select one or more QR codes to release.');
+                    alert(kerbcycle_i18n.bulk_select);
                     return;
                 }
 
-                if (!confirm('Are you sure you want to release the selected QR codes?')) {
+                if (!confirm(kerbcycle_i18n.bulk_confirm)) {
                     return;
                 }
 
@@ -145,12 +149,12 @@ function initKerbcycleScanner() {
                         alert(data.data.message);
                         location.reload();
                     } else {
-                        alert('Error: ' + (data.data.message || 'Failed to release QR codes.'));
+                        alert(kerbcycle_i18n.error_prefix + ' ' + (data.data.message || kerbcycle_i18n.release_failed));
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('An unexpected error occurred. Please try again.');
+                    alert(kerbcycle_i18n.unexpected_error);
                 });
             }
         });
@@ -175,7 +179,7 @@ function initKerbcycleScanner() {
                     if (data.success) {
                         li.dataset.code = newCode;
                     } else {
-                        alert('Failed to update QR code');
+                        alert(kerbcycle_i18n.update_failed);
                         span.textContent = oldCode;
                     }
                 });

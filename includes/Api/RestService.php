@@ -36,7 +36,7 @@ class RestService
             'methods' => 'POST',
             'callback' => [new Controllers\QrController(), 'handle_qr_code_scan'],
             'permission_callback' => function () {
-                return current_user_can('edit_posts');
+                return current_user_can('manage_options');
             },
         ]);
 
@@ -44,7 +44,7 @@ class RestService
             'methods' => 'GET',
             'callback' => [new Controllers\QrController(), 'get_qr_status'],
             'permission_callback' => function () {
-                return is_user_logged_in();
+                return current_user_can('manage_options');
             },
         ]);
     }
