@@ -60,13 +60,7 @@ class QrService
 
     public function bulk_release_codes(array $codes)
     {
-        $released = 0;
-        foreach ($codes as $code) {
-            if ($this->release_code($code)) {
-                $released++;
-            }
-        }
-        return $released;
+        return $this->repository->bulk_release($codes);
     }
 
     public function update_code($old_code, $new_code)

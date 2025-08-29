@@ -50,10 +50,14 @@ class AdminAjax
             wp_send_json_error(['message' => 'Unauthorized'], 403);
         }
 
-        $qr_code    = sanitize_text_field($_POST['qr_code']);
-        $user_id    = intval($_POST['customer_id']);
+        $qr_code    = isset($_POST['qr_code']) ? sanitize_text_field($_POST['qr_code']) : '';
+        $user_id    = isset($_POST['customer_id']) ? intval($_POST['customer_id']) : 0;
         $send_email = !empty($_POST['send_email']) && get_option('kerbcycle_qr_enable_email', 1);
         $send_sms   = !empty($_POST['send_sms']) && get_option('kerbcycle_qr_enable_sms', 0);
+
+        if (!$qr_code || !$user_id) {
+            wp_send_json_error(['message' => 'Invalid parameters']);
+        }
 
         $result = $this->service->assign_code($qr_code, $user_id, $send_email, $send_sms);
 
@@ -78,9 +82,13 @@ class AdminAjax
             wp_send_json_error(['message' => 'Unauthorized'], 403);
         }
 
-        $qr_code   = sanitize_text_field($_POST['qr_code']);
+        $qr_code   = isset($_POST['qr_code']) ? sanitize_text_field($_POST['qr_code']) : '';
         $send_email = !empty($_POST['send_email']) && get_option('kerbcycle_qr_enable_email', 1);
         $send_sms   = !empty($_POST['send_sms']) && get_option('kerbcycle_qr_enable_sms', 0);
+
+        if (!$qr_code) {
+            wp_send_json_error(['message' => 'Invalid QR code']);
+        }
 
         $row = $this->service->release_code($qr_code, $send_email, $send_sms);
 
@@ -136,8 +144,8 @@ class AdminAjax
             wp_send_json_error(['message' => 'Unauthorized'], 403);
         }
 
-        $old_code = sanitize_text_field($_POST['old_code']);
-        $new_code = sanitize_text_field($_POST['new_code']);
+        $old_code = isset($_POST['old_code']) ? sanitize_text_field($_POST['old_code']) : '';
+        $new_code = isset($_POST['new_code']) ? sanitize_text_field($_POST['new_code']) : '';
 
         if (empty($old_code) || empty($new_code)) {
             wp_send_json_error(['message' => 'Invalid QR code']);
