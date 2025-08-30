@@ -102,6 +102,14 @@ class DashboardPage
                 <div id="scan-result" class="updated" style="display: none;"></div>
             </div>
 
+            <?php if (get_option('kerbcycle_qr_enable_manual_entry', 0)) : ?>
+            <h2><?php esc_html_e('Add QR Code', 'kerbcycle'); ?></h2>
+            <div id="qr-manual-entry">
+                <input type="text" id="manual-qr-input" placeholder="<?php esc_attr_e('Enter QR Code', 'kerbcycle'); ?>" />
+                <button id="add-qr-btn" class="button"><?php esc_html_e('Add QR Code', 'kerbcycle'); ?></button>
+            </div>
+            <?php endif; ?>
+
             <h2><?php esc_html_e('Manage QR Codes', 'kerbcycle'); ?></h2>
             <p class="description"><?php esc_html_e('Drag and drop to reorder, select multiple codes for bulk actions, or click a code to edit.', 'kerbcycle'); ?></p>
             <form id="qr-code-bulk-form">
