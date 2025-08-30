@@ -59,7 +59,13 @@ class AdminAssets
             return;
         }
 
-        wp_enqueue_script('html5-qrcode', 'https://unpkg.com/html5-qrcode', [], null, true);
+        wp_enqueue_script(
+            'html5-qrcode',
+            'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js',
+            [],
+            '2.3.8',
+            true
+        );
         wp_enqueue_script(
             'kerbcycle-qr-js',
             KERBCYCLE_QR_URL . 'assets/js/qr-scanner.js',

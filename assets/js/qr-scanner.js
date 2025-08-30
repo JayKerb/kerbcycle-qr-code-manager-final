@@ -1,12 +1,24 @@
 function initKerbcycleScanner() {
-    const scanner = new Html5Qrcode("reader", true);
+    let scanner = null;
     const scanResult = document.getElementById("scan-result");
+    const readerEl = document.getElementById("reader");
+
+    // Only try to create the scanner if the library and element exist
+    try {
+        if (window.Html5Qrcode && readerEl) {
+            scanner = new Html5Qrcode("reader", true);
+        }
+    } catch (e) {
+        console.warn("QR scanner unavailable; manual/other features still enabled.", e);
+    }
+
     const qrSelect = document.getElementById("qr-code-select");
     const sendEmailCheckbox = document.getElementById("send-email");
     const sendSmsCheckbox = document.getElementById("send-sms");
     const sendReminderCheckbox = document.getElementById("send-reminder");
     const assignBtn = document.getElementById("assign-qr-btn");
     const releaseBtn = document.getElementById("release-qr-btn");
+    const addBtn = document.getElementById("add-qr-btn");
     let scannedCode = '';
 
     if (assignBtn) {
@@ -60,6 +72,39 @@ function initKerbcycleScanner() {
         });
     }
 
+    if (addBtn) {
+        addBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            const input = document.getElementById("manual-qr-input");
+            const qrCode = input ? input.value.trim() : '';
+            if (!qrCode) {
+                alert("Please enter a QR code.");
+                return;
+            }
+            fetch(kerbcycle_ajax.ajax_url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: `action=add_qr_code&qr_code=${encodeURIComponent(qrCode)}&security=${kerbcycle_ajax.nonce}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('QR code added successfully.');
+                    location.reload();
+                } else {
+                    const err = data.data && data.data.message ? data.data.message : 'Failed to add QR code.';
+                    alert(err);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while adding the QR code.');
+            });
+        });
+    }
+
     if (releaseBtn) {
         releaseBtn.addEventListener("click", function () {
             const qrCode = scannedCode || (qrSelect ? qrSelect.value : '');
@@ -102,7 +147,9 @@ function initKerbcycleScanner() {
     }
 
     function onScanSuccess(decodedText) {
-        scanner.pause(); // Stop scanning after success
+        if (scanner) {
+            scanner.pause(); // Stop scanning after success
+        }
         scannedCode = decodedText;
         scanResult.style.display = 'block'; // Make the result visible
         scanResult.classList.add('updated'); // Use WordPress success styles
@@ -112,7 +159,9 @@ function initKerbcycleScanner() {
         }
     }
 
-    scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
+    if (scanner) {
+        scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
+    }
 
     const bulkForm = document.getElementById('qr-code-bulk-form');
     if (bulkForm) {
