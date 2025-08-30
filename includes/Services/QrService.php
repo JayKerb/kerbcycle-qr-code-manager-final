@@ -47,6 +47,11 @@ class QrService
         return ['sms_result' => $sms_result];
     }
 
+    public function add($qr_code)
+    {
+        return $this->repository->insert_available($qr_code);
+    }
+
     public function release($qr_code, $send_email, $send_sms)
     {
         $row = $this->repository->find_by_qr_code($qr_code);
