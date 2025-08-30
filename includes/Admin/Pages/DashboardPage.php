@@ -86,6 +86,10 @@ class DashboardPage
                         <option value="<?= esc_attr($code->qr_code); ?>"><?= esc_html($code->qr_code); ?></option>
                     <?php endforeach; ?>
                 </select>
+                <p>
+                    <input type="text" id="manual-qr-code" placeholder="<?php esc_attr_e('Enter QR Code', 'kerbcycle'); ?>" />
+                    <button id="add-qr-btn" class="button"><?php esc_html_e('Add QR Code', 'kerbcycle'); ?></button>
+                </p>
                 <?php
                 $email_enabled    = (bool) get_option('kerbcycle_qr_enable_email', 1);
                 $sms_enabled      = (bool) get_option('kerbcycle_qr_enable_sms', 0);

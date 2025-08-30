@@ -23,6 +23,19 @@ class QrCodeRepository
         $this->table = $wpdb->prefix . 'kerbcycle_qr_codes';
     }
 
+    public function insert_available($qr_code)
+    {
+        global $wpdb;
+        return $wpdb->insert(
+            $this->table,
+            [
+                'qr_code' => $qr_code,
+                'status'  => 'available',
+            ],
+            ['%s', '%s']
+        );
+    }
+
     public function insert_assigned($qr_code, $user_id)
     {
         global $wpdb;
