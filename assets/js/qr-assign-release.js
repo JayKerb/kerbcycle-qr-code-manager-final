@@ -5,6 +5,41 @@ function initKerbcycleAssignRelease() {
     const sendReminderCheckbox = document.getElementById("send-reminder");
     const assignBtn = document.getElementById("assign-qr-btn");
     const releaseBtn = document.getElementById("release-qr-btn");
+    const addBtn = document.getElementById("add-qr-btn");
+
+    if (addBtn) {
+        addBtn.addEventListener("click", function () {
+            const manualQrField = document.getElementById("manual-qr-code");
+            const qrCode = manualQrField ? manualQrField.value.trim() : '';
+
+            if (!qrCode) {
+                alert("Please enter a QR code.");
+                return;
+            }
+
+            fetch(kerbcycle_ajax.ajax_url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: `action=add_qr_code&qr_code=${encodeURIComponent(qrCode)}&security=${kerbcycle_ajax.nonce}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("QR code added successfully.");
+                    location.reload();
+                } else {
+                    const err = data.data && data.data.message ? data.data.message : "Failed to add QR code.";
+                    alert(err);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("An error occurred while adding the QR code.");
+            });
+        });
+    }
 
     if (assignBtn) {
         assignBtn.addEventListener("click", function () {

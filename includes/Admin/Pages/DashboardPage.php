@@ -99,6 +99,10 @@ class DashboardPage
                     <button id="assign-qr-btn" class="button button-primary"><?php esc_html_e('Assign QR Code', 'kerbcycle'); ?></button>
                     <button id="release-qr-btn" class="button"><?php esc_html_e('Release QR Code', 'kerbcycle'); ?></button>
                 </p>
+                <div id="manual-qr-entry" style="margin-top: 10px;">
+                    <input type="text" id="manual-qr-code" placeholder="<?php esc_attr_e('Enter QR Code', 'kerbcycle'); ?>" style="vertical-align: middle;"/>
+                    <button id="add-qr-btn" class="button" style="vertical-align: middle;"><?php esc_html_e('Add QR Code', 'kerbcycle'); ?></button>
+                </div>
                 <?php if ($scanner_enabled) : ?>
                     <div id="reader" style="width: 100%; max-width: 400px; margin-top: 20px;"></div>
                 <?php else : ?>

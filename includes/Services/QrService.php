@@ -26,6 +26,15 @@ class QrService
         $this->repository = new QrCodeRepository();
     }
 
+    public function add_qr_code($qr_code)
+    {
+        $existing = $this->repository->find_by_qr_code($qr_code);
+        if ($existing) {
+            return new \WP_Error('duplicate_qr', 'This QR code already exists in the database.');
+        }
+        return $this->repository->insert_available($qr_code);
+    }
+
     public function assign($qr_code, $user_id, $send_email, $send_sms, $send_reminder)
     {
         $result = $this->repository->insert_assigned($qr_code, $user_id);

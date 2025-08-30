@@ -38,6 +38,19 @@ class QrCodeRepository
         );
     }
 
+    public function insert_available($qr_code)
+    {
+        global $wpdb;
+        return $wpdb->insert(
+            $this->table,
+            [
+                'qr_code' => $qr_code,
+                'status'  => 'available',
+            ],
+            ['%s', '%s']
+        );
+    }
+
     public function release_latest_assigned($qr_code)
     {
         global $wpdb;

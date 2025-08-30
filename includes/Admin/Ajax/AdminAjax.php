@@ -31,12 +31,35 @@ class AdminAjax
     {
         $this->qr_service = new QrService();
 
+        add_action('wp_ajax_add_qr_code', [$this, 'add_qr_code']);
         add_action('wp_ajax_assign_qr_code', [$this, 'assign_qr_code']);
         add_action('wp_ajax_release_qr_code', [$this, 'release_qr_code']);
         add_action('wp_ajax_bulk_release_qr_codes', [$this, 'bulk_release_qr_codes']);
         add_action('wp_ajax_update_qr_code', [$this, 'update_qr_code']);
         add_action('wp_ajax_kerbcycle_qr_report_data', [$this, 'ajax_report_data']);
         add_action('wp_ajax_kerbcycle_delete_logs', [$this, 'delete_logs']);
+    }
+
+    public function add_qr_code()
+    {
+        Nonces::verify('kerbcycle_qr_nonce', 'security');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Unauthorized'], 403);
+        }
+
+        $qr_code = sanitize_text_field($_POST['qr_code']);
+
+        if (empty($qr_code)) {
+            wp_send_json_error(['message' => 'QR code cannot be empty.']);
+        }
+
+        $result = $this->qr_service->add_qr_code($qr_code);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()]);
+        } else {
+            wp_send_json_success(['message' => 'QR code added successfully.']);
+        }
     }
 
     public function assign_qr_code()
