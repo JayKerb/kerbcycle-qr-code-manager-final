@@ -191,9 +191,6 @@ class MessagesHistoryPage
                 .kc-msg-history .col-subject,
                 .kc-msg-history .col-body {
                     white-space: normal;
-                    width: 25%;
-                    writing-mode: horizontal-tb !important;
-                    overflow: visible;
                 }
 
                 /* Clip body/subject previews inside a wrapper, not the table cell */
@@ -301,12 +298,13 @@ class MessagesHistoryPage
                                 <th class="col-body"><?php esc_html_e('Body', 'kerbcycle'); ?></th>
                                 <th class="col-status"><?php esc_html_e('Status', 'kerbcycle'); ?></th>
                                 <th class="col-provider"><?php esc_html_e('Provider', 'kerbcycle'); ?></th>
+                                <th>Test Column</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($results)) : ?>
                                 <tr>
-                                    <td colspan="9"><?php esc_html_e('No logs found.', 'kerbcycle'); ?></td>
+                                    <td colspan="10"><?php esc_html_e('No logs found.', 'kerbcycle'); ?></td>
                                 </tr>
                             <?php else : ?>
                                 <?php foreach ($results as $row) : ?>
@@ -325,6 +323,7 @@ class MessagesHistoryPage
                                         <td class="col-provider" title="<?php echo esc_attr(wp_strip_all_tags((string)$row->response)); ?>">
                                             <?php echo esc_html($row->provider); ?>
                                         </td>
+                                        <td>Test Data</td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
