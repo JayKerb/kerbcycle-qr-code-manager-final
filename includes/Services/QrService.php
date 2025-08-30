@@ -26,6 +26,15 @@ class QrService
         $this->repository = new QrCodeRepository();
     }
 
+    public function create($qr_code)
+    {
+        $result = $this->repository->insert_available($qr_code);
+        if ($result === false) {
+            return new \WP_Error('db_error', 'Failed to add QR code in database.');
+        }
+        return true;
+    }
+
     public function assign($qr_code, $user_id, $send_email, $send_sms, $send_reminder)
     {
         $result = $this->repository->insert_assigned($qr_code, $user_id);
