@@ -90,6 +90,7 @@ class DashboardPage
                 $email_enabled    = (bool) get_option('kerbcycle_qr_enable_email', 1);
                 $sms_enabled      = (bool) get_option('kerbcycle_qr_enable_sms', 0);
                 $reminder_enabled = (bool) get_option('kerbcycle_qr_enable_reminders', 0);
+                $scanner_enabled  = (bool) get_option('kerbcycle_qr_enable_scanner', 1);
                 ?>
                 <label><input type="checkbox" id="send-email" <?php checked($email_enabled); ?> <?php disabled(!$email_enabled); ?>> <?php esc_html_e('Send notification email', 'kerbcycle'); ?></label>
                 <label><input type="checkbox" id="send-sms" <?php checked($sms_enabled); ?> <?php disabled(!$sms_enabled); ?>> <?php esc_html_e('Send SMS', 'kerbcycle'); ?></label>
@@ -98,7 +99,13 @@ class DashboardPage
                     <button id="assign-qr-btn" class="button button-primary"><?php esc_html_e('Assign QR Code', 'kerbcycle'); ?></button>
                     <button id="release-qr-btn" class="button"><?php esc_html_e('Release QR Code', 'kerbcycle'); ?></button>
                 </p>
-                <div id="reader" style="width: 100%; max-width: 400px; margin-top: 20px;"></div>
+                <?php if ($scanner_enabled) : ?>
+                    <div id="reader" style="width: 100%; max-width: 400px; margin-top: 20px;"></div>
+                <?php else : ?>
+                    <div class="notice notice-warning" style="margin-top: 20px;">
+                        <p><?php esc_html_e('QR code scanner camera is disabled in settings.', 'kerbcycle'); ?></p>
+                    </div>
+                <?php endif; ?>
                 <div id="scan-result" class="updated" style="display: none;"></div>
             </div>
 
