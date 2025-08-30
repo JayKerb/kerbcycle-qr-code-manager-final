@@ -74,6 +74,45 @@ class MessagesHistoryPage
         exit;
     }
 
+    /** Build a safe, clipped preview with smart fallbacks (subject/body) */
+    protected function preview_text($primary, $row, $max_words = 40)
+    {
+        // 1) Primary field first
+        $text = is_scalar($primary) ? (string) $primary : '';
+
+        // 2) If empty, try to salvage from provider "response" (JSON or string)
+        if ($text === '' && isset($row->response) && $row->response !== '') {
+            $resp  = (string) $row->response;
+            $maybe = null;
+
+            // Try JSON first
+            $decoded = json_decode($resp, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                // common keys gateways return
+                foreach (['body', 'message', 'error', 'detail', 'statusMessage'] as $k) {
+                    if (!empty($decoded[$k]) && is_scalar($decoded[$k])) {
+                        $maybe = (string) $decoded[$k];
+                        break;
+                    }
+                }
+            }
+            if ($maybe === null) {
+                // Fallback: extract a readable snippet from raw response
+                $maybe = $resp;
+            }
+            $text = $maybe;
+        }
+
+        // 3) Normalize → plain text, then trim
+        $text = wp_strip_all_tags($text);
+        $text = trim(preg_replace('/\s+/', ' ', $text)); // collapse whitespace
+
+        if ($text === '') {
+            return '—'; // visible em dash if truly empty
+        }
+        return wp_trim_words($text, $max_words, '…');
+    }
+
     /**
      * Render the messages history page.
      *
@@ -126,11 +165,11 @@ class MessagesHistoryPage
                 }
 
                 .kc-msg-history .col-id {
-                    width: 80px;
+                    width: 60px;
                 }
 
                 .kc-msg-history .col-date {
-                    width: 160px;
+                    width: 120px;
                 }
 
                 .kc-msg-history .col-type {
@@ -138,20 +177,25 @@ class MessagesHistoryPage
                 }
 
                 .kc-msg-history .col-recipient {
-                    width: 240px;
+                    width: 140px;
+                }
+
+                .kc-msg-history .col-subject {
+                    width: 140px;
+                    white-space: normal;
+                }
+
+                .kc-msg-history .col-body {
+                    width: 200px;
+                    white-space: normal;
                 }
 
                 .kc-msg-history .col-status {
-                    width: 120px;
+                    width: 80px;
                 }
 
                 .kc-msg-history .col-provider {
-                    width: 150px;
-                }
-
-                .kc-msg-history .col-subject,
-                .kc-msg-history .col-body {
-                    white-space: normal;
+                    width: 80px;
                 }
 
                 /* Clip body/subject previews inside a wrapper, not the table cell */
@@ -255,9 +299,7 @@ class MessagesHistoryPage
                                 <th class="col-date"><?php esc_html_e('Date (UTC)', 'kerbcycle'); ?></th>
                                 <th class="col-type"><?php esc_html_e('Type', 'kerbcycle'); ?></th>
                                 <th class="col-recipient"><?php esc_html_e('Recipient', 'kerbcycle'); ?></th>
-                                <?php if ($active_tab === 'email') : ?>
-                                    <th class="col-subject"><?php esc_html_e('Subject', 'kerbcycle'); ?></th>
-                                <?php endif; ?>
+                                <th class="col-subject"><?php esc_html_e('Subject', 'kerbcycle'); ?></th>
                                 <th class="col-body"><?php esc_html_e('Body', 'kerbcycle'); ?></th>
                                 <th class="col-status"><?php esc_html_e('Status', 'kerbcycle'); ?></th>
                                 <th class="col-provider"><?php esc_html_e('Provider', 'kerbcycle'); ?></th>
@@ -266,7 +308,7 @@ class MessagesHistoryPage
                         <tbody>
                             <?php if (empty($results)) : ?>
                                 <tr>
-                                    <td colspan="<?php echo $active_tab === 'email' ? 9 : 8; ?>"><?php esc_html_e('No logs found.', 'kerbcycle'); ?></td>
+                                    <td colspan="9"><?php esc_html_e('No logs found.', 'kerbcycle'); ?></td>
                                 </tr>
                             <?php else : ?>
                                 <?php foreach ($results as $row) : ?>
@@ -276,14 +318,10 @@ class MessagesHistoryPage
                                         <td class="col-date"><?php echo esc_html($row->created_at); ?></td>
                                         <td class="col-type"><?php echo esc_html(strtoupper($row->type)); ?></td>
                                         <td class="col-recipient"><?php echo esc_html($row->recipient); ?></td>
-                                        <?php if ($active_tab === 'email') : ?>
-                                            <td class="col-subject"><div class="kc-clip"><?php echo esc_html($row->subject); ?></div></td>
-                                        <?php endif; ?>
-                                        <?php
-                                        // Render a clipped, plain-text preview to avoid huge rows from HTML/margins
-                                        $body_text = wp_strip_all_tags((string) $row->body);
-                                        $body_snip = wp_trim_words($body_text, 40, '…'); // ~40 words
-                                        ?>
+                                        <?php $subject_snip = $this->preview_text($row->subject ?? '', $row, 24); ?>
+                                        <td class="col-subject"><div class="kc-clip"><?php echo esc_html($subject_snip); ?></div></td>
+
+                                        <?php $body_snip = $this->preview_text($row->body ?? '', $row, 40); ?>
                                         <td class="col-body"><div class="kc-clip"><?php echo esc_html($body_snip); ?></div></td>
                                         <td class="col-status"><?php echo esc_html($row->status); ?></td>
                                         <td class="col-provider" title="<?php echo esc_attr(wp_strip_all_tags((string)$row->response)); ?>">
