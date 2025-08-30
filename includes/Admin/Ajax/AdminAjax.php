@@ -91,7 +91,11 @@ class AdminAjax
         if (is_wp_error($result)) {
             wp_send_json_error(['message' => $result->get_error_message()]);
         } else {
-            wp_send_json_success(['message' => 'QR code added successfully']);
+            $response = [
+                'message' => 'QR code added successfully',
+                'qr_code' => $qr_code,
+            ];
+            wp_send_json_success($response);
         }
     }
 
