@@ -96,8 +96,8 @@ class DashboardPage
                 <label><input type="checkbox" id="send-sms" <?php checked($sms_enabled); ?> <?php disabled(!$sms_enabled); ?>> <?php esc_html_e('Send SMS', 'kerbcycle'); ?></label>
                 <label><input type="checkbox" id="send-reminder" <?php checked($reminder_enabled); ?> <?php disabled(!$reminder_enabled); ?>> <?php esc_html_e('Schedule reminder', 'kerbcycle'); ?></label>
                 <p>
-                    <button id="assign-qr-btn" class="button button-primary"><?php esc_html_e('Assign QR Code', 'kerbcycle'); ?></button>
-                    <button id="release-qr-btn" class="button"><?php esc_html_e('Release QR Code', 'kerbcycle'); ?></button>
+                    <button type="button" id="assign-qr-btn" class="button button-primary"><?php esc_html_e('Assign QR Code', 'kerbcycle'); ?></button>
+                    <button type="button" id="release-qr-btn" class="button"><?php esc_html_e('Release QR Code', 'kerbcycle'); ?></button>
                 </p>
                 <?php if ($scanner_enabled) : ?>
                     <div id="reader" style="width: 100%; max-width: 400px; margin-top: 20px;"></div>
@@ -112,6 +112,13 @@ class DashboardPage
             <h2><?php esc_html_e('Manage QR Codes', 'kerbcycle'); ?></h2>
             <p class="description"><?php esc_html_e('Drag and drop to reorder, select multiple codes for bulk actions, or click a code to edit.', 'kerbcycle'); ?></p>
             <form id="qr-code-bulk-form">
+                <div class="bulk-actions">
+                    <select class="bulk-action">
+                        <option value=""><?php esc_html_e('Bulk actions', 'kerbcycle'); ?></option>
+                        <option value="release"><?php esc_html_e('Release', 'kerbcycle'); ?></option>
+                    </select>
+                    <button class="apply-bulk button"><?php esc_html_e('Apply', 'kerbcycle'); ?></button>
+                </div>
                 <ul id="qr-code-list">
                     <li class="qr-header">
                         <input type="checkbox" class="qr-select" disabled style="visibility:hidden" aria-hidden="true" />
@@ -132,11 +139,13 @@ class DashboardPage
                         </li>
                     <?php endforeach; ?>
                 </ul>
-                <select id="bulk-action">
-                    <option value=""><?php esc_html_e('Bulk actions', 'kerbcycle'); ?></option>
-                    <option value="release"><?php esc_html_e('Release', 'kerbcycle'); ?></option>
-                </select>
-                <button id="apply-bulk" class="button"><?php esc_html_e('Apply', 'kerbcycle'); ?></button>
+                <div class="bulk-actions">
+                    <select class="bulk-action">
+                        <option value=""><?php esc_html_e('Bulk actions', 'kerbcycle'); ?></option>
+                        <option value="release"><?php esc_html_e('Release', 'kerbcycle'); ?></option>
+                    </select>
+                    <button class="apply-bulk button"><?php esc_html_e('Apply', 'kerbcycle'); ?></button>
+                </div>
             </form>
         </div>
         <?php
