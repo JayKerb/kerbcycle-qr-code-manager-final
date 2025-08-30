@@ -188,6 +188,14 @@ class MessagesHistoryPage
                     width: 150px;
                 }
 
+                .kc-msg-history .col-subject {
+                    width: 15%;
+                }
+
+                .kc-msg-history .col-body {
+                    width: 25%;
+                }
+
                 .kc-msg-history .col-subject,
                 .kc-msg-history .col-body {
                     white-space: normal;
