@@ -35,6 +35,7 @@ class AdminAjax
         add_action('wp_ajax_release_qr_code', [$this, 'release_qr_code']);
         add_action('wp_ajax_bulk_release_qr_codes', [$this, 'bulk_release_qr_codes']);
         add_action('wp_ajax_update_qr_code', [$this, 'update_qr_code']);
+        add_action('wp_ajax_add_qr_code', [$this, 'add_qr_code']);
         add_action('wp_ajax_kerbcycle_qr_report_data', [$this, 'ajax_report_data']);
         add_action('wp_ajax_kerbcycle_delete_logs', [$this, 'delete_logs']);
     }
@@ -153,6 +154,31 @@ class AdminAjax
             wp_send_json_success(['message' => 'QR code updated']);
         } else {
             wp_send_json_error(['message' => 'Failed to update QR code']);
+        }
+    }
+
+    public function add_qr_code()
+    {
+        Nonces::verify('kerbcycle_qr_nonce', 'security');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Unauthorized'], 403);
+        }
+
+        if (!get_option('kerbcycle_qr_enable_manual_entry', 0)) {
+            wp_send_json_error(['message' => 'Manual entry disabled'], 403);
+        }
+
+        $qr_code = sanitize_text_field($_POST['qr_code'] ?? '');
+        if (empty($qr_code)) {
+            wp_send_json_error(['message' => 'Invalid QR code']);
+        }
+
+        $result = $this->qr_service->add($qr_code);
+
+        if ($result !== false) {
+            wp_send_json_success(['message' => 'QR code added']);
+        } else {
+            wp_send_json_error(['message' => 'Failed to add QR code']);
         }
     }
 
