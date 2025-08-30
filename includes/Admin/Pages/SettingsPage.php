@@ -56,6 +56,7 @@ class SettingsPage
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_email');
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_sms');
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_reminders');
+        register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_scanner');
 
         add_settings_section(
             'kerbcycle_qr_main',
@@ -87,6 +88,14 @@ class SettingsPage
             'kerbcycle_qr_settings',
             'kerbcycle_qr_main'
         );
+
+        add_settings_field(
+            'kerbcycle_qr_enable_scanner',
+            __('Enable Dashboard QR Scanner Camera', 'kerbcycle'),
+            [$this, 'render_enable_scanner_field'],
+            'kerbcycle_qr_settings',
+            'kerbcycle_qr_main'
+        );
     }
 
     public function render_enable_email_field()
@@ -113,6 +122,15 @@ class SettingsPage
         ?>
         <input type="checkbox" name="kerbcycle_qr_enable_reminders" value="1" <?php checked(1, $value); ?> />
         <span class="description"><?php esc_html_e('Schedule automated reminders after assignment', 'kerbcycle'); ?></span>
+        <?php
+    }
+
+    public function render_enable_scanner_field()
+    {
+        $value = get_option('kerbcycle_qr_enable_scanner', 1);
+        ?>
+        <input type="checkbox" name="kerbcycle_qr_enable_scanner" value="1" <?php checked(1, $value); ?> />
+        <span class="description"><?php esc_html_e('Allow camera use on the dashboard scanner', 'kerbcycle'); ?></span>
         <?php
     }
 }
