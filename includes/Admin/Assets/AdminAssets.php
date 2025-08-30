@@ -61,24 +61,30 @@ class AdminAssets
 
         $scanner_enabled = (bool) get_option('kerbcycle_qr_enable_scanner', 1);
 
-        $deps = ['jquery-ui-sortable'];
-        if ($scanner_enabled) {
-            wp_enqueue_script('html5-qrcode', 'https://unpkg.com/html5-qrcode', [], null, true);
-            $deps[] = 'html5-qrcode';
-        }
-
+        // Always enqueue the assign/release script
         wp_enqueue_script(
-            'kerbcycle-qr-js',
-            KERBCYCLE_QR_URL . 'assets/js/qr-scanner.js',
-            $deps,
+            'kerbcycle-qr-assign-release-js',
+            KERBCYCLE_QR_URL . 'assets/js/qr-assign-release.js',
+            ['jquery-ui-sortable'],
             '1.0',
             true
         );
 
-        wp_localize_script('kerbcycle-qr-js', 'kerbcycle_ajax', [
+        wp_localize_script('kerbcycle-qr-assign-release-js', 'kerbcycle_ajax', [
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('kerbcycle_qr_nonce'),
-            'scanner_enabled' => $scanner_enabled
+            'scanner_enabled' => $scanner_enabled,
         ]);
+
+        if ($scanner_enabled) {
+            wp_enqueue_script('html5-qrcode', 'https://unpkg.com/html5-qrcode', [], null, true);
+            wp_enqueue_script(
+                'kerbcycle-qr-scanner-js',
+                KERBCYCLE_QR_URL . 'assets/js/qr-scanner.js',
+                ['html5-qrcode', 'kerbcycle-qr-assign-release-js'],
+                '1.0',
+                true
+            );
+        }
     }
 }
