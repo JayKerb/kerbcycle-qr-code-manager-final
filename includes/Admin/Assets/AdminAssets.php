@@ -81,7 +81,7 @@ class AdminAssets
             wp_enqueue_script(
                 'kerbcycle-qr-scanner-js',
                 KERBCYCLE_QR_URL . 'assets/js/qr-scanner.js',
-                ['html5-qrcode', 'kerbcycle-qr-assign-release-js'],
+                ['html5-qrcode'],
                 '1.0',
                 true
             );
