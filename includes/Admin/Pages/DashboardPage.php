@@ -112,6 +112,13 @@ class DashboardPage
             <h2><?php esc_html_e('Manage QR Codes', 'kerbcycle'); ?></h2>
             <p class="description"><?php esc_html_e('Drag and drop to reorder, select multiple codes for bulk actions, or click a code to edit.', 'kerbcycle'); ?></p>
             <form id="qr-code-bulk-form">
+                <div class="bulk-actions">
+                    <select class="bulk-action">
+                        <option value=""><?php esc_html_e('Bulk actions', 'kerbcycle'); ?></option>
+                        <option value="release"><?php esc_html_e('Release', 'kerbcycle'); ?></option>
+                    </select>
+                    <button class="apply-bulk button"><?php esc_html_e('Apply', 'kerbcycle'); ?></button>
+                </div>
                 <ul id="qr-code-list">
                     <li class="qr-header">
                         <input type="checkbox" class="qr-select" disabled style="visibility:hidden" aria-hidden="true" />
@@ -132,11 +139,13 @@ class DashboardPage
                         </li>
                     <?php endforeach; ?>
                 </ul>
-                <select id="bulk-action">
-                    <option value=""><?php esc_html_e('Bulk actions', 'kerbcycle'); ?></option>
-                    <option value="release"><?php esc_html_e('Release', 'kerbcycle'); ?></option>
-                </select>
-                <button id="apply-bulk" class="button"><?php esc_html_e('Apply', 'kerbcycle'); ?></button>
+                <div class="bulk-actions">
+                    <select class="bulk-action">
+                        <option value=""><?php esc_html_e('Bulk actions', 'kerbcycle'); ?></option>
+                        <option value="release"><?php esc_html_e('Release', 'kerbcycle'); ?></option>
+                    </select>
+                    <button class="apply-bulk button"><?php esc_html_e('Apply', 'kerbcycle'); ?></button>
+                </div>
             </form>
         </div>
         <?php
