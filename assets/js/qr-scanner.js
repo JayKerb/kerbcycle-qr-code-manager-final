@@ -1,5 +1,5 @@
 function initKerbcycleScanner() {
-    const scanner = new Html5Qrcode("reader", true);
+    const scannerAllowed = typeof kerbcycle_ajax.scanner_enabled === 'undefined' || kerbcycle_ajax.scanner_enabled;
     const scanResult = document.getElementById("scan-result");
     const qrSelect = document.getElementById("qr-code-select");
     const sendEmailCheckbox = document.getElementById("send-email");
@@ -101,18 +101,22 @@ function initKerbcycleScanner() {
         });
     }
 
-    function onScanSuccess(decodedText) {
-        scanner.pause(); // Stop scanning after success
-        scannedCode = decodedText;
-        scanResult.style.display = 'block'; // Make the result visible
-        scanResult.classList.add('updated'); // Use WordPress success styles
-        scanResult.innerHTML = `<strong>✅ QR Code Scanned Successfully!</strong><br>Content: <code>${decodedText}</code>`;
-        if (qrSelect) {
-            qrSelect.value = decodedText;
-        }
-    }
+    if (scannerAllowed && typeof Html5Qrcode !== 'undefined') {
+        const scanner = new Html5Qrcode("reader", true);
 
-    scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
+        function onScanSuccess(decodedText) {
+            scanner.pause(); // Stop scanning after success
+            scannedCode = decodedText;
+            scanResult.style.display = 'block'; // Make the result visible
+            scanResult.classList.add('updated'); // Use WordPress success styles
+            scanResult.innerHTML = `<strong>✅ QR Code Scanned Successfully!</strong><br>Content: <code>${decodedText}</code>`;
+            if (qrSelect) {
+                qrSelect.value = decodedText;
+            }
+        }
+
+        scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, onScanSuccess);
+    }
 
     const bulkForm = document.getElementById('qr-code-bulk-form');
     if (bulkForm) {

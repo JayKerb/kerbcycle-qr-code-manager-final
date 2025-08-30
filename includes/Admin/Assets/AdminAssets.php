@@ -59,18 +59,26 @@ class AdminAssets
             return;
         }
 
-        wp_enqueue_script('html5-qrcode', 'https://unpkg.com/html5-qrcode', [], null, true);
+        $scanner_enabled = (bool) get_option('kerbcycle_qr_enable_scanner', 1);
+
+        $deps = ['jquery-ui-sortable'];
+        if ($scanner_enabled) {
+            wp_enqueue_script('html5-qrcode', 'https://unpkg.com/html5-qrcode', [], null, true);
+            $deps[] = 'html5-qrcode';
+        }
+
         wp_enqueue_script(
             'kerbcycle-qr-js',
             KERBCYCLE_QR_URL . 'assets/js/qr-scanner.js',
-            ['html5-qrcode', 'jquery-ui-sortable'],
+            $deps,
             '1.0',
             true
         );
 
         wp_localize_script('kerbcycle-qr-js', 'kerbcycle_ajax', [
             'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('kerbcycle_qr_nonce')
+            'nonce' => wp_create_nonce('kerbcycle_qr_nonce'),
+            'scanner_enabled' => $scanner_enabled
         ]);
     }
 }
