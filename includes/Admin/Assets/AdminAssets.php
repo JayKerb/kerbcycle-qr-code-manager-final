@@ -70,7 +70,8 @@ class AdminAssets
 
         wp_localize_script('kerbcycle-qr-js', 'kerbcycle_ajax', [
             'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('kerbcycle_qr_nonce')
+            'nonce' => wp_create_nonce('kerbcycle_qr_nonce'),
+            'scanner_enabled' => (bool) get_option('kerbcycle_qr_enable_scanner', 1)
         ]);
     }
 }
