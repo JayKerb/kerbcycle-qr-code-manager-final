@@ -7,7 +7,8 @@ function initKerbcycleAssignRelease() {
     const releaseBtn = document.getElementById("release-qr-btn");
 
     if (assignBtn) {
-        assignBtn.addEventListener("click", function () {
+        assignBtn.addEventListener("click", function (event) {
+            event.preventDefault();
             const userField = document.getElementById("customer-id");
             const userId = userField ? userField.value : '';
             const qrCode = qrSelect ? qrSelect.value : '';
@@ -58,7 +59,8 @@ function initKerbcycleAssignRelease() {
     }
 
     if (releaseBtn) {
-        releaseBtn.addEventListener("click", function () {
+        releaseBtn.addEventListener("click", function (event) {
+            event.preventDefault();
             const qrCode = qrSelect ? qrSelect.value : '';
             const sendEmail = sendEmailCheckbox ? sendEmailCheckbox.checked : false;
             const sendSms = sendSmsCheckbox ? sendSmsCheckbox.checked : false;
