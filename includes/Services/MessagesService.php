@@ -65,6 +65,7 @@ class MessagesService {
         if (!current_user_can('manage_options')) return;
 
         $messages = self::get_all();
+        $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'edit';
 
         /** =========================
          *  SAVE HANDLER (Templates)
@@ -85,6 +86,7 @@ class MessagesService {
 
             update_option(self::OPT, $messages, false);
             echo '<div class="notice notice-success is-dismissible"><p>Messages saved for <strong>'.esc_html(self::label_for($sel)).'</strong>.</p></div>';
+            $tab = 'edit';
         }
 
         /** =========================
@@ -136,6 +138,7 @@ class MessagesService {
                     echo '<div class="notice notice-error"><p><strong>Test Email failed</strong> (check site mail configuration).</p></div>';
                 }
             }
+            $tab = 'test';
         }
 
         // Active type for editor (default assigned)
@@ -146,13 +149,17 @@ class MessagesService {
         ?>
         <div class="wrap">
             <h1>KerbCycle Messages</h1>
+            <h2 class="nav-tab-wrapper">
+                <a href="<?php echo esc_url(admin_url('admin.php?page=kerbcycle-messages&tab=edit')); ?>" class="nav-tab <?php echo $tab === 'edit' ? 'nav-tab-active' : ''; ?>">Edit Messages</a>
+                <a href="<?php echo esc_url(admin_url('admin.php?page=kerbcycle-messages&tab=test')); ?>" class="nav-tab <?php echo $tab === 'test' ? 'nav-tab-active' : ''; ?>">Test messages</a>
+            </h2>
 
-            <!-- ================= TEMPLATE EDITOR ================= -->
+            <?php if ($tab === 'edit'): ?>
             <p>Edit the SMS and Email templates for each message type. Use placeholders:
                 <code>{user}</code>, <code>{code}</code>, <code>{amount}</code>, <code>{wallet}</code>
             </p>
 
-            <form method="post" action="">
+            <form method="post" action="<?php echo esc_url(admin_url('admin.php?page=kerbcycle-messages&tab=edit')); ?>">
                 <?php wp_nonce_field('kc_msgs_save_nonce', 'kc_msgs_nonce'); ?>
 
                 <table class="form-table" role="presentation">
@@ -174,9 +181,7 @@ class MessagesService {
                         <tr class="kc-sms-row">
                             <th scope="row"><label for="kc_sms">SMS Text</label></th>
                             <td>
-                                <textarea id="kc_sms" name="kc_sms" rows="4" style="width: 100%; max-width: 800px;">
-<?php echo esc_textarea($messages[$active]['sms'] ?? ''); ?>
-                                </textarea>
+                                <textarea id="kc_sms" name="kc_sms" rows="4" style="width: 100%; max-width: 800px;"><?php echo esc_textarea($messages[$active]['sms'] ?? ''); ?></textarea>
                                 <p class="description">Keep SMS concise (ideally &lt; 160 chars). Placeholders allowed.</p>
                             </td>
                         </tr>
@@ -184,9 +189,7 @@ class MessagesService {
                         <tr class="kc-email-row">
                             <th scope="row"><label for="kc_email">Email Text</label></th>
                             <td>
-                                <textarea id="kc_email" name="kc_email" rows="8" style="width: 100%; max-width: 800px;">
-<?php echo esc_textarea($messages[$active]['email'] ?? ''); ?>
-                                </textarea>
+                                <textarea id="kc_email" name="kc_email" rows="8" style="width: 100%; max-width: 800px;"><?php echo esc_textarea($messages[$active]['email'] ?? ''); ?></textarea>
                                 <p class="description">Plain text email. Placeholders allowed. Newlines are preserved.</p>
                             </td>
                         </tr>
@@ -197,14 +200,10 @@ class MessagesService {
                     <button type="submit" class="button button-primary" name="kc_msgs_save" value="1">Save</button>
                 </p>
             </form>
-
-            <hr>
-
-            <!-- ================= MESSAGE TEST ================= -->
-            <h2>Test Message</h2>
+            <?php else: ?>
             <p>Render a template with sample variables and optionally send a test SMS and/or Email.</p>
 
-            <form method="post" action="">
+            <form method="post" action="<?php echo esc_url(admin_url('admin.php?page=kerbcycle-messages&tab=test')); ?>">
                 <?php wp_nonce_field('kc_msgs_test_nonce', 'kc_msgs_test_nonce_f'); ?>
 
                 <table class="form-table" role="presentation">
@@ -265,8 +264,9 @@ class MessagesService {
                     <button type="submit" class="button" name="kc_msgs_test" value="1">Render / Send Test</button>
                 </p>
             </form>
+            <?php endif; ?>
         </div>
-
+        <?php if ($tab === 'edit'): ?>
         <script>
         (function(){
             const $type = document.getElementById('kc_msg_type');
@@ -286,9 +286,10 @@ class MessagesService {
             }
 
             $type && $type.addEventListener('change', updateFields);
-            updateFields();
+            $type && updateFields();
         })();
         </script>
+        <?php endif; ?>
 
         <style>
         .kc-sms-row textarea, .kc-email-row textarea, pre {
