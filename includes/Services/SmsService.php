@@ -373,10 +373,11 @@ class SmsService
      * @param int    $user_id The user ID.
      * @param string $qr_code The QR code.
      * @param string $type    The type of notification (e.g., 'assigned', 'released').
+     * @param array  $vars    Additional placeholder variables.
      *
      * @return bool|\WP_Error True on success, WP_Error on failure.
      */
-    public function send_notification($user_id, $qr_code, $type = 'assigned')
+    public function send_notification($user_id, $qr_code, $type = 'assigned', array $vars = [])
     {
         $to = get_user_meta($user_id, 'phone_number', true);
         if (empty($to)) {
@@ -387,11 +388,13 @@ class SmsService
             return new \WP_Error('sms_config', __('Missing phone number', 'kerbcycle'));
         }
 
-        $user     = get_userdata($user_id);
-        $rendered = MessagesService::render($type, [
+        $user = get_userdata($user_id);
+        $vars = array_merge([
             'user' => $user ? ($user->display_name ?: $user->user_login) : '',
             'code' => $qr_code,
-        ]);
+        ], $vars);
+
+        $rendered = MessagesService::render($type, $vars);
 
         $body   = $rendered['sms'];
         $result = self::send($to, $body);

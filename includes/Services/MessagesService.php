@@ -92,9 +92,12 @@ class MessagesService {
         /** =========================
          *  TEST HANDLER (Preview/Send)
          *  ========================= */
-        $test_preview_sms = '';
+        $test_preview_sms   = '';
         $test_preview_email = '';
-        $test_type = 'assigned';
+        $test_type          = 'assigned';
+        $t_user = $t_code = $t_amount = $t_wallet = '';
+        $t_to_sms = $t_to_email = '';
+        $do_send_sms = $do_send_email = false;
         if (!empty($_POST['kc_msgs_test'])) {
             Nonces::verify('kc_msgs_test_nonce', 'kc_msgs_test_nonce_f');
             $t_type   = sanitize_text_field($_POST['kc_test_type'] ?? 'assigned');
@@ -224,10 +227,10 @@ class MessagesService {
                         <tr>
                             <th scope="row">Variables</th>
                             <td>
-                                <input type="text" name="kc_test_user"   placeholder="user e.g. Sam"   style="width:200px" />
-                                <input type="text" name="kc_test_code"   placeholder="code e.g. QR123" style="width:200px" />
-                                <input type="text" name="kc_test_amount" placeholder="amount e.g. $10"  style="width:200px" />
-                                <input type="text" name="kc_test_wallet" placeholder="wallet e.g. TeraWallet" style="width:220px" />
+                                <input type="text" name="kc_test_user"   placeholder="user e.g. Sam"   style="width:200px" value="<?php echo esc_attr($t_user); ?>" />
+                                <input type="text" name="kc_test_code"   placeholder="code e.g. QR123" style="width:200px" value="<?php echo esc_attr($t_code); ?>" />
+                                <input type="text" name="kc_test_amount" placeholder="amount e.g. $10"  style="width:200px" value="<?php echo esc_attr($t_amount); ?>" />
+                                <input type="text" name="kc_test_wallet" placeholder="wallet e.g. TeraWallet" style="width:220px" value="<?php echo esc_attr($t_wallet); ?>" />
                                 <p class="description">Only variables used in the selected template are needed.</p>
                             </td>
                         </tr>
@@ -235,10 +238,10 @@ class MessagesService {
                         <tr>
                             <th scope="row">Send Options</th>
                             <td>
-                                <label><input type="checkbox" name="kc_test_send_sms" value="1" /> Send SMS to:</label>
-                                <input type="text" name="kc_test_to_sms" placeholder="+15551234567" style="width:200px; margin-right:20px;" />
-                                <label><input type="checkbox" name="kc_test_send_email" value="1" /> Send Email to:</label>
-                                <input type="email" name="kc_test_to_email" placeholder="you@example.com" style="width:240px" />
+                                <label><input type="checkbox" name="kc_test_send_sms" value="1" <?php checked($do_send_sms); ?> /> Send SMS to:</label>
+                                <input type="text" name="kc_test_to_sms" placeholder="+15551234567" style="width:200px; margin-right:20px;" value="<?php echo esc_attr($t_to_sms); ?>" />
+                                <label><input type="checkbox" name="kc_test_send_email" value="1" <?php checked($do_send_email); ?> /> Send Email to:</label>
+                                <input type="email" name="kc_test_to_email" placeholder="you@example.com" style="width:240px" value="<?php echo esc_attr($t_to_email); ?>" />
                                 <p class="description">Leave unchecked to just preview below.</p>
                             </td>
                         </tr>
