@@ -125,6 +125,7 @@ class DashboardPage
                 <p><?php esc_html_e('Select a customer and scan or choose a QR code to assign.', 'kerbcycle'); ?></p>
             </div>
             <div id="qr-scanner-container">
+                <h2><?php esc_html_e('Manual QR Code Tasks', 'kerbcycle'); ?></h2>
                 <?php
                 wp_dropdown_users(array(
                     'name' => 'customer_id',
@@ -163,7 +164,6 @@ class DashboardPage
                 <div id="scan-result" class="updated" style="display: none;"></div>
             </div>
 
-            <h2><?php esc_html_e('Manage QR Codes', 'kerbcycle'); ?></h2>
             <form method="get" class="qr-filters" style="margin-bottom:15px;">
                 <input type="hidden" name="page" value="kerbcycle-qr-manager" />
                 <select name="status_filter">
@@ -177,6 +177,7 @@ class DashboardPage
                 <button class="button"><?php esc_html_e('Filter', 'kerbcycle'); ?></button>
                 <a href="<?php echo esc_url(admin_url('admin.php?page=kerbcycle-qr-manager')); ?>" class="button"><?php esc_html_e('Reset', 'kerbcycle'); ?></a>
             </form>
+            <h2><?php esc_html_e('Manage QR Codes', 'kerbcycle'); ?></h2>
             <p class="description"><?php esc_html_e('Drag and drop to reorder, select multiple codes for bulk actions, or click a code to edit.', 'kerbcycle'); ?></p>
             <form id="qr-code-bulk-form">
                 <select id="bulk-action-top">
