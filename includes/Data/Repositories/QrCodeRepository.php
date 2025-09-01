@@ -128,6 +128,16 @@ class QrCodeRepository
         return $wpdb->get_row($wpdb->prepare("SELECT * FROM $this->table WHERE qr_code = %s ORDER BY id DESC LIMIT 1", $qr_code));
     }
 
+    public function available_exists($qr_code)
+    {
+        global $wpdb;
+        $count = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $this->table WHERE qr_code = %s AND status = 'available'",
+            $qr_code
+        ));
+        return $count > 0;
+    }
+
     public function list_available()
     {
         global $wpdb;

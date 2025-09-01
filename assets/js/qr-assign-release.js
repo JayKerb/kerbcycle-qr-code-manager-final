@@ -120,7 +120,32 @@ function initKerbcycleAssignRelease() {
                 if (data.success) {
                     const msg = data.data && data.data.message ? data.data.message : 'QR code added successfully.';
                     alert(msg);
-                    location.reload();
+
+                    // Add to dropdown
+                    const option = document.createElement('option');
+                    option.value = qrCode;
+                    option.textContent = qrCode;
+                    qrSelect.appendChild(option);
+
+                    // Add to main list
+                    const list = document.getElementById('qr-code-list');
+                    const newItem = document.createElement('li');
+                    newItem.className = 'qr-item';
+                    newItem.dataset.code = qrCode;
+                    // Note: We don't have the new ID from the DB, so we leave it blank.
+                    // This is a limitation of not reloading.
+                    newItem.innerHTML = `
+                        <input type="checkbox" class="qr-select" />
+                        <span class="qr-id">—</span>
+                        <span class="qr-text" contenteditable="true">${qrCode}</span>
+                        <span class="qr-user">—</span>
+                        <span class="qr-status">Available</span>
+                        <span class="qr-assigned">—</span>
+                    `;
+                    list.appendChild(newItem);
+
+                    // Clear input
+                    newCodeInput.value = '';
                 } else {
                     const err = data.data && data.data.message ? data.data.message : 'Failed to add QR code.';
                     alert(err);
