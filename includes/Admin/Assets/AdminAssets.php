@@ -66,7 +66,7 @@ class AdminAssets
             'kerbcycle-qr-admin-js',
             KERBCYCLE_QR_URL . 'assets/js/admin.js',
             ['jquery-ui-sortable'],
-            '1.0',
+            filemtime(KERBCYCLE_QR_PATH . 'assets/js/admin.js'),
             true
         );
 
