@@ -94,9 +94,11 @@ class MessagesService {
          *  ========================= */
         $test_preview_sms = '';
         $test_preview_email = '';
+        $test_type = 'assigned';
         if (!empty($_POST['kc_msgs_test'])) {
             Nonces::verify('kc_msgs_test_nonce', 'kc_msgs_test_nonce_f');
             $t_type   = sanitize_text_field($_POST['kc_test_type'] ?? 'assigned');
+            $test_type = $t_type;
             $t_user   = sanitize_text_field($_POST['kc_test_user'] ?? '');
             $t_code   = sanitize_text_field($_POST['kc_test_code'] ?? '');
             $t_amount = sanitize_text_field($_POST['kc_test_amount'] ?? '');
@@ -213,7 +215,7 @@ class MessagesService {
                             <td>
                                 <select id="kc_test_type" name="kc_test_type">
                                     <?php foreach ($types as $key => $label): ?>
-                                        <option value="<?php echo esc_attr($key); ?>"><?php echo esc_html($label); ?></option>
+                                        <option value="<?php echo esc_attr($key); ?>" <?php selected($test_type, $key); ?>><?php echo esc_html($label); ?></option>
                                     <?php endforeach; ?>
                                 </select>
                             </td>
