@@ -45,6 +45,22 @@ class Activator
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql);
 
+        // Create QR code history table
+        $history_table = $wpdb->prefix . 'kerbcycle_qr_code_history';
+        $sql = "CREATE TABLE $history_table (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            qr_code varchar(255) NOT NULL,
+            user_id mediumint(9),
+            status varchar(20) NOT NULL,
+            changed_at datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            KEY qr_code_idx (qr_code),
+            KEY status_idx (status),
+            KEY changed_idx (changed_at)
+        ) $charset_collate;";
+
+        dbDelta($sql);
+
         // Create message logs table
         $table_name = $wpdb->prefix . 'kerbcycle_message_logs';
 
