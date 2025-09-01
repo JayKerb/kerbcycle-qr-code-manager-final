@@ -110,6 +110,19 @@ class QrCodeRepository
         return $released_count;
     }
 
+    public function bulk_delete_available(array $codes)
+    {
+        global $wpdb;
+        if (empty($codes)) {
+            return 0;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($codes), '%s'));
+        $query = $wpdb->prepare("DELETE FROM $this->table WHERE status = 'available' AND qr_code IN ($placeholders)", $codes);
+        $wpdb->query($query);
+        return $wpdb->rows_affected;
+    }
+
     public function update_code($old_code, $new_code)
     {
         global $wpdb;

@@ -117,6 +117,7 @@ class DashboardPage
                 <select id="bulk-action-top">
                     <option value=""><?php esc_html_e('Bulk actions', 'kerbcycle'); ?></option>
                     <option value="release"><?php esc_html_e('Release', 'kerbcycle'); ?></option>
+                    <option value="delete"><?php esc_html_e('Delete', 'kerbcycle'); ?></option>
                 </select>
                 <button id="apply-bulk-top" class="button" data-target="bulk-action-top"><?php esc_html_e('Apply', 'kerbcycle'); ?></button>
                 <ul id="qr-code-list">
@@ -142,6 +143,7 @@ class DashboardPage
                 <select id="bulk-action">
                     <option value=""><?php esc_html_e('Bulk actions', 'kerbcycle'); ?></option>
                     <option value="release"><?php esc_html_e('Release', 'kerbcycle'); ?></option>
+                    <option value="delete"><?php esc_html_e('Delete', 'kerbcycle'); ?></option>
                 </select>
                 <button id="apply-bulk" class="button" data-target="bulk-action"><?php esc_html_e('Apply', 'kerbcycle'); ?></button>
             </form>

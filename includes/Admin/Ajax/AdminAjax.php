@@ -34,6 +34,7 @@ class AdminAjax
         add_action('wp_ajax_assign_qr_code', [$this, 'assign_qr_code']);
         add_action('wp_ajax_release_qr_code', [$this, 'release_qr_code']);
         add_action('wp_ajax_bulk_release_qr_codes', [$this, 'bulk_release_qr_codes']);
+        add_action('wp_ajax_bulk_delete_qr_codes', [$this, 'bulk_delete_qr_codes']);
         add_action('wp_ajax_update_qr_code', [$this, 'update_qr_code']);
         add_action('wp_ajax_add_qr_code', [$this, 'add_qr_code']);
         add_action('wp_ajax_kerbcycle_qr_report_data', [$this, 'ajax_report_data']);
@@ -131,6 +132,40 @@ class AdminAjax
             ]);
         } else {
             wp_send_json_error(['message' => 'Could not find or release any of the selected QR codes. They may have already been released or do not exist.']);
+        }
+    }
+
+    public function bulk_delete_qr_codes()
+    {
+        Nonces::verify('kerbcycle_qr_nonce', 'security');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Unauthorized'], 403);
+        }
+
+        if (empty($_POST['qr_codes'])) {
+            wp_send_json_error(['message' => 'No QR codes were selected.']);
+        }
+
+        $raw_codes = explode(',', $_POST['qr_codes']);
+        $codes = array_map('trim', array_map('sanitize_text_field', $raw_codes));
+        $codes = array_filter($codes);
+
+        if (empty($codes)) {
+            wp_send_json_error(['message' => 'No valid QR codes provided.']);
+        }
+
+        $deleted_count = $this->qr_service->bulk_delete($codes);
+
+        if ($deleted_count > 0) {
+            wp_send_json_success([
+                'message' => sprintf(
+                    '%d of %d selected QR code(s) have been deleted.',
+                    $deleted_count,
+                    count($codes)
+                )
+            ]);
+        } else {
+            wp_send_json_error(['message' => 'Could not delete any of the selected QR codes. Ensure they are available.']);
         }
     }
 
