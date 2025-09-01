@@ -24,7 +24,7 @@ class DashboardPage
     {
         global $wpdb;
         $table        = $wpdb->prefix . 'kerbcycle_qr_codes';
-        $per_page     = 20;
+        $per_page     = (int) get_option('kerbcycle_qr_codes_per_page', 20);
         $current_page = isset($_GET['paged']) ? max(1, absint($_GET['paged'])) : 1;
         $offset       = ($current_page - 1) * $per_page;
 
