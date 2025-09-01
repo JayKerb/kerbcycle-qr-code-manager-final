@@ -57,6 +57,8 @@ class SettingsPage
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_sms');
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_reminders');
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_scanner');
+        register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_codes_per_page');
+        register_setting('kerbcycle_qr_settings', 'kerbcycle_history_per_page');
 
         add_settings_section(
             'kerbcycle_qr_main',
@@ -96,6 +98,22 @@ class SettingsPage
             'kerbcycle_qr_settings',
             'kerbcycle_qr_main'
         );
+
+        add_settings_field(
+            'kerbcycle_qr_codes_per_page',
+            __('QR Codes per Page', 'kerbcycle'),
+            [$this, 'render_codes_per_page_field'],
+            'kerbcycle_qr_settings',
+            'kerbcycle_qr_main'
+        );
+
+        add_settings_field(
+            'kerbcycle_history_per_page',
+            __('History Entries per Page', 'kerbcycle'),
+            [$this, 'render_history_per_page_field'],
+            'kerbcycle_qr_settings',
+            'kerbcycle_qr_main'
+        );
     }
 
     public function render_enable_email_field()
@@ -131,6 +149,24 @@ class SettingsPage
         ?>
         <input type="checkbox" name="kerbcycle_qr_enable_scanner" value="1" <?php checked(1, $value); ?> />
         <span class="description"><?php esc_html_e('Allow camera use on the dashboard scanner', 'kerbcycle'); ?></span>
+        <?php
+    }
+
+    public function render_codes_per_page_field()
+    {
+        $value = get_option('kerbcycle_qr_codes_per_page', 20);
+        ?>
+        <input type="number" min="1" name="kerbcycle_qr_codes_per_page" value="<?= esc_attr($value); ?>" />
+        <span class="description"><?php esc_html_e('Number of QR codes displayed per page', 'kerbcycle'); ?></span>
+        <?php
+    }
+
+    public function render_history_per_page_field()
+    {
+        $value = get_option('kerbcycle_history_per_page', 20);
+        ?>
+        <input type="number" min="1" name="kerbcycle_history_per_page" value="<?= esc_attr($value); ?>" />
+        <span class="description"><?php esc_html_e('Number of history entries displayed per page', 'kerbcycle'); ?></span>
         <?php
     }
 }
