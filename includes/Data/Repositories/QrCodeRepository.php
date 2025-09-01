@@ -16,17 +16,19 @@ if (!defined('ABSPATH')) {
 class QrCodeRepository
 {
     private $table;
+    private $history;
 
     public function __construct()
     {
         global $wpdb;
-        $this->table = $wpdb->prefix . 'kerbcycle_qr_codes';
+        $this->table   = $wpdb->prefix . 'kerbcycle_qr_codes';
+        $this->history = new QrCodeHistoryRepository();
     }
 
     public function insert_available($qr_code)
     {
         global $wpdb;
-        return $wpdb->insert(
+        $result = $wpdb->insert(
             $this->table,
             [
                 'qr_code' => $qr_code,
@@ -34,12 +36,18 @@ class QrCodeRepository
             ],
             ['%s', '%s']
         );
+
+        if ($result !== false) {
+            $this->history->log($qr_code, null, 'added');
+        }
+
+        return $result;
     }
 
     public function insert_assigned($qr_code, $user_id)
     {
         global $wpdb;
-        return $wpdb->insert(
+        $result = $wpdb->insert(
             $this->table,
             [
                 'qr_code'     => $qr_code,
@@ -49,30 +57,42 @@ class QrCodeRepository
             ],
             ['%s', '%d', '%s', '%s']
         );
+
+        if ($result !== false) {
+            $this->history->log($qr_code, $user_id, 'assigned');
+        }
+
+        return $result;
     }
 
     public function release_latest_assigned($qr_code)
     {
         global $wpdb;
-        $latest_id = $wpdb->get_var(
+        $row = $wpdb->get_row(
             $wpdb->prepare(
-                "SELECT id FROM $this->table WHERE qr_code = %s AND status = 'assigned' ORDER BY id DESC LIMIT 1",
+                "SELECT id, user_id FROM $this->table WHERE qr_code = %s AND status = 'assigned' ORDER BY id DESC LIMIT 1",
                 $qr_code
             )
         );
 
-        if ($latest_id) {
-            return $wpdb->update(
+        if ($row) {
+            $result = $wpdb->update(
                 $this->table,
                 [
                     'user_id'     => null,
                     'status'      => 'available',
                     'assigned_at' => null,
                 ],
-                ['id' => $latest_id],
+                ['id' => $row->id],
                 ['%d', '%s', '%s'],
                 ['%d']
             );
+
+            if ($result !== false) {
+                $this->history->log($qr_code, $row->user_id, 'released');
+            }
+
+            return $result;
         }
         return false;
     }
@@ -82,27 +102,28 @@ class QrCodeRepository
         global $wpdb;
         $released_count = 0;
         foreach ($codes as $code) {
-            $latest_id = $wpdb->get_var(
+            $row = $wpdb->get_row(
                 $wpdb->prepare(
-                    "SELECT id FROM $this->table WHERE qr_code = %s AND status = 'assigned' ORDER BY id DESC LIMIT 1",
+                    "SELECT id, user_id FROM $this->table WHERE qr_code = %s AND status = 'assigned' ORDER BY id DESC LIMIT 1",
                     $code
                 )
             );
 
-            if ($latest_id) {
+            if ($row) {
                 $result = $wpdb->update(
                     $this->table,
                     [
-                        'user_id' => null,
-                        'status' => 'available',
+                        'user_id'     => null,
+                        'status'      => 'available',
                         'assigned_at' => null,
                     ],
-                    ['id' => $latest_id],
+                    ['id' => $row->id],
                     ['%d', '%s', '%s'],
                     ['%d']
                 );
 
                 if ($result !== false) {
+                    $this->history->log($code, $row->user_id, 'released');
                     $released_count += $result;
                 }
             }
@@ -117,10 +138,21 @@ class QrCodeRepository
             return 0;
         }
 
-        $placeholders = implode(',', array_fill(0, count($codes), '%s'));
-        $query = $wpdb->prepare("DELETE FROM $this->table WHERE status = 'available' AND qr_code IN ($placeholders)", $codes);
-        $wpdb->query($query);
-        return $wpdb->rows_affected;
+        $deleted_count = 0;
+        foreach ($codes as $code) {
+            $result = $wpdb->delete(
+                $this->table,
+                ['qr_code' => $code, 'status' => 'available'],
+                ['%s', '%s']
+            );
+
+            if ($result) {
+                $this->history->log($code, null, 'deleted');
+                $deleted_count += $result;
+            }
+        }
+
+        return $deleted_count;
     }
 
     public function update_code($old_code, $new_code)
@@ -165,9 +197,7 @@ class QrCodeRepository
 
     public function recent_history($limit)
     {
-        global $wpdb;
-        $limit = absint($limit);
-        return $wpdb->get_results($wpdb->prepare("SELECT * FROM $this->table ORDER BY assigned_at DESC LIMIT %d", $limit));
+        return $this->history->recent($limit);
     }
 
     // Legacy wrappers
