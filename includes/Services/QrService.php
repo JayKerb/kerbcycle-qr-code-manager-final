@@ -86,6 +86,11 @@ class QrService
         return $this->repository->bulk_release($codes);
     }
 
+    public function bulk_delete(array $codes)
+    {
+        return $this->repository->bulk_delete_available($codes);
+    }
+
     public function update($old_code, $new_code)
     {
         return $this->repository->update_code($old_code, $new_code);

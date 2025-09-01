@@ -173,6 +173,45 @@ function initKerbcycleAdmin() {
                         console.error('Error:', error);
                         alert('An unexpected error occurred. Please try again.');
                     });
+                } else if (action === 'delete') {
+                    const selected = Array.from(document.querySelectorAll('#qr-code-list .qr-select:checked'));
+                    if (!selected.length) {
+                        alert('Please select one or more QR codes to delete.');
+                        return;
+                    }
+
+                    const availableItems = selected.filter(cb => cb.closest('li').querySelector('.qr-status').textContent.trim().toLowerCase() === 'available');
+                    if (availableItems.length !== selected.length) {
+                        alert('Only QR codes with Available status can be deleted.');
+                        return;
+                    }
+
+                    const codes = availableItems.map(cb => cb.closest('li').dataset.code);
+
+                    if (!confirm('Are you sure you want to delete the selected QR codes?')) {
+                        return;
+                    }
+
+                    fetch(kerbcycle_ajax.ajax_url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                        },
+                        body: `action=bulk_delete_qr_codes&qr_codes=${encodeURIComponent(codes.join(','))}&security=${kerbcycle_ajax.nonce}`
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.data.message);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + (data.data.message || 'Failed to delete QR codes.'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An unexpected error occurred. Please try again.');
+                    });
                 }
             });
         });
