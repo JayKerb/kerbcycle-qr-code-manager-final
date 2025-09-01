@@ -61,16 +61,16 @@ class AdminAssets
 
         $scanner_enabled = (bool) get_option('kerbcycle_qr_enable_scanner', 1);
 
-        // Always enqueue the assign/release script
+        // Always enqueue the main admin script
         wp_enqueue_script(
-            'kerbcycle-qr-assign-release-js',
-            KERBCYCLE_QR_URL . 'assets/js/qr-assign-release.js',
+            'kerbcycle-qr-admin-js',
+            KERBCYCLE_QR_URL . 'assets/js/admin.js',
             ['jquery-ui-sortable'],
             '1.0',
             true
         );
 
-        wp_localize_script('kerbcycle-qr-assign-release-js', 'kerbcycle_ajax', [
+        wp_localize_script('kerbcycle-qr-admin-js', 'kerbcycle_ajax', [
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('kerbcycle_qr_nonce'),
             'scanner_enabled' => $scanner_enabled,
@@ -81,7 +81,7 @@ class AdminAssets
             wp_enqueue_script(
                 'kerbcycle-qr-scanner-js',
                 KERBCYCLE_QR_URL . 'assets/js/qr-scanner.js',
-                ['html5-qrcode', 'kerbcycle-qr-assign-release-js'],
+                ['html5-qrcode', 'kerbcycle-qr-admin-js'],
                 '1.0',
                 true
             );
