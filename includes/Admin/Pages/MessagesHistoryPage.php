@@ -127,7 +127,7 @@ class MessagesHistoryPage
         $from       = isset($_GET['from']) ? sanitize_text_field($_GET['from']) : '';
         $to         = isset($_GET['to']) ? sanitize_text_field($_GET['to']) : '';
         $paged      = max(1, isset($_GET['paged']) ? absint($_GET['paged']) : 1);
-        $per_page   = 25;
+        $per_page   = 20;
 
         // Validate table; provide repair notice if needed
         $table_ok = $this->repository->table_is_valid();
@@ -287,6 +287,23 @@ class MessagesHistoryPage
                     </a>
                 </form>
 
+                <?php if ($pages > 1) : ?>
+                    <div class="tablenav top" style="margin-bottom:12px;">
+                        <div class="tablenav-pages">
+                            <?php
+                            echo paginate_links([
+                                'base'      => esc_url(add_query_arg(['paged' => '%#%', 'tab' => $active_tab, 's' => $search, 'from' => $from, 'to' => $to], $base_url)),
+                                'format'    => '',
+                                'current'   => $paged,
+                                'total'     => $pages,
+                                'prev_text' => __('« Prev', 'kerbcycle'),
+                                'next_text' => __('Next »', 'kerbcycle'),
+                            ]);
+                            ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+
                 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                     <?php wp_nonce_field('kerbcycle_delete_logs'); ?>
                     <input type="hidden" name="action" value="kerbcycle_delete_logs" />
@@ -349,9 +366,8 @@ class MessagesHistoryPage
                     </button>
                 </form>
 
-                <?php
-                if ($pages > 1) : ?>
-                    <div class="tablenav" style="margin-top:12px;">
+                <?php if ($pages > 1) : ?>
+                    <div class="tablenav bottom" style="margin-top:12px;">
                         <div class="tablenav-pages">
                             <?php
                             echo paginate_links([
