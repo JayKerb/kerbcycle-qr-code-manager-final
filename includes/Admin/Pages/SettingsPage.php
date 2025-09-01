@@ -59,6 +59,8 @@ class SettingsPage
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_scanner');
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_codes_per_page');
         register_setting('kerbcycle_qr_settings', 'kerbcycle_history_per_page');
+        register_setting('kerbcycle_qr_settings', 'kerbcycle_sms_history_per_page');
+        register_setting('kerbcycle_qr_settings', 'kerbcycle_email_history_per_page');
 
         add_settings_section(
             'kerbcycle_qr_main',
@@ -111,6 +113,22 @@ class SettingsPage
             'kerbcycle_history_per_page',
             __('History Entries per Page', 'kerbcycle'),
             [$this, 'render_history_per_page_field'],
+            'kerbcycle_qr_settings',
+            'kerbcycle_qr_main'
+        );
+
+        add_settings_field(
+            'kerbcycle_sms_history_per_page',
+            __('SMS History Entries per Page', 'kerbcycle'),
+            [$this, 'render_sms_history_per_page_field'],
+            'kerbcycle_qr_settings',
+            'kerbcycle_qr_main'
+        );
+
+        add_settings_field(
+            'kerbcycle_email_history_per_page',
+            __('Email History Entries per Page', 'kerbcycle'),
+            [$this, 'render_email_history_per_page_field'],
             'kerbcycle_qr_settings',
             'kerbcycle_qr_main'
         );
@@ -167,6 +185,24 @@ class SettingsPage
         ?>
         <input type="number" min="1" name="kerbcycle_history_per_page" value="<?= esc_attr($value); ?>" />
         <span class="description"><?php esc_html_e('Number of history entries displayed per page', 'kerbcycle'); ?></span>
+        <?php
+    }
+
+    public function render_sms_history_per_page_field()
+    {
+        $value = get_option('kerbcycle_sms_history_per_page', 20);
+        ?>
+        <input type="number" min="1" name="kerbcycle_sms_history_per_page" value="<?= esc_attr($value); ?>" />
+        <span class="description"><?php esc_html_e('Number of SMS history entries displayed per page', 'kerbcycle'); ?></span>
+        <?php
+    }
+
+    public function render_email_history_per_page_field()
+    {
+        $value = get_option('kerbcycle_email_history_per_page', 20);
+        ?>
+        <input type="number" min="1" name="kerbcycle_email_history_per_page" value="<?= esc_attr($value); ?>" />
+        <span class="description"><?php esc_html_e('Number of email history entries displayed per page', 'kerbcycle'); ?></span>
         <?php
     }
 }
