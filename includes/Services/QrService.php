@@ -82,4 +82,9 @@ class QrService
     {
         return $this->repository->update_code($old_code, $new_code);
     }
+
+    public function add_available_qr_code($qr_code)
+    {
+        return $this->repository->insert_available($qr_code);
+    }
 }

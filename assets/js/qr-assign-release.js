@@ -6,6 +6,47 @@ function initKerbcycleAssignRelease() {
     const assignBtn = document.getElementById("assign-qr-btn");
     const releaseBtn = document.getElementById("release-qr-btn");
 
+    const addQrBtn = document.getElementById("add-qr-btn");
+    const manualQrInput = document.getElementById("manual-qr-code");
+    const addQrResult = document.getElementById("add-qr-result");
+
+    if (addQrBtn) {
+        addQrBtn.addEventListener("click", function () {
+            const qrCode = manualQrInput.value.trim();
+            if (!qrCode) {
+                alert("Please enter a QR code.");
+                return;
+            }
+
+            fetch(kerbcycle_ajax.ajax_url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: `action=add_qr_code&qr_code=${encodeURIComponent(qrCode)}&security=${kerbcycle_ajax.nonce}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                addQrResult.style.display = 'block';
+                if (data.success) {
+                    addQrResult.textContent = data.data.message;
+                    addQrResult.classList.remove('notice-error');
+                    addQrResult.classList.add('updated');
+                    manualQrInput.value = '';
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    addQrResult.textContent = data.data.message;
+                    addQrResult.classList.remove('updated');
+                    addQrResult.classList.add('notice-error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("An error occurred while adding the QR code.");
+            });
+        });
+    }
+
     if (assignBtn) {
         assignBtn.addEventListener("click", function () {
             const userField = document.getElementById("customer-id");

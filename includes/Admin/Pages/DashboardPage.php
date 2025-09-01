@@ -109,6 +109,13 @@ class DashboardPage
                 <div id="scan-result" class="updated" style="display: none;"></div>
             </div>
 
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #c3c4c7;">
+                <h3><?php esc_html_e('Manually Add QR Code', 'kerbcycle'); ?></h3>
+                <input type="text" id="manual-qr-code" placeholder="<?php esc_attr_e('Enter QR Code', 'kerbcycle'); ?>">
+                <button id="add-qr-btn" class="button"><?php esc_html_e('Add QR Code', 'kerbcycle'); ?></button>
+                <div id="add-qr-result" class="updated" style="display: none; margin-top: 10px;"></div>
+            </div>
+
             <h2><?php esc_html_e('Manage QR Codes', 'kerbcycle'); ?></h2>
             <p class="description"><?php esc_html_e('Drag and drop to reorder, select multiple codes for bulk actions, or click a code to edit.', 'kerbcycle'); ?></p>
             <form id="qr-code-bulk-form">
