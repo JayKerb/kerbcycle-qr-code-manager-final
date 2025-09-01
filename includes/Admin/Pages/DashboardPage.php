@@ -23,9 +23,22 @@ class DashboardPage
     public function render()
     {
         global $wpdb;
-        $table = $wpdb->prefix . 'kerbcycle_qr_codes';
+        $table        = $wpdb->prefix . 'kerbcycle_qr_codes';
+        $per_page     = 20;
+        $current_page = isset($_GET['paged']) ? max(1, absint($_GET['paged'])) : 1;
+        $offset       = ($current_page - 1) * $per_page;
+
+        $total_items = (int) $wpdb->get_var("SELECT COUNT(*) FROM $table");
+        $total_pages = (int) ceil($total_items / $per_page);
+
         $available_codes = $wpdb->get_results("SELECT qr_code FROM $table WHERE status = 'available' ORDER BY id DESC");
-        $all_codes = $wpdb->get_results("SELECT id, qr_code, user_id, status, assigned_at FROM $table ORDER BY id DESC");
+        $all_codes = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT id, qr_code, user_id, status, assigned_at FROM $table ORDER BY id DESC LIMIT %d OFFSET %d",
+                $per_page,
+                $offset
+            )
+        );
         ?>
         <style>
             #qr-code-list {
@@ -140,6 +153,20 @@ class DashboardPage
                         </li>
                     <?php endforeach; ?>
                 </ul>
+                <?php if ($total_pages > 1) : ?>
+                    <div class="tablenav">
+                        <div class="tablenav-pages">
+                            <?= paginate_links([
+                                'base'      => add_query_arg('paged', '%#%'),
+                                'format'    => '',
+                                'prev_text' => '&laquo;',
+                                'next_text' => '&raquo;',
+                                'total'     => $total_pages,
+                                'current'   => $current_page,
+                            ]); ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
                 <select id="bulk-action">
                     <option value=""><?php esc_html_e('Bulk actions', 'kerbcycle'); ?></option>
                     <option value="release"><?php esc_html_e('Release', 'kerbcycle'); ?></option>
