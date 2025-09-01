@@ -97,8 +97,9 @@ class MessagesService {
         $test_type          = 'assigned';
         $t_user = $t_code = $t_amount = $t_wallet = '';
         $t_to_sms = $t_to_email = '';
+        $send_sms_checked = $send_email_checked = false;
         $do_send_sms = $do_send_email = false;
-        if (!empty($_POST['kc_msgs_test'])) {
+        if (!empty($_POST['kc_msgs_render']) || !empty($_POST['kc_msgs_send'])) {
             Nonces::verify('kc_msgs_test_nonce', 'kc_msgs_test_nonce_f');
             $t_type   = sanitize_text_field($_POST['kc_test_type'] ?? 'assigned');
             $test_type = $t_type;
@@ -108,8 +109,10 @@ class MessagesService {
             $t_wallet = sanitize_text_field($_POST['kc_test_wallet'] ?? '');
             $t_to_sms = sanitize_text_field($_POST['kc_test_to_sms'] ?? '');
             $t_to_email = sanitize_email($_POST['kc_test_to_email'] ?? '');
-            $do_send_sms   = !empty($_POST['kc_test_send_sms']);
-            $do_send_email = !empty($_POST['kc_test_send_email']);
+            $send_sms_checked   = !empty($_POST['kc_test_send_sms']);
+            $send_email_checked = !empty($_POST['kc_test_send_email']);
+            $do_send_sms   = !empty($_POST['kc_msgs_send']) && $send_sms_checked;
+            $do_send_email = !empty($_POST['kc_msgs_send']) && $send_email_checked;
 
             $rendered = self::render($t_type, [
                 'user'   => $t_user,
@@ -238,9 +241,9 @@ class MessagesService {
                         <tr>
                             <th scope="row">Send Options</th>
                             <td>
-                                <label><input type="checkbox" name="kc_test_send_sms" value="1" <?php checked($do_send_sms); ?> /> Send SMS to:</label>
+                                <label><input type="checkbox" name="kc_test_send_sms" value="1" <?php checked($send_sms_checked); ?> /> Send SMS to:</label>
                                 <input type="text" name="kc_test_to_sms" placeholder="+15551234567" style="width:200px; margin-right:20px;" value="<?php echo esc_attr($t_to_sms); ?>" />
-                                <label><input type="checkbox" name="kc_test_send_email" value="1" <?php checked($do_send_email); ?> /> Send Email to:</label>
+                                <label><input type="checkbox" name="kc_test_send_email" value="1" <?php checked($send_email_checked); ?> /> Send Email to:</label>
                                 <input type="email" name="kc_test_to_email" placeholder="you@example.com" style="width:240px" value="<?php echo esc_attr($t_to_email); ?>" />
                                 <p class="description">Leave unchecked to just preview below.</p>
                             </td>
@@ -266,7 +269,8 @@ class MessagesService {
                 </table>
 
                 <p class="submit">
-                    <button type="submit" class="button" name="kc_msgs_test" value="1">Render / Send Test</button>
+                    <button type="submit" class="button" name="kc_msgs_render" value="1">Render Test</button>
+                    <button type="submit" class="button button-primary" name="kc_msgs_send" value="1">Send Test</button>
                 </p>
             </form>
             <?php endif; ?>
