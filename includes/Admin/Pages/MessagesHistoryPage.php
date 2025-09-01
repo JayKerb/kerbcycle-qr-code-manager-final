@@ -127,7 +127,7 @@ class MessagesHistoryPage
         $from       = isset($_GET['from']) ? sanitize_text_field($_GET['from']) : '';
         $to         = isset($_GET['to']) ? sanitize_text_field($_GET['to']) : '';
         $paged      = max(1, isset($_GET['paged']) ? absint($_GET['paged']) : 1);
-        $per_page   = 25;
+        $per_page   = 20;
 
         // Validate table; provide repair notice if needed
         $table_ok = $this->repository->table_is_valid();
