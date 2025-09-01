@@ -23,15 +23,41 @@ class HistoryPage
     public function render()
     {
         global $wpdb;
-        $table_name = $wpdb->prefix . 'kerbcycle_qr_codes';
+        $table_name   = $wpdb->prefix . 'kerbcycle_qr_codes';
+        $per_page     = 20;
+        $current_page = isset($_GET['paged']) ? max(1, absint($_GET['paged'])) : 1;
+        $offset       = ($current_page - 1) * $per_page;
+
+        $total_items  = (int) $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
+        $total_pages  = (int) ceil($total_items / $per_page);
+
+        $pagination_links = $total_pages > 1 ? paginate_links([
+            'base'      => add_query_arg('paged', '%#%'),
+            'format'    => '',
+            'prev_text' => '&laquo;',
+            'next_text' => '&raquo;',
+            'total'     => $total_pages,
+            'current'   => $current_page,
+        ]) : '';
 
         $qr_codes = $wpdb->get_results(
-            $wpdb->prepare("SELECT * FROM $table_name ORDER BY assigned_at DESC LIMIT %d", 100)
+            $wpdb->prepare(
+                "SELECT * FROM $table_name ORDER BY assigned_at DESC LIMIT %d OFFSET %d",
+                $per_page,
+                $offset
+            )
         );
         ?>
         <div class="wrap">
             <h1>QR Code History</h1>
             <p class="description">Recent QR code assignments</p>
+            <?php if ($pagination_links) : ?>
+                <div class="tablenav">
+                    <div class="tablenav-pages">
+                        <?= $pagination_links; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
             <table class="wp-list-table widefat fixed striped">
                 <thead>
                     <tr>
@@ -58,6 +84,13 @@ class HistoryPage
                     <?php endif; ?>
                 </tbody>
             </table>
+            <?php if ($pagination_links) : ?>
+                <div class="tablenav">
+                    <div class="tablenav-pages">
+                        <?= $pagination_links; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
         <?php
     }
