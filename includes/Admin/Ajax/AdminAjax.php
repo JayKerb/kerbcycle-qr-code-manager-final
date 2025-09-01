@@ -55,10 +55,12 @@ class AdminAjax
 
         $result = $this->qr_service->add_available_qr_code($qr_code);
 
-        if ($result !== false) {
-            wp_send_json_success(['message' => 'QR code added successfully.']);
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()]);
+        } elseif ($result === false) {
+            wp_send_json_error(['message' => 'Failed to add QR code due to a database error.']);
         } else {
-            wp_send_json_error(['message' => 'Failed to add QR code. It may already exist.']);
+            wp_send_json_success(['message' => 'QR code added successfully.']);
         }
     }
 

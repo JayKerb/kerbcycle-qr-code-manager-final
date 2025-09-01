@@ -25,23 +25,31 @@ function initKerbcycleAssignRelease() {
                 },
                 body: `action=add_qr_code&qr_code=${encodeURIComponent(qrCode)}&security=${kerbcycle_ajax.nonce}`
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    console.error('Network response was not ok', response);
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Received data:', data);
                 addQrResult.style.display = 'block';
                 if (data.success) {
+                    addQrResult.className = 'notice notice-success is-dismissible';
                     addQrResult.textContent = data.data.message;
-                    addQrResult.classList.remove('notice-error');
-                    addQrResult.classList.add('updated');
                     manualQrInput.value = '';
                     setTimeout(() => location.reload(), 2000);
                 } else {
-                    addQrResult.textContent = data.data.message;
-                    addQrResult.classList.remove('updated');
-                    addQrResult.classList.add('notice-error');
+                    addQrResult.className = 'notice notice-error is-dismissible';
+                    addQrResult.textContent = data.data.message || 'An unknown error occurred.';
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
+                addQrResult.style.display = 'block';
+                addQrResult.className = 'notice notice-error is-dismissible';
+                addQrResult.textContent = 'An error occurred while adding the QR code. Please check the console.';
                 alert("An error occurred while adding the QR code.");
             });
         });

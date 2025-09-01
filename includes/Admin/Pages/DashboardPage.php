@@ -113,7 +113,7 @@ class DashboardPage
                 <h3><?php esc_html_e('Manually Add QR Code', 'kerbcycle'); ?></h3>
                 <input type="text" id="manual-qr-code" placeholder="<?php esc_attr_e('Enter QR Code', 'kerbcycle'); ?>">
                 <button id="add-qr-btn" class="button"><?php esc_html_e('Add QR Code', 'kerbcycle'); ?></button>
-                <div id="add-qr-result" class="updated" style="display: none; margin-top: 10px;"></div>
+                <div id="add-qr-result" style="display: none; margin-top: 10px;"></div>
             </div>
 
             <h2><?php esc_html_e('Manage QR Codes', 'kerbcycle'); ?></h2>
