@@ -26,6 +26,11 @@ class QrService
         $this->repository = new QrCodeRepository();
     }
 
+    public function add($qr_code)
+    {
+        return $this->repository->insert_available($qr_code);
+    }
+
     public function assign($qr_code, $user_id, $send_email, $send_sms, $send_reminder)
     {
         $result = $this->repository->insert_assigned($qr_code, $user_id);
