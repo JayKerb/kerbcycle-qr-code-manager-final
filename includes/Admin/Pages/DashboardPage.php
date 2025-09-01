@@ -125,6 +125,7 @@ class DashboardPage
                 <p><?php esc_html_e('Select a customer and scan or choose a QR code to assign.', 'kerbcycle'); ?></p>
             </div>
             <div id="qr-scanner-container">
+                <h2><?php esc_html_e('Manual QR Code Tasks', 'kerbcycle'); ?></h2>
                 <?php
                 wp_dropdown_users(array(
                     'name' => 'customer_id',
