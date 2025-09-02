@@ -53,8 +53,8 @@ class MessagesService {
     public static function admin_menu() {
         add_submenu_page(
             'kerbcycle-qr-manager',
-            'KerbCycle Messages',
-            'Messages',
+            'KerbCycle Message Settings',
+            'Message Settings',
             'manage_options',
             'kerbcycle-messages',
             [__CLASS__, 'render_page']
@@ -156,7 +156,7 @@ class MessagesService {
         $types = self::types_map();
         ?>
         <div class="wrap">
-            <h1>KerbCycle Messages</h1>
+            <h1>KerbCycle Message Settings</h1>
             <h2 class="nav-tab-wrapper">
                 <a href="<?php echo esc_url(admin_url('admin.php?page=kerbcycle-messages&tab=edit')); ?>" class="nav-tab <?php echo $tab === 'edit' ? 'nav-tab-active' : ''; ?>">Edit Messages</a>
                 <a href="<?php echo esc_url(admin_url('admin.php?page=kerbcycle-messages&tab=test')); ?>" class="nav-tab <?php echo $tab === 'test' ? 'nav-tab-active' : ''; ?>">Test messages</a>
