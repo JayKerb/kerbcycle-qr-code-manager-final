@@ -38,7 +38,7 @@ class Admin
             'manage_options',
             'kerbcycle-qr-manager',
             [new Pages\DashboardPage(), 'render'],
-            'dashicons-qrcode',
+            'dashicons-admin-generic',
             20
         );
 
