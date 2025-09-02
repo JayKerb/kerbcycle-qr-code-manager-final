@@ -45,7 +45,7 @@ class Admin
         add_submenu_page(
             'kerbcycle-qr-manager',
             'QR Code History',
-            'History',
+            'QR Code History',
             'manage_options',
             'kerbcycle-qr-history',
             [new Pages\HistoryPage(), 'render']
@@ -63,7 +63,7 @@ class Admin
         add_submenu_page(
             'kerbcycle-qr-manager',
             'QR Code Reports',
-            'Reports',
+            'QR Code Reports',
             'manage_options',
             'kerbcycle-qr-reports',
             [new Pages\ReportsPage(), 'render']
@@ -74,8 +74,8 @@ class Admin
         if ($bookly_active) {
             add_submenu_page(
                 'kerbcycle-qr-manager',
-                'Bookly Appointments',
-                'Appointments',
+                'Pickup Schedule',
+                'Pickup Schedule',
                 'manage_options',
                 'kerbcycle-bookly-appointments',
                 [new Pages\RedirectsPage(), 'bookly_appointments']
@@ -87,8 +87,8 @@ class Admin
         if ($wallet_active) {
             add_submenu_page(
                 'kerbcycle-qr-manager',
-                'TeraWallet',
-                'TeraWallet',
+                'Customer Wallet',
+                'Customer Wallet',
                 'manage_options',
                 'kerbcycle-terawallet',
                 [new Pages\RedirectsPage(), 'terawallet']
@@ -106,17 +106,8 @@ class Admin
 
         add_submenu_page(
             'kerbcycle-qr-manager',
-            'Plugin Integrations',
-            'Integrations',
-            'manage_options',
-            'kerbcycle-plugin-integrations',
-            [new Pages\IntegrationsPage(), 'render']
-        );
-
-        add_submenu_page(
-            'kerbcycle-qr-manager',
-            'Messages',
-            'Messages',
+            'Message Settings',
+            'Message Settings',
             'manage_options',
             'kerbcycle-messages',
             [new \Kerbcycle\QrCode\Services\MessagesService(), 'render_page']
@@ -129,6 +120,15 @@ class Admin
             'manage_options',
             'kerbcycle-sms',
             ['\Kerbcycle\QrCode\Services\SmsService', 'render_settings_page']
+        );
+
+        add_submenu_page(
+            'kerbcycle-qr-manager',
+            'Plugin Integrations',
+            'Integrations',
+            'manage_options',
+            'kerbcycle-plugin-integrations',
+            [new Pages\IntegrationsPage(), 'render']
         );
     }
 }
