@@ -44,7 +44,7 @@ class QrCodeRepository
         return $result;
     }
 
-    public function insert_assigned($qr_code, $user_id)
+    public function insert_assigned($qr_code, $user_id, $display_name)
     {
         global $wpdb;
         $result = $wpdb->insert(
@@ -52,10 +52,11 @@ class QrCodeRepository
             [
                 'qr_code'     => $qr_code,
                 'user_id'     => $user_id,
+                'display_name'=> $display_name,
                 'status'      => 'assigned',
                 'assigned_at' => current_time('mysql')
             ],
-            ['%s', '%d', '%s', '%s']
+            ['%s', '%d', '%s', '%s', '%s']
         );
 
         if ($result !== false) {
@@ -79,12 +80,13 @@ class QrCodeRepository
             $result = $wpdb->update(
                 $this->table,
                 [
-                    'user_id'     => null,
-                    'status'      => 'available',
-                    'assigned_at' => null,
+                    'user_id'      => null,
+                    'status'       => 'available',
+                    'assigned_at'  => null,
+                    'display_name' => null,
                 ],
                 ['id' => $row->id],
-                ['%d', '%s', '%s'],
+                ['%d', '%s', '%s', '%s'],
                 ['%d']
             );
 
@@ -113,12 +115,13 @@ class QrCodeRepository
                 $result = $wpdb->update(
                     $this->table,
                     [
-                        'user_id'     => null,
-                        'status'      => 'available',
-                        'assigned_at' => null,
+                        'user_id'      => null,
+                        'status'       => 'available',
+                        'assigned_at'  => null,
+                        'display_name' => null,
                     ],
                     ['id' => $row->id],
-                    ['%d', '%s', '%s'],
+                    ['%d', '%s', '%s', '%s'],
                     ['%d']
                 );
 
@@ -192,7 +195,7 @@ class QrCodeRepository
     public function list_all()
     {
         global $wpdb;
-        return $wpdb->get_results("SELECT id, qr_code, user_id, status, assigned_at FROM $this->table ORDER BY id DESC");
+        return $wpdb->get_results("SELECT id, qr_code, user_id, display_name, status, assigned_at FROM $this->table ORDER BY id DESC");
     }
 
     public function recent_history($limit)
@@ -201,9 +204,9 @@ class QrCodeRepository
     }
 
     // Legacy wrappers
-    public function assign($qr_code, $user_id)
+    public function assign($qr_code, $user_id, $display_name = '')
     {
-        return $this->insert_assigned($qr_code, $user_id);
+        return $this->insert_assigned($qr_code, $user_id, $display_name);
     }
 
     public function add($qr_code)

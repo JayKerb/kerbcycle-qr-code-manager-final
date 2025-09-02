@@ -36,7 +36,9 @@ class QrService
 
     public function assign($qr_code, $user_id, $send_email, $send_sms, $send_reminder)
     {
-        $result = $this->repository->insert_assigned($qr_code, $user_id);
+        $user      = get_userdata($user_id);
+        $name      = $user ? $user->display_name : '';
+        $result = $this->repository->insert_assigned($qr_code, $user_id, $name);
 
         if ($result === false) {
             return new \WP_Error('db_error', 'Failed to assign QR code in database.');
