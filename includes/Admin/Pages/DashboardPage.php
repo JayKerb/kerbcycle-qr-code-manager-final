@@ -53,7 +53,8 @@ class DashboardPage
 
         if ($search) {
             $like     = '%' . $wpdb->esc_like($search) . '%';
-            $where   .= ' AND (CAST(id AS CHAR) LIKE %s OR qr_code LIKE %s OR CAST(user_id AS CHAR) LIKE %s OR CAST(assigned_at AS CHAR) LIKE %s)';
+            $where   .= ' AND (CAST(id AS CHAR) LIKE %s OR qr_code LIKE %s OR CAST(user_id AS CHAR) LIKE %s OR display_name LIKE %s OR CAST(assigned_at AS CHAR) LIKE %s)';
+            $params[] = $like;
             $params[] = $like;
             $params[] = $like;
             $params[] = $like;
@@ -75,7 +76,7 @@ class DashboardPage
 
         $available_codes = $wpdb->get_results("SELECT qr_code FROM $table WHERE status = 'available' ORDER BY id DESC");
 
-        $select_sql = "SELECT id, qr_code, user_id, status, assigned_at FROM $table WHERE $where ORDER BY id DESC LIMIT %d OFFSET %d";
+        $select_sql = "SELECT id, qr_code, user_id, display_name, status, assigned_at FROM $table WHERE $where ORDER BY id DESC LIMIT %d OFFSET %d";
         $query_args = array_merge($params, [$per_page, $offset]);
         $all_codes  = $wpdb->get_results($wpdb->prepare($select_sql, $query_args));
         ?>
@@ -108,6 +109,10 @@ class DashboardPage
             }
             .qr-id, .qr-user, .qr-status {
                 flex-basis: 80px;
+                padding: 0 8px;
+            }
+            .qr-name {
+                flex-basis: 150px;
                 padding: 0 8px;
             }
             .qr-text {
@@ -199,6 +204,7 @@ class DashboardPage
                         <span class="qr-id"><?php esc_html_e('ID', 'kerbcycle'); ?></span>
                         <span class="qr-text"><?php esc_html_e('QR Code', 'kerbcycle'); ?></span>
                         <span class="qr-user"><?php esc_html_e('User ID', 'kerbcycle'); ?></span>
+                        <span class="qr-name"><?php esc_html_e('Customer', 'kerbcycle'); ?></span>
                         <span class="qr-status"><?php esc_html_e('Status', 'kerbcycle'); ?></span>
                         <span class="qr-assigned"><?php esc_html_e('Assigned At', 'kerbcycle'); ?></span>
                     </li>
@@ -208,6 +214,7 @@ class DashboardPage
                             <span class="qr-id"><?= esc_html($code->id); ?></span>
                             <span class="qr-text" contenteditable="true"><?= esc_html($code->qr_code); ?></span>
                             <span class="qr-user"><?= $code->user_id ? esc_html($code->user_id) : '—'; ?></span>
+                            <span class="qr-name"><?= $code->display_name ? esc_html($code->display_name) : '—'; ?></span>
                             <span class="qr-status"><?= esc_html(ucfirst($code->status)); ?></span>
                             <span class="qr-assigned"><?= $code->assigned_at ? esc_html($code->assigned_at) : '—'; ?></span>
                         </li>

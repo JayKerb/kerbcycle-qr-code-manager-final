@@ -56,7 +56,7 @@ class Shortcodes
     {
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
-        $codes = $wpdb->get_results("SELECT id, qr_code, user_id, status, assigned_at FROM $table ORDER BY id DESC");
+        $codes = $wpdb->get_results("SELECT id, qr_code, user_id, display_name, status, assigned_at FROM $table ORDER BY id DESC");
 
         ob_start();
         ?>
@@ -83,6 +83,7 @@ class Shortcodes
                     <th><?php esc_html_e('ID', 'kerbcycle'); ?></th>
                     <th><?php esc_html_e('QR Code', 'kerbcycle'); ?></th>
                     <th><?php esc_html_e('User ID', 'kerbcycle'); ?></th>
+                    <th><?php esc_html_e('Customer', 'kerbcycle'); ?></th>
                     <th><?php esc_html_e('Status', 'kerbcycle'); ?></th>
                     <th><?php esc_html_e('Assigned At', 'kerbcycle'); ?></th>
                 </tr>
@@ -94,13 +95,14 @@ class Shortcodes
                             <td><?= esc_html($code->id); ?></td>
                             <td><?= esc_html($code->qr_code); ?></td>
                             <td><?= $code->user_id ? esc_html($code->user_id) : '—'; ?></td>
+                            <td><?= $code->display_name ? esc_html($code->display_name) : '—'; ?></td>
                             <td><?= esc_html(ucfirst($code->status)); ?></td>
                             <td><?= $code->assigned_at ? esc_html($code->assigned_at) : '—'; ?></td>
                         </tr>
                     <?php endforeach; ?>
                 <?php else : ?>
                     <tr>
-                        <td colspan="5" class="description"><?php esc_html_e('No QR codes found', 'kerbcycle'); ?></td>
+                        <td colspan="6" class="description"><?php esc_html_e('No QR codes found', 'kerbcycle'); ?></td>
                     </tr>
                 <?php endif; ?>
             </tbody>

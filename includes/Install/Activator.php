@@ -36,6 +36,7 @@ class Activator
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             qr_code varchar(255) NOT NULL,
             user_id mediumint(9),
+            display_name varchar(255) DEFAULT NULL,
             status varchar(20) DEFAULT 'available',
             assigned_at datetime DEFAULT NULL,
             created_at datetime DEFAULT CURRENT_TIMESTAMP,

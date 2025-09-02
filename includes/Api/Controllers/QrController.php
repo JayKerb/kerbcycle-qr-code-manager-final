@@ -41,15 +41,18 @@ class QrController
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
 
+        $user  = get_userdata($user_id);
+        $name  = $user ? $user->display_name : '';
         $result = $wpdb->insert(
             $table,
             [
-                'qr_code' => $qr_code,
-                'user_id' => $user_id,
-                'status' => 'assigned',
+                'qr_code'     => $qr_code,
+                'user_id'     => $user_id,
+                'display_name'=> $name,
+                'status'      => 'assigned',
                 'assigned_at' => current_time('mysql')
             ],
-            ['%s', '%d', '%s', '%s']
+            ['%s', '%d', '%s', '%s', '%s']
         );
 
         if ($result === false) {
@@ -60,10 +63,11 @@ class QrController
         }
 
         return new WP_REST_Response([
-            'success' => true,
-            'message' => 'QR code processed',
-            'qr_code' => $qr_code,
-            'user_id' => $user_id
+            'success'      => true,
+            'message'      => 'QR code processed',
+            'qr_code'      => $qr_code,
+            'user_id'      => $user_id,
+            'display_name' => $name,
         ], 200);
     }
 
