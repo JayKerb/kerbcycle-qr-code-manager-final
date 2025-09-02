@@ -125,7 +125,7 @@ class DashboardPage
             }
         </style>
         <div class="wrap">
-            <h1>KerbCycle QR Code Manager</h1>
+            <h1>KerbCycle QR Code Management</h1>
             <div class="notice notice-info">
                 <p><?php esc_html_e('Select a customer and scan or choose a QR code to assign.', 'kerbcycle'); ?></p>
             </div>

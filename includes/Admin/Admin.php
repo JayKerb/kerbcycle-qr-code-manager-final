@@ -33,8 +33,8 @@ class Admin
     public function register_admin_menu()
     {
         add_menu_page(
-            'QR Code Manager',
-            'QR Codes',
+            'QR Code Management',
+            'QR Code Management',
             'manage_options',
             'kerbcycle-qr-manager',
             [new Pages\DashboardPage(), 'render'],
@@ -45,7 +45,7 @@ class Admin
         add_submenu_page(
             'kerbcycle-qr-manager',
             'QR Code History',
-            'History',
+            'QR Code History',
             'manage_options',
             'kerbcycle-qr-history',
             [new Pages\HistoryPage(), 'render']
@@ -106,17 +106,8 @@ class Admin
 
         add_submenu_page(
             'kerbcycle-qr-manager',
-            'Plugin Integrations',
-            'Integrations',
-            'manage_options',
-            'kerbcycle-plugin-integrations',
-            [new Pages\IntegrationsPage(), 'render']
-        );
-
-        add_submenu_page(
-            'kerbcycle-qr-manager',
-            'Messages',
-            'Messages',
+            'Message Settings',
+            'Message Settings',
             'manage_options',
             'kerbcycle-messages',
             [new \Kerbcycle\QrCode\Services\MessagesService(), 'render_page']
@@ -129,6 +120,15 @@ class Admin
             'manage_options',
             'kerbcycle-sms',
             ['\Kerbcycle\QrCode\Services\SmsService', 'render_settings_page']
+        );
+
+        add_submenu_page(
+            'kerbcycle-qr-manager',
+            'Plugin Integrations',
+            'Integrations',
+            'manage_options',
+            'kerbcycle-plugin-integrations',
+            [new Pages\IntegrationsPage(), 'render']
         );
     }
 }
