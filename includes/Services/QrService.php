@@ -38,7 +38,12 @@ class QrService
     {
         $user      = get_userdata($user_id);
         $name      = $user ? $user->display_name : '';
-        $result = $this->repository->insert_assigned($qr_code, $user_id, $name);
+
+        if ($this->repository->available_exists($qr_code)) {
+            $result = $this->repository->update_available_to_assigned($qr_code, $user_id, $name);
+        } else {
+            $result = $this->repository->insert_assigned($qr_code, $user_id, $name);
+        }
 
         if ($result === false) {
             return new \WP_Error('db_error', 'Failed to assign QR code in database.');

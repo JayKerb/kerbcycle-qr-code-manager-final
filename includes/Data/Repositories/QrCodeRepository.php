@@ -44,6 +44,32 @@ class QrCodeRepository
         return $result;
     }
 
+    public function update_available_to_assigned($qr_code, $user_id, $display_name)
+    {
+        global $wpdb;
+        $result = $wpdb->update(
+            $this->table,
+            [
+                'user_id'     => $user_id,
+                'display_name'=> $display_name,
+                'status'      => 'assigned',
+                'assigned_at' => current_time('mysql')
+            ],
+            [
+                'qr_code' => $qr_code,
+                'status'  => 'available'
+            ],
+            ['%d', '%s', '%s', '%s'],
+            ['%s', '%s']
+        );
+
+        if ($result !== false) {
+            $this->history->log($qr_code, $user_id, 'assigned');
+        }
+
+        return $result;
+    }
+
     public function insert_assigned($qr_code, $user_id, $display_name)
     {
         global $wpdb;
