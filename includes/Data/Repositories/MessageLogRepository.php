@@ -141,8 +141,18 @@ class MessageLogRepository
         }
 
         global $wpdb;
-        $placeholders = implode(',', array_fill(0, count($ids), '%d'));
-        return $wpdb->query($wpdb->prepare("DELETE FROM {$this->table} WHERE id IN ($placeholders)", $ids));
+        $deleted_count = 0;
+        foreach ($ids as $id) {
+            $result = $wpdb->delete(
+                $this->table,
+                ['id' => $id],
+                ['%d']
+            );
+            if ($result) {
+                $deleted_count++;
+            }
+        }
+        return $deleted_count;
     }
 
     public function clear_all()
