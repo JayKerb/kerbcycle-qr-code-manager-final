@@ -182,8 +182,15 @@ class OsrmPage
                         method: 'POST',
                         headers: {'Content-Type':'application/x-www-form-urlencoded'},
                         body: 'action=kc_osrm_test&_wpnonce=<?php echo wp_create_nonce('kc_osrm_test'); ?>'
-                    }).then(r=>r.json()).then(j=>{
-                        out.textContent = j.ok ? 'OK ('+j.ms+' ms)' : ('Error: '+(j.error||'unknown'));
+                    }).then(r=>r.text()).then(t=>{
+                        let j;
+                        try {
+                            j = JSON.parse(t);
+                        } catch(e) {
+                            out.textContent = 'Error: ' + t;
+                            return;
+                        }
+                        out.textContent = j.ok ? 'OK ('+j.ms+' ms)' : ('Error: ' + (typeof j.error !== 'undefined' ? j.error : 'unknown'));
                     }).catch(e=>{
                         out.textContent = 'Error: ' + e;
                     });
