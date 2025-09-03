@@ -243,6 +243,149 @@ function initKerbcycleAdmin() {
             });
         });
     }
+
+    // Message History page
+    const logsForm = document.getElementById('kc-logs-form');
+    if (logsForm) {
+        const tbody = document.getElementById('kc-logs-tbody');
+
+        // Handle single log deletion
+        tbody.addEventListener('click', function(e) {
+            if (!e.target.classList.contains('kc-delete-log')) {
+                return;
+            }
+            e.preventDefault();
+
+            if (!confirm('Are you sure you want to delete this log?')) {
+                return;
+            }
+
+            const logId = e.target.dataset.logId;
+            const security = document.querySelector('#kc-logs-form [name="security"]').value;
+
+            const formData = new URLSearchParams();
+            formData.append('action', 'kerbcycle_delete_logs');
+            formData.append('log_ids[]', logId);
+            formData.append('security', security);
+
+            fetch(kerbcycle_ajax.ajax_url, {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const row = e.target.closest('tr');
+                    row.remove();
+                    showAdminNotice('Log deleted successfully.', 'success');
+                    if (!tbody.querySelector('tr')) {
+                        const noLogsRow = document.getElementById('kc-no-logs-row');
+                        if(noLogsRow) noLogsRow.style.display = '';
+                    }
+                } else {
+                    showAdminNotice(data.data.message || 'Failed to delete log.', 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                showAdminNotice('An unexpected error occurred.', 'error');
+            });
+        });
+
+        // Handle bulk deletion
+        const deleteSelectedBtn = document.getElementById('kc-delete-selected');
+        deleteSelectedBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const selected = Array.from(document.querySelectorAll('#kc-logs-tbody input[name="log_ids[]"]:checked'));
+
+            if (!selected.length) {
+                alert('Please select one or more logs to delete.');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to delete the selected logs?')) {
+                return;
+            }
+
+            const logIds = selected.map(cb => cb.value);
+            const security = document.querySelector('#kc-logs-form [name="security"]').value;
+
+            const formData = new URLSearchParams();
+            formData.append('action', 'kerbcycle_delete_logs');
+            logIds.forEach(id => formData.append('log_ids[]', id));
+            formData.append('security', security);
+
+            fetch(kerbcycle_ajax.ajax_url, {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    selected.forEach(cb => cb.closest('tr').remove());
+                    showAdminNotice(`${data.data.deleted} log(s) deleted successfully.`, 'success');
+                     if (!tbody.querySelector('tr')) {
+                        const noLogsRow = document.getElementById('kc-no-logs-row');
+                        if(noLogsRow) noLogsRow.style.display = '';
+                    }
+                } else {
+                    showAdminNotice(data.data.message || 'Failed to delete logs.', 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                showAdminNotice('An unexpected error occurred.', 'error');
+            });
+        });
+
+        // Handle clearing all logs
+        const clearAllBtn = document.getElementById('kc-clear-all-logs');
+        clearAllBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            if (!confirm('Are you sure you want to clear ALL logs? This cannot be undone.')) {
+                return;
+            }
+
+            const security = document.querySelector('#kc-logs-form [name="security"]').value;
+
+            const formData = new URLSearchParams();
+            formData.append('action', 'kerbcycle_clear_logs');
+            formData.append('security', security);
+
+            fetch(kerbcycle_ajax.ajax_url, {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    tbody.innerHTML = '<tr id="kc-no-logs-row"><td colspan="10">No logs found.</td></tr>';
+                    showAdminNotice('All logs cleared successfully.', 'success');
+                } else {
+                    showAdminNotice(data.data.message || 'Failed to clear logs.', 'error');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                showAdminNotice('An unexpected error occurred.', 'error');
+            });
+        });
+
+        function showAdminNotice(message, type = 'success') {
+            const notice = document.getElementById('kc-admin-notice');
+            notice.textContent = message;
+            notice.className = `notice notice-${type} is-dismissible`;
+            notice.style.display = 'block';
+            notice.scrollIntoView({ behavior: 'smooth' });
+
+            const dismissBtn = document.createElement('button');
+            dismissBtn.className = 'notice-dismiss';
+            dismissBtn.innerHTML = '<span class="screen-reader-text">Dismiss this notice.</span>';
+            dismissBtn.onclick = () => { notice.style.display = 'none'; };
+            notice.appendChild(dismissBtn);
+        }
+    }
 }
 
 if (document.readyState === 'loading') {

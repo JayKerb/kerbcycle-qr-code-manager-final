@@ -25,53 +25,6 @@ class MessagesHistoryPage
     public function __construct()
     {
         $this->repository = new MessageLogRepository();
-        add_action('admin_post_kerbcycle_clear_logs',  [$this, 'handle_clear_logs']);
-        add_action('admin_post_kerbcycle_delete_logs', [$this, 'handle_bulk_delete']);
-        add_action('admin_post_kerbcycle_repair_logs', [$this, 'handle_repair_logs']);
-    }
-
-    /** Actions */
-    public function handle_clear_logs()
-    {
-        if (!current_user_can('manage_options')) wp_die(__('Access denied.', 'kerbcycle'));
-        Nonces::verify('kerbcycle_clear_logs');
-
-        global $wpdb;
-        $table = $wpdb->prefix . 'kerbcycle_message_logs';
-        $wpdb->query("TRUNCATE TABLE $table");
-
-        wp_redirect(add_query_arg(['page' => $this->page_slug, 'cleared' => 1], admin_url('admin.php')));
-        exit;
-    }
-
-    public function handle_bulk_delete()
-    {
-        if (!current_user_can('manage_options')) wp_die(__('Access denied.', 'kerbcycle'));
-        Nonces::verify('kerbcycle_delete_logs');
-
-        $ids = isset($_POST['log_ids']) && is_array($_POST['log_ids']) ? array_map('absint', $_POST['log_ids']) : [];
-        $deleted = $this->repository->delete_by_ids($ids);
-
-        wp_redirect(add_query_arg(['page' => $this->page_slug, 'deleted' => (int)$deleted], admin_url('admin.php')));
-        exit;
-    }
-
-    public function handle_repair_logs()
-    {
-        if (!current_user_can('manage_options')) wp_die(__('Access denied.', 'kerbcycle'));
-        Nonces::verify('kerbcycle_repair_logs');
-
-        // The activation logic will handle the repair
-        \Kerbcycle\QrCode\Install\Activator::activate();
-
-        $args = ['page' => $this->page_slug];
-        if ($this->repository->table_is_valid()) {
-            $args['repaired'] = 1;
-        } else {
-            $args['repair_failed'] = 1;
-        }
-        wp_redirect(add_query_arg($args, admin_url('admin.php')));
-        exit;
     }
 
     /** Build a safe, clipped preview with smart fallbacks (subject/body) */
@@ -199,6 +152,9 @@ class MessagesHistoryPage
                 .kc-msg-history .col-provider {
                     width: 80px;
                 }
+                .kc-msg-history .col-actions {
+                    width: 80px;
+                }
 
                 /* Clip body/subject previews inside a wrapper, not the table cell */
                 .kc-msg-history .kc-clip {
@@ -224,46 +180,15 @@ class MessagesHistoryPage
             <div class="kc-msg-history">
                 <h1><?php esc_html_e('Messages History', 'kerbcycle'); ?></h1>
 
+                <div id="kc-admin-notice" class="notice" style="display:none;"></div>
+
                 <?php if (!$table_ok) : ?>
                     <div class="notice notice-error">
                         <p>
-                            <?php esc_html_e('The message logs table is missing or incomplete. Click “Repair Table” to (re)create the correct structure.', 'kerbcycle'); ?>
+                            <?php esc_html_e('The message logs table is missing or incomplete. Please de-activate and re-activate the plugin to repair.', 'kerbcycle'); ?>
                             <?php if (!empty($this->last_error)) : ?>
                                 <br><strong><?php esc_html_e('Last DB error:', 'kerbcycle'); ?></strong> <?php echo esc_html($this->last_error); ?>
                             <?php endif; ?>
-                        </p>
-                    </div>
-                    <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin:8px 0;">
-                        <?php wp_nonce_field('kerbcycle_repair_logs'); ?>
-                        <input type="hidden" name="action" value="kerbcycle_repair_logs" />
-                        <button class="button button-primary"><?php esc_html_e('Repair Table', 'kerbcycle'); ?></button>
-                    </form>
-                <?php endif; ?>
-
-                <?php if (!empty($_GET['repaired'])) : ?>
-                    <div class="notice notice-success is-dismissible">
-                        <p><?php esc_html_e('Logs table repaired.', 'kerbcycle'); ?></p>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (!empty($_GET['repair_failed'])) : ?>
-                    <div class="notice notice-error is-dismissible">
-                        <p><?php esc_html_e('Repair failed. Check server error logs or DB permissions.', 'kerbcycle'); ?></p>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (!empty($_GET['deleted'])) : ?>
-                    <div class="notice notice-success is-dismissible">
-                        <p>
-                            <?php printf(esc_html__('%d log(s) deleted.', 'kerbcycle'), absint($_GET['deleted'])); ?>
-                        </p>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (!empty($_GET['cleared'])) : ?>
-                    <div class="notice notice-success is-dismissible">
-                        <p>
-                            <?php esc_html_e('All logs cleared.', 'kerbcycle'); ?>
                         </p>
                     </div>
                 <?php endif; ?>
@@ -306,9 +231,8 @@ class MessagesHistoryPage
                     </div>
                 <?php endif; ?>
 
-                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
-                    <?php wp_nonce_field('kerbcycle_delete_logs'); ?>
-                    <input type="hidden" name="action" value="kerbcycle_delete_logs" />
+                <form id="kc-logs-form" method="post">
+                    <?php wp_nonce_field('kerbcycle_delete_logs', 'security'); ?>
 
                     <table class="widefat fixed striped">
                         <thead>
@@ -322,16 +246,17 @@ class MessagesHistoryPage
                                 <th class="col-body"><?php esc_html_e('Body', 'kerbcycle'); ?></th>
                                 <th class="col-status"><?php esc_html_e('Status', 'kerbcycle'); ?></th>
                                 <th class="col-provider"><?php esc_html_e('Provider', 'kerbcycle'); ?></th>
+                                <th class="col-actions"><?php esc_html_e('Actions', 'kerbcycle'); ?></th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="kc-logs-tbody">
                             <?php if (empty($results)) : ?>
-                                <tr>
-                                    <td colspan="9"><?php esc_html_e('No logs found.', 'kerbcycle'); ?></td>
+                                <tr id="kc-no-logs-row">
+                                    <td colspan="10"><?php esc_html_e('No logs found.', 'kerbcycle'); ?></td>
                                 </tr>
                             <?php else : ?>
                                 <?php foreach ($results as $row) : ?>
-                                    <tr>
+                                    <tr data-log-id="<?php echo (int)$row->id; ?>">
                                         <td class="col-cb"><input type="checkbox" name="log_ids[]" value="<?php echo (int)$row->id; ?>" /></td>
                                         <td class="col-id"><?php echo (int)$row->id; ?></td>
                                         <td class="col-date"><?php echo esc_html($row->created_at); ?></td>
@@ -346,6 +271,11 @@ class MessagesHistoryPage
                                         <td class="col-provider" title="<?php echo esc_attr(wp_strip_all_tags((string)$row->response)); ?>">
                                             <?php echo esc_html($row->provider); ?>
                                         </td>
+                                        <td class="col-actions">
+                                            <button class="button button-link-delete kc-delete-log" data-log-id="<?php echo (int)$row->id; ?>">
+                                                <?php esc_html_e('Delete', 'kerbcycle'); ?>
+                                            </button>
+                                        </td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
@@ -353,19 +283,13 @@ class MessagesHistoryPage
                     </table>
 
                     <div class="actions-row">
-                        <button type="submit" class="button button-secondary" <?php disabled(empty($results)); ?>>
+                        <button id="kc-delete-selected" class="button button-secondary" <?php disabled(empty($results)); ?>>
                             <?php esc_html_e('Delete Selected', 'kerbcycle'); ?>
                         </button>
+                        <button id="kc-clear-all-logs" class="button button-link-delete" <?php disabled(empty($results)); ?>>
+                            <?php esc_html_e('Clear All', 'kerbcycle'); ?>
+                        </button>
                     </div>
-                </form>
-
-                <!-- Clear All logs (separate form) -->
-                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline; margin-top:8px;">
-                    <?php wp_nonce_field('kerbcycle_clear_logs'); ?>
-                    <input type="hidden" name="action" value="kerbcycle_clear_logs" />
-                    <button class="button button-link-delete" onclick="return confirm('<?php echo esc_js(__('Clear ALL logs? This cannot be undone.', 'kerbcycle')); ?>')">
-                        <?php esc_html_e('Clear All', 'kerbcycle'); ?>
-                    </button>
                 </form>
 
                 <?php if ($pages > 1) : ?>

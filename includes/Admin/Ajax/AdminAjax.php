@@ -39,6 +39,7 @@ class AdminAjax
         add_action('wp_ajax_add_qr_code', [$this, 'add_qr_code']);
         add_action('wp_ajax_kerbcycle_qr_report_data', [$this, 'ajax_report_data']);
         add_action('wp_ajax_kerbcycle_delete_logs', [$this, 'delete_logs']);
+        add_action('wp_ajax_kerbcycle_clear_logs', [$this, 'clear_logs']);
     }
 
     public function assign_qr_code()
@@ -243,5 +244,18 @@ class AdminAjax
         $deleted = $repo->delete_by_ids($ids);
 
         wp_send_json_success(['deleted' => (int) $deleted]);
+    }
+
+    public function clear_logs()
+    {
+        Nonces::verify('kerbcycle_delete_logs', 'security');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => 'Unauthorized'], 403);
+        }
+
+        $repo = new MessageLogRepository();
+        $repo->clear_all();
+
+        wp_send_json_success(['message' => 'All logs cleared.']);
     }
 }
