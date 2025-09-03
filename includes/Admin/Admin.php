@@ -97,6 +97,15 @@ class Admin
 
         add_submenu_page(
             'kerbcycle-qr-manager',
+            'OSRM Settings',
+            'Routing',
+            'manage_options',
+            'kerbcycle-osrm',
+            [new Pages\OsrmPage(), 'render']
+        );
+
+        add_submenu_page(
+            'kerbcycle-qr-manager',
             'Settings',
             'Settings',
             'manage_options',
