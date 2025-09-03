@@ -205,19 +205,26 @@ class OsrmPage
         if ($o['env'] === 'prod' && $o['deny_demo_in_prod'] && strpos($endpoint, 'router.project-osrm.org') !== false) {
             wp_send_json(['ok' => false, 'error' => 'Demo endpoint blocked in prod']);
         }
+
         $profile = $o['profile'];
-        $url = $endpoint . "/route/v1/$profile/-73.990,40.730;-73.970,40.780?overview=false";
-        $t0 = microtime(true);
-        $res = wp_remote_get($url, ['timeout' => $o['timeout']]);
-        $ms = round(1000 * (microtime(true) - $t0));
+        $url     = trailingslashit($endpoint) . "route/v1/{$profile}/-73.990,40.730;-73.970,40.780?overview=false";
+
+        $t0  = microtime(true);
+        $res = wp_remote_get($url, ['timeout' => max(1, (int)$o['timeout'])]);
+        $ms  = (int) round(1000 * (microtime(true) - $t0));
+
         if (is_wp_error($res)) {
             wp_send_json(['ok' => false, 'error' => $res->get_error_message()]);
         }
-        $code = wp_remote_retrieve_response_code($res);
+
+        $code = (int) wp_remote_retrieve_response_code($res);
         if ($code === 200) {
             wp_send_json(['ok' => true, 'ms' => $ms]);
         }
-        wp_send_json(['ok' => false, 'error' => 'HTTP ' + String(code)]);
+
+        $body    = wp_remote_retrieve_body($res);
+        $snippet = substr((string)$body, 0, 200);
+        wp_send_json(['ok' => false, 'error' => "HTTP {$code}: {$snippet}"]);
     }
 
     /* ---------- Front-end map ---------- */
@@ -225,26 +232,29 @@ class OsrmPage
     public function register_assets()
     {
         wp_register_style('leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', [], null);
-        wp_register_style('lrm', 'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css', [], null);
-        wp_register_script('leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', [], null, true);
-        wp_register_script('lrm', 'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js', ['leaflet'], null, true);
-        wp_register_script('kc-osrm', KERBCYCLE_QR_URL . 'assets/js/kc-osrm.js', ['leaflet', 'lrm'], '1.0', true);
+        wp_register_style('lrm',     'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css', [], null);
+        wp_register_script('leaflet','https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', [], null, true);
+        wp_register_script('lrm',    'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js', ['leaflet'], null, true);
+        wp_register_script('kc-osrm', KC_CORE_URL.'assets/js/kc-osrm.js', ['leaflet','lrm'], KC_CORE_VERSION, true);
 
-        $o = self::get_options();
+        $o   = self::get_options();
+        $base = rtrim(self::current_endpoint($o), '/') . '/route/v1';
+
         wp_localize_script('kc-osrm', 'KC_OSRM', [
-            'endpoint' => self::current_endpoint($o) . '/route/v1/' . $o['profile'],
-            'tileUrl'  => $o['tile_url'],
-            'tileAttrib' => $o['tile_attrib'],
+            'base'      => $base,               // e.g. https://your-osrm/route/v1
+            'profile'   => $o['profile'],       // driving|cycling|walking
+            'tileUrl'   => $o['tile_url'],
+            'tileAttrib'=> $o['tile_attrib'],
         ]);
     }
 
-    public function shortcode_map($atts)
+    public function shortcode_map( $atts )
     {
         $atts = shortcode_atts([
-            'start'   => '40.730,-73.990',
-            'end'     => '40.780,-73.970',
-            'height'  => '420px',
-            'zoom'    => 12,
+            'start'  => '40.730,-73.990', // lat,lon
+            'end'    => '40.780,-73.970', // lat,lon
+            'height' => '420px',
+            'zoom'   => 12,
         ], $atts, 'kerbcycle_osrm_map');
 
         wp_enqueue_style('leaflet');
@@ -253,24 +263,34 @@ class OsrmPage
         wp_enqueue_script('lrm');
         wp_enqueue_script('kc-osrm');
 
-        $id = 'kc-osrm-' . wp_generate_uuid4();
+        $id = 'kc-osrm-'.wp_generate_uuid4();
+
         ob_start(); ?>
-        <div id="<?php echo esc_attr($id); ?>" style="height:<?php echo esc_attr($atts['height']); ?>;"></div>
-        <script>
-        (function(){
-            if (!window.L || !window.L.Routing) return;
-            var map = L.map('<?php echo esc_js($id); ?>').setView([<?php echo esc_js($atts['start']); ?>].reverse(), <?php echo intval($atts['zoom']); ?>);
-            L.tileLayer(KC_OSRM.tileUrl, { attribution: KC_OSRM.tileAttrib }).addTo(map);
-            var wp1 = L.latLng.apply(null, [<?php echo esc_js($atts['start']); ?>]);
-            var wp2 = L.latLng.apply(null, [<?php echo esc_js($atts['end']); ?>]);
-            L.Routing.control({
-                waypoints: [ wp1, wp2 ],
-                router: L.Routing.osrmv1({ serviceUrl: KC_OSRM.endpoint.replace(/\/route\/v1\/.*$/, '/route/v1') })
-            }).addTo(map);
-        })();
-        </script>
-        <?php
-        return ob_get_clean();
+    <div id="<?php echo esc_attr($id); ?>" style="height:<?php echo esc_attr($atts['height']); ?>;"></div>
+    <script>
+    (function(){
+      if (!window.L || !window.L.Routing) return;
+
+      function parseLatLon(str){
+        var p = (str || '').split(',').map(function(n){ return parseFloat(n); });
+        // Expect [lat, lon]
+        return [p[0], p[1]];
+      }
+
+      var start = parseLatLon("<?php echo esc_js($atts['start']); ?>");
+      var end   = parseLatLon("<?php echo esc_js($atts['end']); ?>");
+
+      var map = L.map("<?php echo esc_js($id); ?>").setView(start, <?php echo (int)$atts['zoom']; ?>);
+      L.tileLayer(KC_OSRM.tileUrl, { attribution: KC_OSRM.tileAttrib }).addTo(map);
+
+      L.Routing.control({
+        waypoints: [ L.latLng(start[0], start[1]), L.latLng(end[0], end[1]) ],
+        router: L.Routing.osrmv1({ serviceUrl: KC_OSRM.base }) // KC_OSRM.base ends with /route/v1
+      }).addTo(map);
+    })();
+    </script>
+    <?php
+    return ob_get_clean();
     }
 }
 
