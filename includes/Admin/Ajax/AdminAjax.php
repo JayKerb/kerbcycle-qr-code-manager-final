@@ -236,14 +236,18 @@ class AdminAjax
         }
 
         $ids = isset($_POST['log_ids']) && is_array($_POST['log_ids']) ? array_map('absint', $_POST['log_ids']) : [];
-        if (!$ids) {
+        if (empty($ids)) {
             wp_send_json_error(['message' => 'No logs selected']);
         }
 
         $repo = new MessageLogRepository();
         $deleted = $repo->delete_by_ids($ids);
 
-        wp_send_json_success(['deleted' => (int) $deleted]);
+        if ($deleted > 0) {
+            wp_send_json_success(['deleted' => (int) $deleted]);
+        } else {
+            wp_send_json_error(['message' => 'Could not delete the selected logs. They may have already been deleted or a database error occurred.']);
+        }
     }
 
     public function clear_logs()
