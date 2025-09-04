@@ -1,0 +1,7 @@
+.kc-card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; margin-top:16px; }
+.kc-row { display:flex; gap:12px; align-items:center; margin:8px 0; }
+.kc-row label { width:160px; font-weight:600; }
+.kc-row input, .kc-row select { min-width:260px; }
+.kc-grid { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:16px; margin-top:16px; }
+.kc-card-grid { text-align:center; padding:12px; }
+.kc-card-grid .kc-code { margin-top:8px; font-weight:600; word-break:break-all; }
