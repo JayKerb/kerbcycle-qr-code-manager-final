@@ -82,5 +82,21 @@ class Activator
         ) $charset_collate;";
 
         dbDelta($sql);
+
+        // Create QR generator repository table
+        $repo_table = $wpdb->prefix . 'kerbcycle_qr_repo';
+        $sql = "CREATE TABLE $repo_table (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            code VARCHAR(191) NOT NULL,
+            status VARCHAR(50) NOT NULL DEFAULT 'available',
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            created_by BIGINT UNSIGNED NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY code_unique (code),
+            KEY created_at_idx (created_at),
+            KEY status_idx (status)
+        ) $charset_collate;";
+
+        dbDelta($sql);
     }
 }
