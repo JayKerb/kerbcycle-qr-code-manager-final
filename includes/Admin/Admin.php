@@ -69,6 +69,16 @@ class Admin
             [new Pages\ReportsPage(), 'render']
         );
 
+        $generator = Pages\GeneratorPage::instance();
+        add_submenu_page(
+            'kerbcycle-qr-manager',
+            'QR Code Generator',
+            'QR Code Generate',
+            'manage_options',
+            'kerbcycle-qr-generator',
+            [$generator, 'render']
+        );
+
         // Shortcut to Bookly appointments if Bookly is active
         $bookly_active = class_exists('Bookly\\Lib\\Plugin') || defined('BOOKLY_VERSION');
         if ($bookly_active) {
