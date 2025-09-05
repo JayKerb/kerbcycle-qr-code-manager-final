@@ -46,7 +46,8 @@ class FrontAssets
 
             wp_localize_script('kerbcycle-qr-frontend-js', 'kerbcycle_ajax', [
                 'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('kerbcycle_qr_nonce')
+                'nonce' => wp_create_nonce('kerbcycle_qr_nonce'),
+                'scanner_enabled' => true,
             ]);
         }
     }
