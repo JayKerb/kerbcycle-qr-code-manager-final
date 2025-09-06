@@ -12,6 +12,8 @@ function showToast(message, isError = false) {
 
 function initKerbcycleAdmin() {
     const qrSelect = document.getElementById("qr-code-select");
+    const assignedSelect = document.getElementById("assigned-qr-code-select");
+    const userField = document.getElementById("customer-id");
     const sendEmailCheckbox = document.getElementById("send-email");
     const sendSmsCheckbox = document.getElementById("send-sms");
     const sendReminderCheckbox = document.getElementById("send-reminder");
@@ -20,9 +22,37 @@ function initKerbcycleAdmin() {
     const addBtn = document.getElementById("add-qr-btn");
     const newCodeInput = document.getElementById("new-qr-code");
 
+    if (userField && assignedSelect) {
+        userField.addEventListener("change", function () {
+            const userId = userField.value;
+            assignedSelect.innerHTML = '<option value="">Select Assigned QR Code</option>';
+            if (!userId) {
+                return;
+            }
+            fetch(kerbcycle_ajax.ajax_url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: `action=get_assigned_qr_codes&customer_id=${encodeURIComponent(userId)}&security=${kerbcycle_ajax.nonce}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && Array.isArray(data.data)) {
+                    data.data.forEach(code => {
+                        const opt = document.createElement('option');
+                        opt.value = code;
+                        opt.textContent = code;
+                        assignedSelect.appendChild(opt);
+                    });
+                }
+            });
+        });
+        userField.dispatchEvent(new Event('change'));
+    }
+
     if (assignBtn) {
         assignBtn.addEventListener("click", function () {
-            const userField = document.getElementById("customer-id");
             const userId = userField ? userField.value : '';
             const qrCode = qrSelect ? qrSelect.value : '';
             const sendEmail = sendEmailCheckbox ? sendEmailCheckbox.checked : false;
@@ -69,6 +99,12 @@ function initKerbcycleAdmin() {
                     const opt = qrSelect ? qrSelect.querySelector(`option[value="${qrCode}"]`) : null;
                     if (opt) opt.remove();
                     if (qrSelect) qrSelect.value = '';
+                    if (assignedSelect && userField && userField.value === userId) {
+                        const opt2 = document.createElement('option');
+                        opt2.value = qrCode;
+                        opt2.textContent = qrCode;
+                        assignedSelect.appendChild(opt2);
+                    }
                 } else {
                     const err = data.data && data.data.message ? data.data.message : "Failed to assign QR code.";
                     showToast(err, true);
@@ -83,7 +119,7 @@ function initKerbcycleAdmin() {
 
     if (releaseBtn) {
         releaseBtn.addEventListener("click", function () {
-            const qrCode = qrSelect ? qrSelect.value : '';
+            const qrCode = assignedSelect ? assignedSelect.value : '';
             const sendEmail = sendEmailCheckbox ? sendEmailCheckbox.checked : false;
             const sendSms = sendSmsCheckbox ? sendSmsCheckbox.checked : false;
             if (!qrCode) {
@@ -123,7 +159,11 @@ function initKerbcycleAdmin() {
                         opt.textContent = qrCode;
                         qrSelect.appendChild(opt);
                     }
-                    if (qrSelect) qrSelect.value = '';
+                    if (assignedSelect) {
+                        const opt = assignedSelect.querySelector(`option[value="${qrCode}"]`);
+                        if (opt) opt.remove();
+                        assignedSelect.value = '';
+                    }
                 } else {
                     showToast("Failed to release QR code.", true);
                 }

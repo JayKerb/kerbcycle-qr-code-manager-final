@@ -228,6 +228,17 @@ class QrCodeRepository
         return $wpdb->get_results("SELECT qr_code FROM $this->table WHERE status = 'available' ORDER BY id DESC");
     }
 
+    public function list_assigned_by_user($user_id)
+    {
+        global $wpdb;
+        return $wpdb->get_col(
+            $wpdb->prepare(
+                "SELECT qr_code FROM {$this->table} WHERE status = 'assigned' AND user_id = %d ORDER BY id DESC",
+                $user_id
+            )
+        );
+    }
+
     public function list_all()
     {
         global $wpdb;
@@ -263,6 +274,11 @@ class QrCodeRepository
     public function get_available_codes()
     {
         return $this->list_available();
+    }
+
+    public function get_assigned_codes_by_user($user_id)
+    {
+        return $this->list_assigned_by_user($user_id);
     }
 
     public function get_all_codes()
