@@ -10,6 +10,35 @@ function showToast(message, isError = false) {
     setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
+function makeSearchableSelect(select) {
+    if (!select) return;
+    const listId = select.id + '-list';
+    const dataList = document.createElement('datalist');
+    dataList.id = listId;
+    const input = document.createElement('input');
+    input.setAttribute('list', listId);
+    input.className = 'kc-search-input';
+    const updateOptions = () => {
+        dataList.innerHTML = '';
+        Array.from(select.options).forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.textContent;
+            option.dataset.value = opt.value;
+            dataList.appendChild(option);
+        });
+    };
+    updateOptions();
+    input.addEventListener('input', () => {
+        const found = dataList.querySelector(`option[value="${CSS.escape(input.value)}"]`);
+        select.value = found ? found.dataset.value : '';
+        select.dispatchEvent(new Event('change'));
+    });
+    select.parentNode.insertBefore(input, select);
+    select.parentNode.insertBefore(dataList, select);
+    select.style.display = 'none';
+    select._searchable = { input, updateOptions };
+}
+
 function initKerbcycleAdmin() {
     const qrSelect = document.getElementById("qr-code-select");
     const assignedSelect = document.getElementById("assigned-qr-code-select");
@@ -24,10 +53,16 @@ function initKerbcycleAdmin() {
     const importBtn = document.getElementById("import-qr-btn");
     const importFile = document.getElementById("import-qr-file");
 
+    document.querySelectorAll('select.kc-searchable').forEach(makeSearchableSelect);
+
     if (userField && assignedSelect) {
         userField.addEventListener("change", function () {
             const userId = userField.value;
             assignedSelect.innerHTML = '<option value="">Select Assigned QR Code</option>';
+            if (assignedSelect._searchable) {
+                assignedSelect._searchable.updateOptions();
+                assignedSelect._searchable.input.value = '';
+            }
             if (!userId) {
                 return;
             }
@@ -47,6 +82,9 @@ function initKerbcycleAdmin() {
                         opt.textContent = code;
                         assignedSelect.appendChild(opt);
                     });
+                    if (assignedSelect._searchable) {
+                        assignedSelect._searchable.updateOptions();
+                    }
                 }
             });
         });
@@ -100,12 +138,21 @@ function initKerbcycleAdmin() {
                     }
                     const opt = qrSelect ? qrSelect.querySelector(`option[value="${qrCode}"]`) : null;
                     if (opt) opt.remove();
-                    if (qrSelect) qrSelect.value = '';
+                    if (qrSelect) {
+                        qrSelect.value = '';
+                        if (qrSelect._searchable) {
+                            qrSelect._searchable.updateOptions();
+                            qrSelect._searchable.input.value = '';
+                        }
+                    }
                     if (assignedSelect && userField && userField.value === userId) {
                         const opt2 = document.createElement('option');
                         opt2.value = qrCode;
                         opt2.textContent = qrCode;
                         assignedSelect.appendChild(opt2);
+                        if (assignedSelect._searchable) {
+                            assignedSelect._searchable.updateOptions();
+                        }
                     }
                 } else {
                     const err = data.data && data.data.message ? data.data.message : "Failed to assign QR code.";
@@ -160,11 +207,18 @@ function initKerbcycleAdmin() {
                         opt.value = qrCode;
                         opt.textContent = qrCode;
                         qrSelect.appendChild(opt);
+                        if (qrSelect._searchable) {
+                            qrSelect._searchable.updateOptions();
+                        }
                     }
                     if (assignedSelect) {
                         const opt = assignedSelect.querySelector(`option[value="${qrCode}"]`);
                         if (opt) opt.remove();
                         assignedSelect.value = '';
+                        if (assignedSelect._searchable) {
+                            assignedSelect._searchable.updateOptions();
+                            assignedSelect._searchable.input.value = '';
+                        }
                     }
                 } else {
                     showToast("Failed to release QR code.", true);
@@ -202,6 +256,9 @@ function initKerbcycleAdmin() {
                         opt.value = qrCode;
                         opt.textContent = qrCode;
                         qrSelect.appendChild(opt);
+                        if (qrSelect._searchable) {
+                            qrSelect._searchable.updateOptions();
+                        }
                     }
                     newCodeInput.value = '';
                     if (data.data && data.data.row) {

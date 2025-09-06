@@ -104,6 +104,10 @@
     min-width: 200px;
 }
 
+#qr-selects .kc-search-input {
+    min-width: 200px;
+}
+
 .qr-select-group {
     display: flex;
     align-items: center;
