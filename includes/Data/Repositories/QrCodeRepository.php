@@ -167,21 +167,31 @@ class QrCodeRepository
             return 0;
         }
 
-        $deleted_count = 0;
-        foreach ($codes as $code) {
-            $result = $wpdb->delete(
-                $this->table,
-                ['qr_code' => $code, 'status' => 'available'],
-                ['%s', '%s']
-            );
+        $placeholders = implode(',', array_fill(0, count($codes), '%s'));
+        $query = $wpdb->prepare(
+            "SELECT qr_code FROM {$this->table} WHERE status = 'available' AND qr_code IN ($placeholders)",
+            $codes
+        );
+        $existing = $wpdb->get_col($query);
 
-            if ($result) {
+        if (empty($existing)) {
+            return 0;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($existing), '%s'));
+        $delete_query = $wpdb->prepare(
+            "DELETE FROM {$this->table} WHERE status = 'available' AND qr_code IN ($placeholders)",
+            $existing
+        );
+        $deleted_count = $wpdb->query($delete_query);
+
+        if ($deleted_count) {
+            foreach ($existing as $code) {
                 $this->history->log($code, null, 'deleted');
-                $deleted_count += $result;
             }
         }
 
-        return $deleted_count;
+        return (int) $deleted_count;
     }
 
     public function update_code($old_code, $new_code)
