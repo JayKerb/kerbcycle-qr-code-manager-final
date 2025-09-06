@@ -38,6 +38,7 @@ class AdminAjax
         add_action('wp_ajax_update_qr_code', [$this, 'update_qr_code']);
         add_action('wp_ajax_add_qr_code', [$this, 'add_qr_code']);
         add_action('wp_ajax_get_assigned_qr_codes', [$this, 'get_assigned_qr_codes']);
+        add_action('wp_ajax_import_qr_codes', [$this, 'import_qr_codes']);
         add_action('wp_ajax_kerbcycle_qr_report_data', [$this, 'ajax_report_data']);
         add_action('wp_ajax_kerbcycle_delete_logs', [$this, 'delete_logs']);
     }
@@ -237,6 +238,56 @@ class AdminAjax
             ]);
         } else {
             wp_send_json_error(['message' => __('Failed to add QR code due to a database error.', 'kerbcycle')]);
+        }
+    }
+
+    public function import_qr_codes()
+    {
+        Nonces::verify('kerbcycle_qr_nonce', 'security');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
+        }
+
+        if (empty($_FILES['import_file']) || !is_uploaded_file($_FILES['import_file']['tmp_name'])) {
+            wp_send_json_error(['message' => __('No file uploaded.', 'kerbcycle')]);
+        }
+
+        $handle = fopen($_FILES['import_file']['tmp_name'], 'r');
+        if (!$handle) {
+            wp_send_json_error(['message' => __('Could not read uploaded file.', 'kerbcycle')]);
+        }
+
+        $header = fgetcsv($handle);
+        if ($header === false) {
+            fclose($handle);
+            wp_send_json_error(['message' => __('Invalid CSV file.', 'kerbcycle')]);
+        }
+        $code_index = array_search('Code', $header);
+        if ($code_index === false) {
+            fclose($handle);
+            wp_send_json_error(['message' => __('Could not find Code column.', 'kerbcycle')]);
+        }
+
+        $added = 0;
+        while (($data = fgetcsv($handle)) !== false) {
+            if (empty($data[$code_index])) {
+                continue;
+            }
+            $code   = sanitize_text_field($data[$code_index]);
+            $result = $this->qr_service->add($code);
+            if (!is_wp_error($result) && $result !== false) {
+                $added++;
+            }
+        }
+        fclose($handle);
+
+        if ($added > 0) {
+            wp_send_json_success([
+                'message' => sprintf(__('Imported %d QR code(s).', 'kerbcycle'), $added),
+                'added'   => $added,
+            ]);
+        } else {
+            wp_send_json_error(['message' => __('No QR codes were imported.', 'kerbcycle')]);
         }
     }
 

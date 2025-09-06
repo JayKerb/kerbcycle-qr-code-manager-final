@@ -122,8 +122,17 @@ class DashboardPage
                         <button id="release-qr-btn" class="button"><?php esc_html_e('Release QR Code', 'kerbcycle'); ?></button>
                     </div>
                 </div>
-                <input type="text" id="new-qr-code" placeholder="<?php esc_attr_e('Enter QR Code', 'kerbcycle'); ?>" />
-                <button id="add-qr-btn" class="button"><?php esc_html_e('Add QR Code', 'kerbcycle'); ?></button>
+                <div class="qr-select-group">
+                    <input type="text" id="new-qr-code" placeholder="<?php esc_attr_e('Enter QR Code', 'kerbcycle'); ?>" />
+                    <button id="add-qr-btn" class="button"><?php esc_html_e('Add QR Code', 'kerbcycle'); ?></button>
+                </div>
+                <div class="qr-select-group">
+                    <input type="file" id="import-qr-file" accept=".csv" />
+                </div>
+                <p class="description"><?php esc_html_e('Import QR Codes from a selected CSV File.', 'kerbcycle'); ?></p>
+                <div class="qr-select-group">
+                    <button id="import-qr-btn" class="button"><?php esc_html_e('Import QR Codes', 'kerbcycle'); ?></button>
+                </div>
                 <?php if ($scanner_enabled) : ?>
                     <div id="reader" class="qr-reader"></div>
                 <?php else : ?>

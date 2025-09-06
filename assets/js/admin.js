@@ -21,6 +21,8 @@ function initKerbcycleAdmin() {
     const releaseBtn = document.getElementById("release-qr-btn");
     const addBtn = document.getElementById("add-qr-btn");
     const newCodeInput = document.getElementById("new-qr-code");
+    const importBtn = document.getElementById("import-qr-btn");
+    const importFile = document.getElementById("import-qr-file");
 
     if (userField && assignedSelect) {
         userField.addEventListener("change", function () {
@@ -275,6 +277,38 @@ function initKerbcycleAdmin() {
             .catch(error => {
                 console.error('Error:', error);
                 showToast('An error occurred while adding the QR code.', true);
+            });
+        });
+    }
+
+    if (importBtn) {
+        importBtn.addEventListener("click", function () {
+            if (!importFile || !importFile.files.length) {
+                alert("Please select a CSV file.");
+                return;
+            }
+            const formData = new FormData();
+            formData.append('action', 'import_qr_codes');
+            formData.append('security', kerbcycle_ajax.nonce);
+            formData.append('import_file', importFile.files[0]);
+            fetch(kerbcycle_ajax.ajax_url, {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const msg = data.data && data.data.message ? data.data.message : 'QR codes imported.';
+                    showToast(msg);
+                    location.reload();
+                } else {
+                    const err = data.data && data.data.message ? data.data.message : 'Failed to import QR codes.';
+                    showToast(err, true);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('An error occurred while importing QR codes.', true);
             });
         });
     }
