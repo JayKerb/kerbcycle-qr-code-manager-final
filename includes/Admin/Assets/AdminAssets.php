@@ -62,6 +62,13 @@ class AdminAssets
         $scanner_enabled      = (bool) get_option('kerbcycle_qr_enable_scanner', 1);
         $drag_drop_disabled   = (bool) get_option('kerbcycle_qr_disable_drag_drop', 0);
 
+        wp_enqueue_style(
+            'kerbcycle-qr-admin-css',
+            KERBCYCLE_QR_URL . 'assets/css/admin.css',
+            [],
+            filemtime(KERBCYCLE_QR_PATH . 'assets/css/admin.css')
+        );
+
         $deps = [];
         if (!$drag_drop_disabled) {
             $deps[] = 'jquery-ui-sortable';

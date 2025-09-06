@@ -36,10 +36,17 @@ class Nonces
         $nonce = sanitize_text_field($nonce);
 
         if (!wp_verify_nonce($nonce, $action)) {
+            $message = __('Security check failed', 'kerbcycle');
+
             if ($request instanceof \WP_REST_Request) {
-                return new \WP_Error('rest_nonce_invalid', __('Security check failed', 'kerbcycle'), ['status' => 403]);
+                return new \WP_Error('rest_nonce_invalid', $message, ['status' => 403]);
             }
-            wp_die(__('Security check failed', 'kerbcycle'), __('Error', 'kerbcycle'), 403);
+
+            if (wp_doing_ajax()) {
+                wp_send_json_error(['message' => $message], 403);
+            }
+
+            wp_die($message, __('Error', 'kerbcycle'), 403);
         }
 
         return true;

@@ -80,50 +80,6 @@ class DashboardPage
         $query_args = array_merge($params, [$per_page, $offset]);
         $all_codes  = $wpdb->get_results($wpdb->prepare($select_sql, $query_args));
         ?>
-        <style>
-            #qr-code-list {
-                display: flex;
-                flex-direction: column;
-                padding: 0;
-                border: 1px solid #c3c4c7;
-                box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
-                background: #fff;
-            }
-            .qr-header, .qr-item {
-                display: flex;
-                align-items: center;
-                border-bottom: 1px solid #c3c4c7;
-                padding: 8px 10px;
-            }
-            .qr-header {
-                font-weight: 600;
-                background: #f0f0f1;
-            }
-            .qr-item:last-child {
-                border-bottom: none;
-            }
-            .qr-select {
-                flex-basis: 30px;
-                flex-shrink: 0;
-                margin-right: 10px;
-            }
-            .qr-id, .qr-user, .qr-status {
-                flex-basis: 80px;
-                padding: 0 8px;
-            }
-            .qr-name {
-                flex-basis: 150px;
-                padding: 0 8px;
-            }
-            .qr-text {
-                flex-grow: 1;
-                padding: 0 8px;
-            }
-            .qr-assigned {
-                flex-basis: 150px;
-                padding: 0 8px;
-            }
-        </style>
         <div class="wrap">
             <h1>KerbCycle QR Code Manager</h1>
             <div class="notice notice-info">
@@ -160,17 +116,17 @@ class DashboardPage
                     <button id="release-qr-btn" class="button"><?php esc_html_e('Release QR Code', 'kerbcycle'); ?></button>
                 </p>
                 <?php if ($scanner_enabled) : ?>
-                    <div id="reader" style="width: 100%; max-width: 400px; margin-top: 20px;"></div>
+                    <div id="reader" class="qr-reader"></div>
                 <?php else : ?>
-                    <div class="notice notice-warning" style="margin-top: 20px;">
+                    <div class="notice notice-warning qr-warning">
                         <p><?php esc_html_e('QR code scanner camera is disabled in settings.', 'kerbcycle'); ?></p>
                     </div>
                 <?php endif; ?>
-                <div id="scan-result" class="updated" style="display: none;"></div>
+                <div id="scan-result" class="updated"></div>
             </div>
 
             <h2><?php esc_html_e('Manage QR Codes', 'kerbcycle'); ?></h2>
-            <form method="get" class="qr-filters" style="margin-bottom:15px;">
+            <form method="get" class="qr-filters">
                 <input type="hidden" name="page" value="kerbcycle-qr-manager" />
                 <select name="status_filter">
                     <option value=""><?php esc_html_e('All Statuses', 'kerbcycle'); ?></option>
