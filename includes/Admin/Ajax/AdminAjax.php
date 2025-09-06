@@ -45,11 +45,11 @@ class AdminAjax
     {
         Nonces::verify('kerbcycle_qr_nonce', 'security');
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => 'Unauthorized'], 403);
+            wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
 
-        $qr_code      = sanitize_text_field($_POST['qr_code']);
-        $user_id      = intval($_POST['customer_id']);
+        $qr_code      = sanitize_text_field(wp_unslash($_POST['qr_code']));
+        $user_id      = intval(wp_unslash($_POST['customer_id']));
         $send_email   = !empty($_POST['send_email']) && get_option('kerbcycle_qr_enable_email', 1);
         $send_sms     = !empty($_POST['send_sms']) && get_option('kerbcycle_qr_enable_sms', 0);
         $send_reminder = !empty($_POST['send_reminder']) && get_option('kerbcycle_qr_enable_reminders', 0);
@@ -78,10 +78,10 @@ class AdminAjax
     {
         Nonces::verify('kerbcycle_qr_nonce', 'security');
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => 'Unauthorized'], 403);
+            wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
 
-        $qr_code   = sanitize_text_field($_POST['qr_code']);
+        $qr_code   = sanitize_text_field(wp_unslash($_POST['qr_code']));
         $send_email = !empty($_POST['send_email']) && get_option('kerbcycle_qr_enable_email', 1);
         $send_sms   = !empty($_POST['send_sms']) && get_option('kerbcycle_qr_enable_sms', 0);
 
@@ -105,14 +105,14 @@ class AdminAjax
     {
         Nonces::verify('kerbcycle_qr_nonce', 'security');
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => 'Unauthorized'], 403);
+            wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
 
         if (empty($_POST['qr_codes'])) {
-            wp_send_json_error(['message' => 'No QR codes were selected.']);
+            wp_send_json_error(['message' => __('No QR codes were selected.', 'kerbcycle')]);
         }
 
-        $raw_codes = explode(',', $_POST['qr_codes']);
+        $raw_codes = explode(',', wp_unslash($_POST['qr_codes']));
         $codes = array_map('trim', array_map('sanitize_text_field', $raw_codes));
         $codes = array_filter($codes);
 
@@ -139,14 +139,14 @@ class AdminAjax
     {
         Nonces::verify('kerbcycle_qr_nonce', 'security');
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => 'Unauthorized'], 403);
+            wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
 
         if (empty($_POST['qr_codes'])) {
-            wp_send_json_error(['message' => 'No QR codes were selected.']);
+            wp_send_json_error(['message' => __('No QR codes were selected.', 'kerbcycle')]);
         }
 
-        $raw_codes = explode(',', $_POST['qr_codes']);
+        $raw_codes = explode(',', wp_unslash($_POST['qr_codes']));
         $codes = array_map('trim', array_map('sanitize_text_field', $raw_codes));
         $codes = array_filter($codes);
 
@@ -173,22 +173,26 @@ class AdminAjax
     {
         Nonces::verify('kerbcycle_qr_nonce', 'security');
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => 'Unauthorized'], 403);
+            wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
 
-        $old_code = sanitize_text_field($_POST['old_code']);
-        $new_code = sanitize_text_field($_POST['new_code']);
+        $old_code = sanitize_text_field(wp_unslash($_POST['old_code']));
+        $new_code = sanitize_text_field(wp_unslash($_POST['new_code']));
 
         if (empty($old_code) || empty($new_code)) {
-            wp_send_json_error(['message' => 'Invalid QR code']);
+            wp_send_json_error(['message' => __('Invalid QR code', 'kerbcycle')]);
         }
 
         $result = $this->qr_service->update($old_code, $new_code);
 
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()]);
+        }
+
         if ($result !== false) {
-            wp_send_json_success(['message' => 'QR code updated']);
+            wp_send_json_success(['message' => __('QR code updated', 'kerbcycle')]);
         } else {
-            wp_send_json_error(['message' => 'Failed to update QR code']);
+            wp_send_json_error(['message' => __('Failed to update QR code', 'kerbcycle')]);
         }
     }
 
@@ -196,13 +200,13 @@ class AdminAjax
     {
         Nonces::verify('kerbcycle_qr_nonce', 'security');
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => 'Unauthorized'], 403);
+            wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
 
-        $qr_code = sanitize_text_field($_POST['qr_code']);
+        $qr_code = sanitize_text_field(wp_unslash($_POST['qr_code']));
 
         if (empty($qr_code)) {
-            wp_send_json_error(['message' => 'Invalid QR code']);
+            wp_send_json_error(['message' => __('Invalid QR code', 'kerbcycle')]);
         }
 
         $result = $this->qr_service->add($qr_code);
@@ -210,9 +214,9 @@ class AdminAjax
         if (is_wp_error($result)) {
             wp_send_json_error(['message' => $result->get_error_message()]);
         } elseif ($result !== false) {
-            wp_send_json_success(['message' => 'QR code added successfully.']);
+            wp_send_json_success(['message' => __('QR code added successfully.', 'kerbcycle')]);
         } else {
-            wp_send_json_error(['message' => 'Failed to add QR code due to a database error.']);
+            wp_send_json_error(['message' => __('Failed to add QR code due to a database error.', 'kerbcycle')]);
         }
     }
 
@@ -220,7 +224,7 @@ class AdminAjax
     {
         Nonces::verify('kerbcycle_qr_report_nonce', 'security');
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => 'Unauthorized'], 403);
+            wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
         $report_service = new ReportService();
         $data = $report_service->get_report_data();
@@ -231,12 +235,12 @@ class AdminAjax
     {
         Nonces::verify('kerbcycle_delete_logs', 'security');
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => 'Unauthorized'], 403);
+            wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
 
-        $ids = isset($_POST['log_ids']) && is_array($_POST['log_ids']) ? array_map('absint', $_POST['log_ids']) : [];
+        $ids = isset($_POST['log_ids']) && is_array($_POST['log_ids']) ? array_map('absint', wp_unslash($_POST['log_ids'])) : [];
         if (!$ids) {
-            wp_send_json_error(['message' => 'No logs selected']);
+            wp_send_json_error(['message' => __('No logs selected', 'kerbcycle')]);
         }
 
         $repo = new MessageLogRepository();
