@@ -104,6 +104,14 @@
     min-width: 200px;
 }
 
+#qr-selects .kc-search-input {
+    min-width: 200px;
+}
+
+#qr-selects datalist {
+    display: none;
+}
+
 .qr-select-group {
     display: flex;
     align-items: center;

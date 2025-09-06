@@ -99,15 +99,18 @@ class DashboardPage
                     <label><input type="checkbox" id="send-reminder" <?php checked($reminder_enabled); ?> <?php disabled(!$reminder_enabled); ?>> <?php esc_html_e('Schedule reminder', 'kerbcycle'); ?></label>
                 </div>
                 <div id="qr-selects">
-                    <?php
-                    wp_dropdown_users(array(
-                        'name'             => 'customer_id',
-                        'id'               => 'customer-id',
-                        'show_option_none' => __('Select Customer', 'kerbcycle')
-                    ));
-                    ?>
                     <div class="qr-select-group">
-                        <select id="qr-code-select">
+                        <?php
+                        wp_dropdown_users(array(
+                            'name'             => 'customer_id',
+                            'id'               => 'customer-id',
+                            'class'            => 'kc-searchable',
+                            'show_option_none' => __('Select Customer', 'kerbcycle')
+                        ));
+                        ?>
+                    </div>
+                    <div class="qr-select-group">
+                        <select id="qr-code-select" class="kc-searchable">
                             <option value=""><?php esc_html_e('Select QR Code', 'kerbcycle'); ?></option>
                             <?php foreach ($available_codes as $code) : ?>
                                 <option value="<?= esc_attr($code->qr_code); ?>"><?= esc_html($code->qr_code); ?></option>
@@ -116,7 +119,7 @@ class DashboardPage
                         <button id="assign-qr-btn" class="button button-primary"><?php esc_html_e('Assign QR Code', 'kerbcycle'); ?></button>
                     </div>
                     <div class="qr-select-group">
-                        <select id="assigned-qr-code-select">
+                        <select id="assigned-qr-code-select" class="kc-searchable">
                             <option value=""><?php esc_html_e('Select Assigned QR Code', 'kerbcycle'); ?></option>
                         </select>
                         <button id="release-qr-btn" class="button"><?php esc_html_e('Release QR Code', 'kerbcycle'); ?></button>
