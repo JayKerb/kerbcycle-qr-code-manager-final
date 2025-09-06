@@ -28,8 +28,9 @@ class QrService
 
     public function add($qr_code)
     {
-        if ($this->repository->available_exists($qr_code)) {
-            return new \WP_Error('duplicate_qr_code', __('This QR code is already available.', 'kerbcycle'));
+        // Prevent duplicates regardless of current status (available or assigned)
+        if ($this->repository->find_by_qr_code($qr_code)) {
+            return new \WP_Error('duplicate_qr_code', __('This QR code already exists.', 'kerbcycle'));
         }
         $inserted = $this->repository->insert_available($qr_code);
         if ($inserted === false) {
