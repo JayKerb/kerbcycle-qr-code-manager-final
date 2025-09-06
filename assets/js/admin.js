@@ -135,7 +135,9 @@ function initKerbcycleAdmin() {
 
     const bulkForm = document.getElementById('qr-code-bulk-form');
     if (bulkForm) {
-        jQuery('#qr-code-list').sortable({ items: 'li.qr-item' });
+        if (!kerbcycle_ajax.drag_drop_disabled) {
+            jQuery('#qr-code-list').sortable({ items: 'li.qr-item' });
+        }
 
         const selectAll = document.getElementById('qr-select-all');
         if (selectAll) {
