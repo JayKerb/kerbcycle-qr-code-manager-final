@@ -110,4 +110,9 @@ class QrService
         }
         return $this->repository->update_code($old_code, $new_code);
     }
+
+    public function get_assigned_by_user($user_id)
+    {
+        return $this->repository->get_assigned_codes_by_user($user_id);
+    }
 }
