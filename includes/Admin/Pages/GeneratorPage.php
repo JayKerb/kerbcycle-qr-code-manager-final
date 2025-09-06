@@ -78,7 +78,7 @@ class GeneratorPage
     public function render()
     {
         if (!current_user_can('manage_options')) {
-            wp_die('Insufficient permissions.');
+            wp_die(__('Insufficient permissions.', 'kerbcycle'));
         }
         ?>
         <div class="wrap">
@@ -162,18 +162,18 @@ class GeneratorPage
     {
         check_ajax_referer('kerbcycle_generate_qr', 'nonce');
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => 'No permission'], 403);
+            wp_send_json_error(['message' => __('No permission', 'kerbcycle')], 403);
         }
 
         $repo = new QrRepoRepository();
         $user = get_current_user_id();
-        $type = sanitize_text_field($_POST['genType'] ?? 'single');
+        $type = sanitize_text_field(wp_unslash($_POST['genType'] ?? 'single'));
         $result = ['saved' => [], 'skipped' => []];
 
         if ($type === 'single') {
-            $code = trim(sanitize_text_field($_POST['code'] ?? ''));
+            $code = trim(sanitize_text_field(wp_unslash($_POST['code'] ?? '')));
             if ($code === '') {
-                wp_send_json_error(['message' => 'Code required.'], 400);
+                wp_send_json_error(['message' => __('Code required.', 'kerbcycle')], 400);
             }
 
             if ($repo->exists($code)) {
@@ -185,25 +185,28 @@ class GeneratorPage
             wp_send_json_success($result);
         }
 
-        $count  = max(1, min(5000, intval($_POST['count'] ?? 20)));
-        $prefix = sanitize_text_field($_POST['prefix'] ?? '');
-        $len    = max(4, min(16, intval($_POST['length'] ?? 8)));
+        $count  = max(1, min(5000, intval(wp_unslash($_POST['count'] ?? 20))));
+        $prefix = sanitize_text_field(wp_unslash($_POST['prefix'] ?? ''));
+        $len    = max(4, min(16, intval(wp_unslash($_POST['length'] ?? 8))));
 
-        for ($i = 0; $i < $count; $i++) {
+        if ($prefix !== '' && !preg_match('/^[A-Za-z0-9-]+$/', $prefix)) {
+            wp_send_json_error(['message' => __('Invalid prefix.', 'kerbcycle')], 400);
+        }
+
+        $attempts = 0;
+        while (count($result['saved']) < $count) {
             $rand = wp_generate_password($len, false, false);
             $code = $prefix . strtoupper($rand);
-            $tries = 0;
-            while ($tries < 3 && $repo->exists($code)) {
-                $rand = wp_generate_password($len, false, false);
-                $code = $prefix . strtoupper($rand);
-                $tries++;
-            }
             if ($repo->exists($code)) {
                 $result['skipped'][] = $code;
-                continue;
+            } else {
+                $repo->insert($code, $user);
+                $result['saved'][] = $code;
             }
-            $repo->insert($code, $user);
-            $result['saved'][] = $code;
+            $attempts++;
+            if ($attempts > $count * 5) {
+                break; // prevent infinite loops on extreme collisions
+            }
         }
 
         wp_send_json_success($result);
@@ -215,18 +218,18 @@ class GeneratorPage
     public function handle_export_csv()
     {
         if (!current_user_can('manage_options')) {
-            wp_die('No permission.');
+            wp_die(__('No permission.', 'kerbcycle'));
         }
         if (!isset($_POST['kc_export_nonce']) || !wp_verify_nonce($_POST['kc_export_nonce'], 'kerbcycle_export_qr_csv')) {
-            wp_die('Bad nonce.');
+            wp_die(__('Bad nonce.', 'kerbcycle'));
         }
 
-        $from   = sanitize_text_field($_POST['from'] ?? '');
-        $to     = sanitize_text_field($_POST['to'] ?? '');
-        $format = sanitize_text_field($_POST['format'] ?? 'csv');
+        $from   = sanitize_text_field(wp_unslash($_POST['from'] ?? ''));
+        $to     = sanitize_text_field(wp_unslash($_POST['to'] ?? ''));
+        $format = sanitize_text_field(wp_unslash($_POST['format'] ?? 'csv'));
 
         if (!$from || !$to) {
-            wp_die('Date range required.');
+            wp_die(__('Date range required.', 'kerbcycle'));
         }
 
         $repo = new QrRepoRepository();

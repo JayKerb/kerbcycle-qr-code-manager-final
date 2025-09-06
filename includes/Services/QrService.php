@@ -100,6 +100,9 @@ class QrService
 
     public function update($old_code, $new_code)
     {
+        if ($this->repository->find_by_qr_code($new_code)) {
+            return new \WP_Error('duplicate_qr_code', __('This QR code already exists.', 'kerbcycle'));
+        }
         return $this->repository->update_code($old_code, $new_code);
     }
 }

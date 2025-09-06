@@ -9,6 +9,8 @@ if (!defined('ABSPATH')) {
 use WP_REST_Request;
 use WP_REST_Response;
 use Kerbcycle\QrCode\Helpers\Nonces;
+use Kerbcycle\QrCode\Services\QrService;
+use Kerbcycle\QrCode\Data\Repositories\QrCodeRepository;
 
 /**
  * The qr controller.
@@ -30,6 +32,10 @@ class QrController
      */
     public function handle_qr_code_scan(WP_REST_Request $request)
     {
+        if (!current_user_can('edit_posts')) {
+            return new \WP_Error('rest_forbidden', __('Unauthorized', 'kerbcycle'), ['status' => 403]);
+        }
+
         $qr_code = sanitize_text_field($request->get_param('qr_code'));
         $user_id = intval($request->get_param('user_id'));
 
@@ -38,33 +44,30 @@ class QrController
             return $nonce_check;
         }
 
-        global $wpdb;
-        $table = $wpdb->prefix . 'kerbcycle_qr_codes';
-
-        $user  = get_userdata($user_id);
-        $name  = $user ? $user->display_name : '';
-        $result = $wpdb->insert(
-            $table,
-            [
-                'qr_code'     => $qr_code,
-                'user_id'     => $user_id,
-                'display_name'=> $name,
-                'status'      => 'assigned',
-                'assigned_at' => current_time('mysql')
-            ],
-            ['%s', '%d', '%s', '%s', '%s']
-        );
-
-        if ($result === false) {
+        $repo = new QrCodeRepository();
+        $existing = $repo->find_by_qr_code($qr_code);
+        if ($existing && $existing->status === 'assigned') {
             return new WP_REST_Response([
                 'success' => false,
-                'message' => 'Failed to process QR code'
+                'message' => __('QR code already assigned.', 'kerbcycle'),
+            ], 409);
+        }
+
+        $service = new QrService();
+        $assign = $service->assign($qr_code, $user_id, false, false, false);
+        if (is_wp_error($assign)) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => $assign->get_error_message(),
             ], 500);
         }
 
+        $user  = get_userdata($user_id);
+        $name  = $user ? $user->display_name : '';
+
         return new WP_REST_Response([
             'success'      => true,
-            'message'      => 'QR code processed',
+            'message'      => __('QR code processed', 'kerbcycle'),
             'qr_code'      => $qr_code,
             'user_id'      => $user_id,
             'display_name' => $name,

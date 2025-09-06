@@ -1,3 +1,15 @@
+function showToast(message, isError = false) {
+    let toast = document.getElementById('qr-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'qr-toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.className = isError ? 'error show' : 'show';
+    setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
 function initKerbcycleAdmin() {
     const qrSelect = document.getElementById("qr-code-select");
     const sendEmailCheckbox = document.getElementById("send-email");
@@ -40,21 +52,31 @@ function initKerbcycleAdmin() {
                             msg += " SMS failed: " + (data.data.sms_error || "Unknown error") + ".";
                         }
                     }
-                    alert(msg);
+                    showToast(msg);
                     try {
                         localStorage.setItem('kerbcycleAssignment', Date.now().toString());
                     } catch (e) {
                         console.warn('LocalStorage unavailable', e);
                     }
-                    location.reload();
+                    const li = document.querySelector(`#qr-code-list .qr-item[data-code="${qrCode}"]`);
+                    if (li) {
+                        li.querySelector('.qr-user').textContent = userId;
+                        const userName = userField.options[userField.selectedIndex].text || '—';
+                        li.querySelector('.qr-name').textContent = userName;
+                        li.querySelector('.qr-status').textContent = 'Assigned';
+                        li.querySelector('.qr-assigned').textContent = new Date().toISOString().slice(0,19).replace('T',' ');
+                    }
+                    const opt = qrSelect ? qrSelect.querySelector(`option[value="${qrCode}"]`) : null;
+                    if (opt) opt.remove();
+                    if (qrSelect) qrSelect.value = '';
                 } else {
                     const err = data.data && data.data.message ? data.data.message : "Failed to assign QR code.";
-                    alert(err);
+                    showToast(err, true);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert("An error occurred while assigning the QR code.");
+                showToast("An error occurred while assigning the QR code.", true);
             });
         });
     }
@@ -87,15 +109,28 @@ function initKerbcycleAdmin() {
                             msg += " SMS failed: " + (data.data.sms_error || "Unknown error") + ".";
                         }
                     }
-                    alert(msg);
-                    location.reload();
+                    showToast(msg);
+                    const li = document.querySelector(`#qr-code-list .qr-item[data-code="${qrCode}"]`);
+                    if (li) {
+                        li.querySelector('.qr-user').textContent = '—';
+                        li.querySelector('.qr-name').textContent = '—';
+                        li.querySelector('.qr-status').textContent = 'Available';
+                        li.querySelector('.qr-assigned').textContent = '—';
+                    }
+                    if (qrSelect && !qrSelect.querySelector(`option[value="${qrCode}"]`)) {
+                        const opt = document.createElement('option');
+                        opt.value = qrCode;
+                        opt.textContent = qrCode;
+                        qrSelect.appendChild(opt);
+                    }
+                    if (qrSelect) qrSelect.value = '';
                 } else {
-                    alert("Failed to release QR code.");
+                    showToast("Failed to release QR code.", true);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert("An error occurred while releasing the QR code.");
+                showToast("An error occurred while releasing the QR code.", true);
             });
         });
     }
@@ -119,16 +154,22 @@ function initKerbcycleAdmin() {
             .then(data => {
                 if (data.success) {
                     const msg = data.data && data.data.message ? data.data.message : 'QR code added successfully.';
-                    alert(msg);
-                    location.reload();
+                    showToast(msg);
+                    if (qrSelect && !qrSelect.querySelector(`option[value="${qrCode}"]`)) {
+                        const opt = document.createElement('option');
+                        opt.value = qrCode;
+                        opt.textContent = qrCode;
+                        qrSelect.appendChild(opt);
+                    }
+                    newCodeInput.value = '';
                 } else {
                     const err = data.data && data.data.message ? data.data.message : 'Failed to add QR code.';
-                    alert(err);
+                    showToast(err, true);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while adding the QR code.');
+                showToast('An error occurred while adding the QR code.', true);
             });
         });
     }
@@ -257,8 +298,11 @@ function initKerbcycleAdmin() {
                 .then(data => {
                     if (data.success) {
                         li.dataset.code = newCode;
+                        const msg = data.data && data.data.message ? data.data.message : 'QR code updated';
+                        showToast(msg);
                     } else {
-                        alert('Failed to update QR code');
+                        const err = data.data && data.data.message ? data.data.message : 'Failed to update QR code';
+                        showToast(err, true);
                         span.textContent = oldCode;
                     }
                 });
