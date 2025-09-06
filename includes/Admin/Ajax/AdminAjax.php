@@ -37,6 +37,7 @@ class AdminAjax
         add_action('wp_ajax_bulk_delete_qr_codes', [$this, 'bulk_delete_qr_codes']);
         add_action('wp_ajax_update_qr_code', [$this, 'update_qr_code']);
         add_action('wp_ajax_add_qr_code', [$this, 'add_qr_code']);
+        add_action('wp_ajax_get_assigned_qr_codes', [$this, 'get_assigned_qr_codes']);
         add_action('wp_ajax_kerbcycle_qr_report_data', [$this, 'ajax_report_data']);
         add_action('wp_ajax_kerbcycle_delete_logs', [$this, 'delete_logs']);
     }
@@ -99,6 +100,22 @@ class AdminAjax
             }
             wp_send_json_success($response);
         }
+    }
+
+    public function get_assigned_qr_codes()
+    {
+        Nonces::verify('kerbcycle_qr_nonce', 'security');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
+        }
+
+        $user_id = isset($_POST['customer_id']) ? intval(wp_unslash($_POST['customer_id'])) : 0;
+        if (!$user_id) {
+            wp_send_json_error(['message' => __('Invalid user ID', 'kerbcycle')]);
+        }
+
+        $codes = $this->qr_service->get_assigned_by_user($user_id);
+        wp_send_json_success($codes);
     }
 
     public function bulk_release_qr_codes()

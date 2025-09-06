@@ -23,3 +23,7 @@ msgstr ""
 #: includes/Admin/Pages/DashboardPage.php:0
 msgid "Manual QR Code Tasks"
 msgstr ""
+
+#: includes/Admin/Pages/DashboardPage.php:0
+msgid "Select Assigned QR Code"
+msgstr ""

@@ -92,3 +92,23 @@
 #qr-toast.error {
     background: #d63638;
 }
+
+#qr-selects {
+    display: flex;
+    gap: 20px;
+    margin: 15px 0;
+}
+
+.qr-select-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.qr-select-column select {
+    min-width: 200px;
+}
+
+.qr-select-column button {
+    margin-top: 10px;
+}
