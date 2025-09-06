@@ -59,21 +59,28 @@ class AdminAssets
             return;
         }
 
-        $scanner_enabled = (bool) get_option('kerbcycle_qr_enable_scanner', 1);
+        $scanner_enabled      = (bool) get_option('kerbcycle_qr_enable_scanner', 1);
+        $drag_drop_disabled   = (bool) get_option('kerbcycle_qr_disable_drag_drop', 0);
 
-        // Always enqueue the main admin script
+        $deps = [];
+        if (!$drag_drop_disabled) {
+            $deps[] = 'jquery-ui-sortable';
+        }
+
+        // Enqueue the main admin script
         wp_enqueue_script(
             'kerbcycle-qr-admin-js',
             KERBCYCLE_QR_URL . 'assets/js/admin.js',
-            ['jquery-ui-sortable'],
+            $deps,
             filemtime(KERBCYCLE_QR_PATH . 'assets/js/admin.js'),
             true
         );
 
         wp_localize_script('kerbcycle-qr-admin-js', 'kerbcycle_ajax', [
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('kerbcycle_qr_nonce'),
-            'scanner_enabled' => $scanner_enabled,
+            'ajax_url'          => admin_url('admin-ajax.php'),
+            'nonce'             => wp_create_nonce('kerbcycle_qr_nonce'),
+            'scanner_enabled'   => $scanner_enabled,
+            'drag_drop_disabled'=> $drag_drop_disabled,
         ]);
 
         if ($scanner_enabled) {
