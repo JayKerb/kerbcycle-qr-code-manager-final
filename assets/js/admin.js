@@ -137,13 +137,33 @@ function initKerbcycleAdmin() {
     if (bulkForm) {
         jQuery('#qr-code-list').sortable({ items: 'li.qr-item' });
 
+        const selectAll = document.getElementById('qr-select-all');
+        if (selectAll) {
+            selectAll.addEventListener('change', function() {
+                const checked = selectAll.checked;
+                document.querySelectorAll('#qr-code-list .qr-item .qr-select').forEach(cb => {
+                    cb.checked = checked;
+                });
+            });
+
+            document.querySelectorAll('#qr-code-list .qr-item .qr-select').forEach(cb => {
+                cb.addEventListener('change', function() {
+                    const items = document.querySelectorAll('#qr-code-list .qr-item .qr-select');
+                    const allChecked = Array.from(items).every(cb => cb.checked);
+                    const anyChecked = Array.from(items).some(cb => cb.checked);
+                    selectAll.checked = allChecked;
+                    selectAll.indeterminate = !allChecked && anyChecked;
+                });
+            });
+        }
+
         document.querySelectorAll('#apply-bulk, #apply-bulk-top').forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault();
                 const targetSelect = document.getElementById(button.dataset.target);
                 const action = targetSelect ? targetSelect.value : '';
                 if (action === 'release') {
-                    const codes = Array.from(document.querySelectorAll('#qr-code-list .qr-select:checked')).map(cb => cb.closest('li').dataset.code);
+                    const codes = Array.from(document.querySelectorAll('#qr-code-list .qr-item .qr-select:checked')).map(cb => cb.closest('li').dataset.code);
                     if (!codes.length) {
                         alert('Please select one or more QR codes to release.');
                         return;
@@ -174,7 +194,7 @@ function initKerbcycleAdmin() {
                         alert('An unexpected error occurred. Please try again.');
                     });
                 } else if (action === 'delete') {
-                    const selected = Array.from(document.querySelectorAll('#qr-code-list .qr-select:checked'));
+                    const selected = Array.from(document.querySelectorAll('#qr-code-list .qr-item .qr-select:checked'));
                     if (!selected.length) {
                         alert('Please select one or more QR codes to delete.');
                         return;
