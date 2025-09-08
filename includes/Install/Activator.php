@@ -83,6 +83,23 @@ class Activator
 
         dbDelta($sql);
 
+        // Create error logs table
+        $errors_table = $wpdb->prefix . 'kerbcycle_error_logs';
+
+        $sql = "CREATE TABLE $errors_table (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            type VARCHAR(100) NOT NULL,
+            message LONGTEXT NOT NULL,
+            page VARCHAR(255) DEFAULT '',
+            status VARCHAR(30) DEFAULT '',
+            created_at DATETIME NOT NULL,
+            PRIMARY KEY  (id),
+            KEY type_idx (type),
+            KEY created_idx (created_at)
+        ) $charset_collate;";
+
+        dbDelta($sql);
+
         // Create QR generator repository table
         $repo_table = $wpdb->prefix . 'kerbcycle_qr_repo';
         $sql = "CREATE TABLE $repo_table (
