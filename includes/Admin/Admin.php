@@ -62,6 +62,15 @@ class Admin
 
         add_submenu_page(
             'kerbcycle-qr-manager',
+            'Errors',
+            'Errors',
+            'manage_options',
+            'kerbcycle-errors',
+            [new Pages\ErrorsPage(), 'render']
+        );
+
+        add_submenu_page(
+            'kerbcycle-qr-manager',
             'QR Code Reports',
             'QR Code Reports',
             'manage_options',
