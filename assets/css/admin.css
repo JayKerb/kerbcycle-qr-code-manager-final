@@ -96,7 +96,7 @@
 #qr-selects {
     display: flex;
     gap: 20px;
-    align-items: flex-end;
+    align-items: baseline;
     margin: 15px 0;
 }
 
