@@ -100,28 +100,37 @@ class DashboardPage
                 </div>
                 <div id="qr-selects">
                     <div class="qr-select-group">
-                        <?php
-                        wp_dropdown_users(array(
-                            'name'             => 'customer_id',
-                            'id'               => 'customer-id',
-                            'class'            => 'kc-searchable',
-                            'show_option_none' => __('Select Customer', 'kerbcycle')
-                        ));
-                        ?>
+                        <div>
+                            <?php
+                            wp_dropdown_users(array(
+                                'name'             => 'customer_id',
+                                'id'               => 'customer-id',
+                                'class'            => 'kc-searchable',
+                                'show_option_none' => __('Select Customer', 'kerbcycle')
+                            ));
+                            ?>
+                            <p class="description"><?php esc_html_e('Customer Search', 'kerbcycle'); ?></p>
+                        </div>
                     </div>
                     <div class="qr-select-group">
-                        <select id="qr-code-select" class="kc-searchable">
-                            <option value=""><?php esc_html_e('Select QR Code', 'kerbcycle'); ?></option>
-                            <?php foreach ($available_codes as $code) : ?>
-                                <option value="<?= esc_attr($code->qr_code); ?>"><?= esc_html($code->qr_code); ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                        <div>
+                            <select id="qr-code-select" class="kc-searchable">
+                                <option value=""><?php esc_html_e('Select QR Code', 'kerbcycle'); ?></option>
+                                <?php foreach ($available_codes as $code) : ?>
+                                    <option value="<?= esc_attr($code->qr_code); ?>"><?= esc_html($code->qr_code); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <p class="description"><?php esc_html_e('Available QR Code Search', 'kerbcycle'); ?></p>
+                        </div>
                         <button id="assign-qr-btn" class="button button-primary"><?php esc_html_e('Assign QR Code', 'kerbcycle'); ?></button>
                     </div>
                     <div class="qr-select-group">
-                        <select id="assigned-qr-code-select" class="kc-searchable">
-                            <option value=""><?php esc_html_e('Select Assigned QR Code', 'kerbcycle'); ?></option>
-                        </select>
+                        <div>
+                            <select id="assigned-qr-code-select" class="kc-searchable">
+                                <option value=""><?php esc_html_e('Select Assigned QR Code', 'kerbcycle'); ?></option>
+                            </select>
+                            <p class="description"><?php esc_html_e('Assigned QR Code Search', 'kerbcycle'); ?></p>
+                        </div>
                         <button id="release-qr-btn" class="button"><?php esc_html_e('Release QR Code', 'kerbcycle'); ?></button>
                     </div>
                 </div>
