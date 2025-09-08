@@ -110,7 +110,7 @@
 
 .qr-select-group {
     display: flex;
-    align-items: flex-end;
+    align-items: flex-start;
     gap: 10px;
 }
 
