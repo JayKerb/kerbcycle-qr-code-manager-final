@@ -6,6 +6,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+use Kerbcycle\QrCode\Data\Repositories\ErrorLogRepository;
+
 /**
  * The admin-specific functionality of the plugin.
  *
@@ -23,6 +25,7 @@ class Admin
     public function __construct()
     {
         add_action('admin_menu', [$this, 'register_admin_menu']);
+        add_action('admin_notices', [$this, 'capture_admin_notices'], 0);
     }
 
     /**
@@ -107,6 +110,15 @@ class Admin
 
         add_submenu_page(
             'kerbcycle-qr-manager',
+            'Errors',
+            'Errors',
+            'manage_options',
+            'kerbcycle-errors',
+            [new Pages\ErrorsPage(), 'render']
+        );
+
+        add_submenu_page(
+            'kerbcycle-qr-manager',
             'Settings',
             'Settings',
             'manage_options',
@@ -140,5 +152,30 @@ class Admin
             'kerbcycle-plugin-integrations',
             [new Pages\IntegrationsPage(), 'render']
         );
+    }
+
+    /**
+     * Capture and log admin notices for plugin pages.
+     */
+    public function capture_admin_notices()
+    {
+        $page = isset($_GET['page']) ? sanitize_text_field(wp_unslash($_GET['page'])) : '';
+        if (strpos($page, 'kerbcycle') !== 0) {
+            return;
+        }
+
+        $errors = get_settings_errors();
+        if (empty($errors)) {
+            return;
+        }
+
+        foreach ($errors as $err) {
+            ErrorLogRepository::log([
+                'type'   => $err['code'] ?? '',
+                'message'=> $err['message'] ?? '',
+                'page'   => $page,
+                'status' => ($err['type'] ?? '') === 'updated' ? 'success' : 'failure',
+            ]);
+        }
     }
 }
