@@ -16,9 +16,10 @@ if (class_exists('KerbCycle_QR_Manager')) {
     new KerbCycle_QR_Manager();
 }
 
-class KerbCycle_QR_Manager {
-
-    public function __construct() {
+class KerbCycle_QR_Manager
+{
+    public function __construct()
+    {
         // Initialize hooks
         add_action('admin_menu', array($this, 'register_admin_menu'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
@@ -27,11 +28,12 @@ class KerbCycle_QR_Manager {
         add_action('rest_api_init', array($this, 'register_rest_endpoints'));
     }
 
-    public static function activate() {
+    public static function activate()
+    {
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
         $charset = $wpdb->get_charset_collate();
-        
+
         $sql = "CREATE TABLE $table (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             qr_code varchar(255) NOT NULL UNIQUE,
@@ -46,21 +48,23 @@ class KerbCycle_QR_Manager {
         dbDelta($sql);
     }
 
-    public static function deactivate() {
+    public static function deactivate()
+    {
         // Optional cleanup
     }
 
-    public function register_admin_menu() {
+    public function register_admin_menu()
+    {
         add_menu_page(
-            'QR Code Manager', 
-            'QR Codes', 
-            'manage_options', 
-            'kerbcycle-qr-manager', 
-            array($this, 'admin_page'), 
-            'dashicons-qrcode', 
+            'QR Code Manager',
+            'QR Codes',
+            'manage_options',
+            'kerbcycle-qr-manager',
+            array($this, 'admin_page'),
+            'dashicons-qrcode',
             20
         );
-        
+
         // Add submenu page for history
         add_submenu_page(
             'kerbcycle-qr-manager',
@@ -72,27 +76,29 @@ class KerbCycle_QR_Manager {
         );
     }
 
-    public function enqueue_admin_scripts($hook) {
+    public function enqueue_admin_scripts($hook)
+    {
         if (!in_array($hook, ['toplevel_page_kerbcycle-qr-manager', 'kerbcycle-qr-manager_page_kerbcycle-qr-history'])) {
             return;
         }
-        
+
         wp_enqueue_script('html5-qrcode', 'https://unpkg.com/html5-qrcode', [], null, true);
         wp_enqueue_script(
-            'kerbcycle-qr-js', 
-            KERBCYCLE_QR_URL . 'assets/js/qr-scanner.js', 
-            array('html5-qrcode'), 
-            '1.0', 
+            'kerbcycle-qr-js',
+            KERBCYCLE_QR_URL . 'assets/js/qr-scanner.js',
+            array('html5-qrcode'),
+            '1.0',
             true
         );
-        
+
         wp_localize_script('kerbcycle-qr-js', 'kerbcycle_ajax', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('kerbcycle_qr_nonce')
         ));
     }
 
-    public function admin_page() {
+    public function admin_page()
+    {
         ?>
         <div class="wrap">
             <h1>KerbCycle QR Code Manager</h1>
@@ -110,14 +116,15 @@ class KerbCycle_QR_Manager {
         <?php
     }
 
-    public function history_page() {
+    public function history_page()
+    {
         global $wpdb;
         $table_name = $wpdb->prefix . 'kerbcycle_qr_codes';
-        
+
         // Fetch all QR codes with status history
         $qr_codes = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT * FROM $table_name ORDER BY assigned_at DESC LIMIT %d", 
+                "SELECT * FROM $table_name ORDER BY assigned_at DESC LIMIT %d",
                 100
             )
         );
@@ -156,14 +163,15 @@ class KerbCycle_QR_Manager {
         <?php
     }
 
-    public function assign_qr_code() {
+    public function assign_qr_code()
+    {
         check_ajax_referer('kerbcycle_qr_nonce', 'security');
-        
+
         global $wpdb;
         $qr_code = sanitize_text_field($_POST['qr_code']);
         $user_id = intval($_POST['customer_id']);
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
-        
+
         // Update QR code assignment
         $result = $wpdb->update(
             $table,
@@ -176,7 +184,7 @@ class KerbCycle_QR_Manager {
             array('%d', '%s', '%s'),
             array('%s')
         );
-        
+
         if ($result !== false) {
             $this->send_notification_email($user_id, $qr_code);
             wp_send_json_success(array(
@@ -189,13 +197,14 @@ class KerbCycle_QR_Manager {
         }
     }
 
-    public function release_qr_code() {
+    public function release_qr_code()
+    {
         check_ajax_referer('kerbcycle_qr_nonce', 'security');
-        
+
         global $wpdb;
         $qr_code = sanitize_text_field($_POST['qr_code']);
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
-        
+
         $result = $wpdb->update(
             $table,
             array(
@@ -207,7 +216,7 @@ class KerbCycle_QR_Manager {
             array('%d', '%s', '%s'),
             array('%s')
         );
-        
+
         if ($result !== false) {
             wp_send_json_success(array('message' => 'QR code released successfully'));
         } else {
@@ -215,7 +224,8 @@ class KerbCycle_QR_Manager {
         }
     }
 
-    public function register_rest_endpoints() {
+    public function register_rest_endpoints()
+    {
         register_rest_route('qrmgmt2/v1', '/qr-code/scanned', array(
             'methods' => 'POST',
             'callback' => array($this, 'handle_qr_code_scan'),
@@ -223,20 +233,21 @@ class KerbCycle_QR_Manager {
         ));
     }
 
-    public function handle_qr_code_scan(WP_REST_Request $request) {
+    public function handle_qr_code_scan(WP_REST_Request $request)
+    {
         $qr_code = sanitize_text_field($request->get_param('qr_code'));
         $user_id = intval($request->get_param('user_id'));
-        
+
         // Log the scan event (placeholder for actual logging implementation)
         $this->log_scan_event($qr_code, $user_id);
-        
+
         // Notify admins
         $this->send_notification_email($user_id, $qr_code);
-        
+
         // Update QR code status
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
-        
+
         $wpdb->update(
             $table,
             array(
@@ -248,7 +259,7 @@ class KerbCycle_QR_Manager {
             array('%d', '%s', '%s'),
             array('%s')
         );
-        
+
         return new WP_REST_Response(array(
             'success' => true,
             'message' => 'QR code processed',
@@ -257,7 +268,8 @@ class KerbCycle_QR_Manager {
         ), 200);
     }
 
-    private function log_scan_event($qr_code, $user_id) {
+    private function log_scan_event($qr_code, $user_id)
+    {
         // Implement actual logging here
         error_log(sprintf(
             "QR Code %s scanned by user %d at %s",
@@ -267,7 +279,8 @@ class KerbCycle_QR_Manager {
         ));
     }
 
-    private function send_notification_email($user_id, $qr_code) {
+    private function send_notification_email($user_id, $qr_code)
+    {
         // Implement admin notification logic
         $admin_email = get_option('admin_email');
         $subject = 'QR Code Assignment Notification';
@@ -277,7 +290,7 @@ class KerbCycle_QR_Manager {
             $qr_code,
             current_time('mysql')
         );
-        
+
         wp_mail($admin_email, $subject, $message);
     }
 }

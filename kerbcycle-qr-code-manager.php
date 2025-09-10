@@ -17,9 +17,10 @@ if (!defined('KERBCYCLE_QR_URL')) {
 }
 
 // Main plugin class
-class KerbCycle_QR_Manager {
-
-    public function __construct() {
+class KerbCycle_QR_Manager
+{
+    public function __construct()
+    {
         // Admin hooks
         add_action('admin_menu', array($this, 'register_admin_menu'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_scripts'));
@@ -37,7 +38,8 @@ class KerbCycle_QR_Manager {
     }
 
     // Plugin activation
-    public static function activate() {
+    public static function activate()
+    {
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
         $charset = $wpdb->get_charset_collate();
@@ -57,12 +59,14 @@ class KerbCycle_QR_Manager {
     }
 
     // Plugin deactivation
-    public static function deactivate() {
+    public static function deactivate()
+    {
         // Optional cleanup
     }
 
     // Register admin menu
-    public function register_admin_menu() {
+    public function register_admin_menu()
+    {
         add_menu_page(
             'QR Code Manager',
             'QR Codes',
@@ -84,7 +88,8 @@ class KerbCycle_QR_Manager {
     }
 
     // Enqueue admin scripts
-    public function enqueue_admin_scripts($hook) {
+    public function enqueue_admin_scripts($hook)
+    {
         if (!in_array($hook, ['toplevel_page_kerbcycle-qr-manager', 'kerbcycle-qr-manager_page_kerbcycle-qr-history'])) {
             return;
         }
@@ -105,7 +110,8 @@ class KerbCycle_QR_Manager {
     }
 
     // Admin dashboard page
-    public function admin_page() {
+    public function admin_page()
+    {
         ?>
         <div class="wrap">
             <h1>KerbCycle QR Code Manager</h1>
@@ -123,7 +129,8 @@ class KerbCycle_QR_Manager {
     }
 
     // QR code history page
-    public function history_page() {
+    public function history_page()
+    {
         global $wpdb;
         $table_name = $wpdb->prefix . 'kerbcycle_qr_codes';
 
@@ -165,7 +172,8 @@ class KerbCycle_QR_Manager {
     }
 
     // Shortcode to render scanner on any page
-    public function generate_frontend_scanner() {
+    public function generate_frontend_scanner()
+    {
         ob_start();
         ?>
         <div class="kerbcycle-qr-scanner-container">
@@ -181,7 +189,8 @@ class KerbCycle_QR_Manager {
     }
 
     // Enqueue frontend scripts only when shortcode is used
-    public function enqueue_frontend_scripts() {
+    public function enqueue_frontend_scripts()
+    {
         global $post;
 
         if (is_a($post, 'WP_Post') && has_shortcode($post->post_content, 'kerbcycle_scanner')) {
@@ -202,7 +211,8 @@ class KerbCycle_QR_Manager {
     }
 
     // AJAX: Assign QR code
-    public function assign_qr_code() {
+    public function assign_qr_code()
+    {
         check_ajax_referer('kerbcycle_qr_nonce', 'security');
 
         global $wpdb;
@@ -235,7 +245,8 @@ class KerbCycle_QR_Manager {
     }
 
     // AJAX: Release QR code
-    public function release_qr_code() {
+    public function release_qr_code()
+    {
         check_ajax_referer('kerbcycle_qr_nonce', 'security');
 
         global $wpdb;
@@ -262,7 +273,8 @@ class KerbCycle_QR_Manager {
     }
 
     // REST API: Handle QR code scan
-    public function register_rest_endpoints() {
+    public function register_rest_endpoints()
+    {
         register_rest_route('qrmgmt2/v1', '/qr-code/scanned', array(
             'methods' => 'POST',
             'callback' => array($this, 'handle_qr_code_scan'),
@@ -270,7 +282,8 @@ class KerbCycle_QR_Manager {
         ));
     }
 
-    public function handle_qr_code_scan(WP_REST_Request $request) {
+    public function handle_qr_code_scan(WP_REST_Request $request)
+    {
         $qr_code = sanitize_text_field($request->get_param('qr_code'));
         $user_id = intval($request->get_param('user_id'));
 
@@ -298,7 +311,8 @@ class KerbCycle_QR_Manager {
     }
 
     // Helper: Send email notification
-    private function send_notification_email($user_id, $qr_code) {
+    private function send_notification_email($user_id, $qr_code)
+    {
         $admin_email = get_option('admin_email');
         $subject = 'QR Code Assignment Notification';
         $message = sprintf(
