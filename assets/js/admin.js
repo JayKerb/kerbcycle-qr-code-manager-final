@@ -176,10 +176,9 @@ function initKerbcycleAdmin() {
               }
             }
           } else {
-            const err =
-              data.data?.message
-                ? data.data.message
-                : "Failed to assign QR code.";
+            const err = data.data?.message
+              ? data.data.message
+              : "Failed to assign QR code.";
             showToast(err, true);
           }
         })
@@ -283,10 +282,9 @@ function initKerbcycleAdmin() {
         .then((response) => response.json())
         .then((data) => {
           if (data.success) {
-            const msg =
-              data.data?.message
-                ? data.data.message
-                : "QR code added successfully.";
+            const msg = data.data?.message
+              ? data.data.message
+              : "QR code added successfully.";
             showToast(msg);
             if (
               qrSelect &&
@@ -363,16 +361,14 @@ function initKerbcycleAdmin() {
                       .then((data) => {
                         if (data.success) {
                           liElem.dataset.code = newCode;
-                          const msg =
-                            data.data?.message
-                              ? data.data.message
-                              : "QR code updated";
+                          const msg = data.data?.message
+                            ? data.data.message
+                            : "QR code updated";
                           showToast(msg);
                         } else {
-                          const err =
-                            data.data?.message
-                              ? data.data.message
-                              : "Failed to update QR code";
+                          const err = data.data?.message
+                            ? data.data.message
+                            : "Failed to update QR code";
                           showToast(err, true);
                           span.textContent = oldCode;
                         }
@@ -382,10 +378,9 @@ function initKerbcycleAdmin() {
               }
             }
           } else {
-            const err =
-              data.data?.message
-                ? data.data.message
-                : "Failed to add QR code.";
+            const err = data.data?.message
+              ? data.data.message
+              : "Failed to add QR code.";
             showToast(err, true);
           }
         })
@@ -413,17 +408,15 @@ function initKerbcycleAdmin() {
         .then((res) => res.json())
         .then((data) => {
           if (data.success) {
-            const msg =
-              data.data?.message
-                ? data.data.message
-                : "QR codes imported.";
+            const msg = data.data?.message
+              ? data.data.message
+              : "QR codes imported.";
             showToast(msg);
             location.reload();
           } else {
-            const err =
-              data.data?.message
-                ? data.data.message
-                : "Failed to import QR codes.";
+            const err = data.data?.message
+              ? data.data.message
+              : "Failed to import QR codes.";
             showToast(err, true);
           }
         })
@@ -600,16 +593,14 @@ function initKerbcycleAdmin() {
             .then((data) => {
               if (data.success) {
                 li.dataset.code = newCode;
-                const msg =
-                  data.data?.message
-                    ? data.data.message
-                    : "QR code updated";
+                const msg = data.data?.message
+                  ? data.data.message
+                  : "QR code updated";
                 showToast(msg);
               } else {
-                const err =
-                  data.data?.message
-                    ? data.data.message
-                    : "Failed to update QR code";
+                const err = data.data?.message
+                  ? data.data.message
+                  : "Failed to update QR code";
                 showToast(err, true);
                 span.textContent = oldCode;
               }

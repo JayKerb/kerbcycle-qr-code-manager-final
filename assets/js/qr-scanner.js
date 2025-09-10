@@ -62,10 +62,9 @@ function initKerbcycleScanner() {
             alert("QR code assigned successfully.");
             location.reload();
           } else {
-            const err =
-              data.data?.message
-                ? data.data.message
-                : "Failed to assign QR code.";
+            const err = data.data?.message
+              ? data.data.message
+              : "Failed to assign QR code.";
             alert(err);
           }
         })
