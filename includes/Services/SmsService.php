@@ -12,8 +12,7 @@ use Kerbcycle\QrCode\Helpers\Nonces;
 
 class SmsService
 {
-
-    const OPT = 'kerbcycle_sms_options';
+    public const OPT = 'kerbcycle_sms_options';
 
     public function __construct()
     {

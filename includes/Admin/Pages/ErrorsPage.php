@@ -43,7 +43,7 @@ class ErrorsPage
         $total = $table_ok ? $this->repository->count_logs($search, $status, $page_f) : 0;
         $pages = max(1, (int) ceil($total / $per_page));
         $base_url = remove_query_arg(['paged'], admin_url('admin.php?page=' . $this->page_slug));
-?>
+        ?>
         <div class="wrap">
             <h1><?php esc_html_e('Errors', 'kerbcycle'); ?></h1>
             <form method="get" action="<?php echo esc_url(admin_url('admin.php')); ?>">
@@ -97,14 +97,14 @@ class ErrorsPage
             <?php if ($pages > 1) : ?>
                 <div class="tablenav"><div class="tablenav-pages">
                 <?php
-                    echo paginate_links([
-                        'base'      => add_query_arg('paged', '%#%', $base_url),
-                        'format'    => '',
-                        'current'   => $paged,
-                        'total'     => $pages,
-                        'prev_text' => __('&laquo;'),
-                        'next_text' => __('&raquo;'),
-                    ]);
+                            echo paginate_links([
+                                'base'      => add_query_arg('paged', '%#%', $base_url),
+                                'format'    => '',
+                                'current'   => $paged,
+                                'total'     => $pages,
+                                'prev_text' => __('&laquo;'),
+                                'next_text' => __('&raquo;'),
+                            ]);
                 ?>
                 </div></div>
             <?php endif; ?>
