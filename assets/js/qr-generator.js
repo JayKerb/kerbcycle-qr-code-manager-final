@@ -28,7 +28,7 @@
       .done(function (resp) {
         $btn.prop("disabled", false).text("Generate & Save");
         if (!resp || !resp.success) {
-          alert((resp && resp.data && resp.data.message) || "Failed.");
+          alert((resp?.data && resp.data.message) || "Failed.");
           return;
         }
         const saved = resp.data.saved || [];

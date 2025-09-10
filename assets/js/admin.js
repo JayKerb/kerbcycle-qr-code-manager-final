@@ -177,7 +177,7 @@ function initKerbcycleAdmin() {
             }
           } else {
             const err =
-              data.data && data.data.message
+              data.data?.message
                 ? data.data.message
                 : "Failed to assign QR code.";
             showToast(err, true);
@@ -284,7 +284,7 @@ function initKerbcycleAdmin() {
         .then((data) => {
           if (data.success) {
             const msg =
-              data.data && data.data.message
+              data.data?.message
                 ? data.data.message
                 : "QR code added successfully.";
             showToast(msg);
@@ -301,7 +301,7 @@ function initKerbcycleAdmin() {
               }
             }
             newCodeInput.value = "";
-            if (data.data && data.data.row) {
+            if (data.data?.row) {
               const row = data.data.row;
               const list = document.getElementById("qr-code-list");
               if (list) {
@@ -318,7 +318,7 @@ function initKerbcycleAdmin() {
 <span class="qr-status">Available</span>
 <span class="qr-assigned">—</span>`;
                 const header = list.querySelector(".qr-header");
-                if (header && header.nextSibling) {
+                if (header?.nextSibling) {
                   list.insertBefore(li, header.nextSibling);
                 } else {
                   list.appendChild(li);
@@ -364,13 +364,13 @@ function initKerbcycleAdmin() {
                         if (data.success) {
                           liElem.dataset.code = newCode;
                           const msg =
-                            data.data && data.data.message
+                            data.data?.message
                               ? data.data.message
                               : "QR code updated";
                           showToast(msg);
                         } else {
                           const err =
-                            data.data && data.data.message
+                            data.data?.message
                               ? data.data.message
                               : "Failed to update QR code";
                           showToast(err, true);
@@ -383,7 +383,7 @@ function initKerbcycleAdmin() {
             }
           } else {
             const err =
-              data.data && data.data.message
+              data.data?.message
                 ? data.data.message
                 : "Failed to add QR code.";
             showToast(err, true);
@@ -414,14 +414,14 @@ function initKerbcycleAdmin() {
         .then((data) => {
           if (data.success) {
             const msg =
-              data.data && data.data.message
+              data.data?.message
                 ? data.data.message
                 : "QR codes imported.";
             showToast(msg);
             location.reload();
           } else {
             const err =
-              data.data && data.data.message
+              data.data?.message
                 ? data.data.message
                 : "Failed to import QR codes.";
             showToast(err, true);
@@ -601,13 +601,13 @@ function initKerbcycleAdmin() {
               if (data.success) {
                 li.dataset.code = newCode;
                 const msg =
-                  data.data && data.data.message
+                  data.data?.message
                     ? data.data.message
                     : "QR code updated";
                 showToast(msg);
               } else {
                 const err =
-                  data.data && data.data.message
+                  data.data?.message
                     ? data.data.message
                     : "Failed to update QR code";
                 showToast(err, true);
