@@ -89,10 +89,10 @@ class DashboardPage
                 <h2><?php esc_html_e('Manual QR Code Tasks', 'kerbcycle'); ?></h2>
                 <?php
                 $email_enabled    = (bool) get_option('kerbcycle_qr_enable_email', 1);
-                $sms_enabled      = (bool) get_option('kerbcycle_qr_enable_sms', 0);
-                $reminder_enabled = (bool) get_option('kerbcycle_qr_enable_reminders', 0);
-                $scanner_enabled  = (bool) get_option('kerbcycle_qr_enable_scanner', 1);
-                ?>
+        $sms_enabled      = (bool) get_option('kerbcycle_qr_enable_sms', 0);
+        $reminder_enabled = (bool) get_option('kerbcycle_qr_enable_reminders', 0);
+        $scanner_enabled  = (bool) get_option('kerbcycle_qr_enable_scanner', 1);
+        ?>
                 <div id="qr-task-options">
                     <label><input type="checkbox" id="send-email" <?php checked($email_enabled); ?> <?php disabled(!$email_enabled); ?>> <?php esc_html_e('Send notification email', 'kerbcycle'); ?></label>
                     <label><input type="checkbox" id="send-sms" <?php checked($sms_enabled); ?> <?php disabled(!$sms_enabled); ?>> <?php esc_html_e('Send SMS', 'kerbcycle'); ?></label>
@@ -102,13 +102,13 @@ class DashboardPage
                     <div class="qr-select-group">
                         <div>
                             <?php
-                            wp_dropdown_users(array(
-                                'name'             => 'customer_id',
-                                'id'               => 'customer-id',
-                                'class'            => 'kc-searchable',
-                                'show_option_none' => __('Select Customer', 'kerbcycle')
-                            ));
-                            ?>
+                    wp_dropdown_users(array(
+                        'name'             => 'customer_id',
+                        'id'               => 'customer-id',
+                        'class'            => 'kc-searchable',
+                        'show_option_none' => __('Select Customer', 'kerbcycle')
+                    ));
+        ?>
                             <p class="description"><?php esc_html_e('Customer Search', 'kerbcycle'); ?></p>
                         </div>
                     </div>

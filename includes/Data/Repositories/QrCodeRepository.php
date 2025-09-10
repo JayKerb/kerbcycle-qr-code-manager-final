@@ -51,7 +51,7 @@ class QrCodeRepository
             $this->table,
             [
                 'user_id'     => $user_id,
-                'display_name'=> $display_name,
+                'display_name' => $display_name,
                 'status'      => 'assigned',
                 'assigned_at' => current_time('mysql')
             ],
@@ -78,7 +78,7 @@ class QrCodeRepository
             [
                 'qr_code'     => $qr_code,
                 'user_id'     => $user_id,
-                'display_name'=> $display_name,
+                'display_name' => $display_name,
                 'status'      => 'assigned',
                 'assigned_at' => current_time('mysql')
             ],

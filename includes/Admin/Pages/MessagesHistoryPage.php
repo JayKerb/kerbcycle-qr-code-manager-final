@@ -25,7 +25,7 @@ class MessagesHistoryPage
     public function __construct()
     {
         $this->repository = new MessageLogRepository();
-        add_action('admin_post_kerbcycle_clear_logs',  [$this, 'handle_clear_logs']);
+        add_action('admin_post_kerbcycle_clear_logs', [$this, 'handle_clear_logs']);
         add_action('admin_post_kerbcycle_delete_logs', [$this, 'handle_bulk_delete']);
         add_action('admin_post_kerbcycle_repair_logs', [$this, 'handle_repair_logs']);
     }
@@ -33,7 +33,9 @@ class MessagesHistoryPage
     /** Actions */
     public function handle_clear_logs()
     {
-        if (!current_user_can('manage_options')) wp_die(__('Access denied.', 'kerbcycle'));
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Access denied.', 'kerbcycle'));
+        }
         Nonces::verify('kerbcycle_clear_logs');
 
         global $wpdb;
@@ -46,7 +48,9 @@ class MessagesHistoryPage
 
     public function handle_bulk_delete()
     {
-        if (!current_user_can('manage_options')) wp_die(__('Access denied.', 'kerbcycle'));
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Access denied.', 'kerbcycle'));
+        }
         Nonces::verify('kerbcycle_delete_logs');
 
         $ids = isset($_POST['log_ids']) && is_array($_POST['log_ids']) ? array_map('absint', $_POST['log_ids']) : [];
@@ -58,7 +62,9 @@ class MessagesHistoryPage
 
     public function handle_repair_logs()
     {
-        if (!current_user_can('manage_options')) wp_die(__('Access denied.', 'kerbcycle'));
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Access denied.', 'kerbcycle'));
+        }
         Nonces::verify('kerbcycle_repair_logs');
 
         // The activation logic will handle the repair
@@ -120,7 +126,9 @@ class MessagesHistoryPage
      */
     public function render()
     {
-        if (!current_user_can('manage_options')) return;
+        if (!current_user_can('manage_options')) {
+            return;
+        }
 
         $active_tab = isset($_GET['tab']) && $_GET['tab'] === 'email' ? 'email' : 'sms';
         $search     = isset($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : '';
@@ -141,7 +149,7 @@ class MessagesHistoryPage
         $total   = $table_ok ? $this->repository->count_logs($active_tab, $search, $from, $to) : 0;
         $pages   = max(1, (int)ceil($total / $per_page));
         $base_url = remove_query_arg(['paged', 'deleted', 'cleared', 'repaired', 'repair_failed'], admin_url('admin.php?page=' . $this->page_slug));
-?>
+        ?>
         <div class="wrap">
             <style>
                 .kc-msg-history .widefat {
@@ -293,15 +301,15 @@ class MessagesHistoryPage
                     <div class="tablenav top" style="margin-bottom:12px;">
                         <div class="tablenav-pages">
                             <?php
-                            echo paginate_links([
-                                'base'      => esc_url(add_query_arg(['paged' => '%#%', 'tab' => $active_tab, 's' => $search, 'from' => $from, 'to' => $to], $base_url)),
-                                'format'    => '',
-                                'current'   => $paged,
-                                'total'     => $pages,
-                                'prev_text' => __('« Prev', 'kerbcycle'),
-                                'next_text' => __('Next »', 'kerbcycle'),
-                            ]);
-                            ?>
+                                    echo paginate_links([
+                                        'base'      => esc_url(add_query_arg(['paged' => '%#%', 'tab' => $active_tab, 's' => $search, 'from' => $from, 'to' => $to], $base_url)),
+                                        'format'    => '',
+                                        'current'   => $paged,
+                                        'total'     => $pages,
+                                        'prev_text' => __('« Prev', 'kerbcycle'),
+                                        'next_text' => __('Next »', 'kerbcycle'),
+                                    ]);
+                    ?>
                         </div>
                     </div>
                 <?php endif; ?>
@@ -372,15 +380,15 @@ class MessagesHistoryPage
                     <div class="tablenav bottom" style="margin-top:12px;">
                         <div class="tablenav-pages">
                             <?php
-                            echo paginate_links([
-                                'base'      => esc_url(add_query_arg(['paged' => '%#%', 'tab' => $active_tab, 's' => $search, 'from' => $from, 'to' => $to], $base_url)),
-                                'format'    => '',
-                                'current'   => $paged,
-                                'total'     => $pages,
-                                'prev_text' => __('« Prev', 'kerbcycle'),
-                                'next_text' => __('Next »', 'kerbcycle'),
-                            ]);
-                            ?>
+                    echo paginate_links([
+                        'base'      => esc_url(add_query_arg(['paged' => '%#%', 'tab' => $active_tab, 's' => $search, 'from' => $from, 'to' => $to], $base_url)),
+                        'format'    => '',
+                        'current'   => $paged,
+                        'total'     => $pages,
+                        'prev_text' => __('« Prev', 'kerbcycle'),
+                        'next_text' => __('Next »', 'kerbcycle'),
+                    ]);
+                    ?>
                         </div>
                     </div>
                 <?php endif; ?>

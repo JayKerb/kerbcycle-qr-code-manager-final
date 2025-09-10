@@ -7,8 +7,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class IntegrationsService {
-    public static function get_summaries() {
+class IntegrationsService
+{
+    public static function get_summaries()
+    {
         $user_id   = get_current_user_id();
         $summaries = array();
 
