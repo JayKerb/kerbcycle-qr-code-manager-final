@@ -4,13 +4,16 @@ namespace Kerbcycle\QrCode\Services;
 
 use Kerbcycle\QrCode\Helpers\Nonces;
 
-if (!defined('ABSPATH')) exit;
+if (!defined('ABSPATH')) {
+    exit;
+}
 
-class MessagesService {
+class MessagesService
+{
+    public const OPT = 'kerbcycle_messages'; // stores an array of message templates
 
-    const OPT = 'kerbcycle_messages'; // stores an array of message templates
-
-    public static function defaults() {
+    public static function defaults()
+    {
         // Each type has: ['sms' => '', 'email' => '']
         return [
             'assigned'   => [
@@ -32,16 +35,21 @@ class MessagesService {
         ];
     }
 
-    public static function get_all() {
+    public static function get_all()
+    {
         $saved = get_option(self::OPT, []);
         $defaults = self::defaults();
-        if (!is_array($saved)) $saved = [];
+        if (!is_array($saved)) {
+            $saved = [];
+        }
         foreach ($defaults as $k => $pair) {
             if (!isset($saved[$k]) || !is_array($saved[$k])) {
                 $saved[$k] = $pair;
             } else {
                 foreach ($pair as $kk => $vv) {
-                    if (!isset($saved[$k][$kk])) $saved[$k][$kk] = $vv;
+                    if (!isset($saved[$k][$kk])) {
+                        $saved[$k][$kk] = $vv;
+                    }
                 }
             }
         }
@@ -50,7 +58,8 @@ class MessagesService {
 
     /* ---------------- Admin page ---------------- */
 
-    public static function admin_menu() {
+    public static function admin_menu()
+    {
         add_submenu_page(
             'kerbcycle-qr-manager',
             'KerbCycle Messages',
@@ -61,8 +70,11 @@ class MessagesService {
         );
     }
 
-    public static function render_page() {
-        if (!current_user_can('manage_options')) return;
+    public static function render_page()
+    {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
 
         $messages = self::get_all();
         $tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'edit';
@@ -74,13 +86,15 @@ class MessagesService {
             Nonces::verify('kc_msgs_save_nonce', 'kc_msgs_nonce');
             $sel = sanitize_text_field($_POST['kc_msg_type'] ?? 'assigned');
 
-            $sms   = isset($_POST['kc_sms'])   ? wp_unslash($_POST['kc_sms'])   : '';
+            $sms   = isset($_POST['kc_sms']) ? wp_unslash($_POST['kc_sms']) : '';
             $email = isset($_POST['kc_email']) ? wp_unslash($_POST['kc_email']) : '';
 
-            $sms   = is_string($sms)   ? trim($sms)   : '';
+            $sms   = is_string($sms) ? trim($sms) : '';
             $email = is_string($email) ? trim($email) : '';
 
-            if (!isset($messages[$sel])) $messages[$sel] = ['sms'=>'','email'=>''];
+            if (!isset($messages[$sel])) {
+                $messages[$sel] = ['sms' => '','email' => ''];
+            }
             $messages[$sel]['sms']   = wp_strip_all_tags($sms, true);
             $messages[$sel]['email'] = wp_strip_all_tags($email, true);
 
@@ -130,7 +144,7 @@ class MessagesService {
                 if (is_wp_error($r)) {
                     $d = $r->get_error_data();
                     $http = (is_array($d) && isset($d['http'])) ? ' HTTP='.$d['http'] : '';
-                    $body = (is_array($d) && isset($d['body'])) ? ' Body='.substr(is_string($d['body'])?$d['body']:json_encode($d['body']),0,300) : '';
+                    $body = (is_array($d) && isset($d['body'])) ? ' Body='.substr(is_string($d['body']) ? $d['body'] : json_encode($d['body']), 0, 300) : '';
                     echo '<div class="notice notice-error"><p><strong>Test SMS failed:</strong> '.esc_html($r->get_error_message().$http.$body).'</p></div>';
                 } else {
                     echo '<div class="notice notice-success is-dismissible"><p><strong>Test SMS sent.</strong> '.esc_html(json_encode($r)).'</p></div>';
@@ -151,7 +165,9 @@ class MessagesService {
 
         // Active type for editor (default assigned)
         $active = isset($_POST['kc_msg_type']) ? sanitize_text_field($_POST['kc_msg_type']) : 'assigned';
-        if (!isset($messages[$active])) $active = 'assigned';
+        if (!isset($messages[$active])) {
+            $active = 'assigned';
+        }
 
         $types = self::types_map();
         ?>
@@ -308,7 +324,8 @@ class MessagesService {
         <?php
     }
 
-    private static function types_map() {
+    private static function types_map()
+    {
         return [
             'assigned'   => 'QR code is assigned',
             'released'   => 'QR code is released',
@@ -317,7 +334,8 @@ class MessagesService {
         ];
     }
 
-    private static function descriptions_map() {
+    private static function descriptions_map()
+    {
         return [
             'assigned'   => 'Sent when a QR code is assigned to a customer.',
             'released'   => 'Sent when a QR code is released from a customer.',
@@ -326,7 +344,8 @@ class MessagesService {
         ];
     }
 
-    private static function label_for($key) {
+    private static function label_for($key)
+    {
         $map = self::types_map();
         return $map[$key] ?? $key;
     }
@@ -338,19 +357,21 @@ class MessagesService {
      * @param string $type One of: assigned|released|funds_to|funds_from
      * @return array ['sms' => '...', 'email' => '...']
      */
-    public static function get_template($type) {
+    public static function get_template($type)
+    {
         $all = self::get_all();
-        return isset($all[$type]) ? $all[$type] : ['sms'=>'','email'=>''];
+        return isset($all[$type]) ? $all[$type] : ['sms' => '','email' => ''];
     }
 
     /**
      * Render a template with placeholders replaced.
      * Usage: KerbCycle_Messages::render('assigned', ['user'=>'Sam','code'=>'QR123'])
      */
-    public static function render($type, array $vars) {
+    public static function render($type, array $vars)
+    {
         $tpl = self::get_template($type);
         $replace = [];
-        foreach ($vars as $k=>$v) {
+        foreach ($vars as $k => $v) {
             $replace['{'.trim($k).'}'] = (string)$v;
         }
         return [
@@ -361,4 +382,3 @@ class MessagesService {
 }
 
 // No boot needed, admin menu is registered in Admin class.
-

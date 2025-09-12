@@ -126,10 +126,14 @@ class MessageLogRepository
             'id', 'type', 'recipient', 'subject', 'body', 'status', 'provider', 'response', 'created_at'
         ];
         $cols = $wpdb->get_col("SHOW COLUMNS FROM {$this->table}", 0);
-        if (empty($cols) || !is_array($cols)) return false;
+        if (empty($cols) || !is_array($cols)) {
+            return false;
+        }
 
         foreach ($expected as $c) {
-            if (!in_array($c, $cols, true)) return false;
+            if (!in_array($c, $cols, true)) {
+                return false;
+            }
         }
         return true;
     }
