@@ -75,6 +75,8 @@ class DashboardPage
         ]) : '';
 
         $available_codes = $wpdb->get_results("SELECT qr_code FROM $table WHERE status = 'available' ORDER BY id DESC");
+        $available_count = count($available_codes);
+        $assigned_count  = (int) $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE status = 'assigned'");
 
         $select_sql = "SELECT id, qr_code, user_id, display_name, status, assigned_at FROM $table WHERE $where ORDER BY id DESC LIMIT %d OFFSET %d";
         $query_args = array_merge($params, [$per_page, $offset]);
@@ -180,6 +182,7 @@ class DashboardPage
                     <option value="delete"><?php esc_html_e('Delete', 'kerbcycle'); ?></option>
                 </select>
                 <button id="apply-bulk-top" class="button" data-target="bulk-action-top"><?php esc_html_e('Apply', 'kerbcycle'); ?></button>
+                <p class="qr-code-counts">QR Codes: <span class="qr-available-count"><?= esc_html($available_count); ?></span> Available <span class="qr-assigned-count"><?= esc_html($assigned_count); ?></span> Assigned</p>
                 <?php if ($pagination_links) : ?>
                     <div class="tablenav">
                         <div class="tablenav-pages">
@@ -216,6 +219,7 @@ class DashboardPage
                         </div>
                     </div>
                 <?php endif; ?>
+                <p class="qr-code-counts">QR Codes: <span class="qr-available-count"><?= esc_html($available_count); ?></span> Available <span class="qr-assigned-count"><?= esc_html($assigned_count); ?></span> Assigned</p>
                 <select id="bulk-action">
                     <option value=""><?php esc_html_e('Bulk actions', 'kerbcycle'); ?></option>
                     <option value="release"><?php esc_html_e('Release', 'kerbcycle'); ?></option>
