@@ -53,6 +53,25 @@ function initKerbcycleAdmin() {
     const importBtn = document.getElementById("import-qr-btn");
     const importFile = document.getElementById("import-qr-file");
 
+    function refreshDropdowns(oldCode, newCode) {
+        [qrSelect, assignedSelect].forEach(select => {
+            if (!select) return;
+            const opt = select.querySelector(`option[value="${CSS.escape(oldCode)}"]`);
+            if (!opt) return;
+            opt.value = newCode;
+            opt.textContent = newCode;
+            if (select.value === oldCode) {
+                select.value = newCode;
+                if (select._searchable) {
+                    select._searchable.input.value = newCode;
+                }
+            }
+            if (select._searchable) {
+                select._searchable.updateOptions();
+            }
+        });
+    }
+
     document.querySelectorAll('select.kc-searchable').forEach(makeSearchableSelect);
 
     if (userField && assignedSelect) {
@@ -316,6 +335,7 @@ function initKerbcycleAdmin() {
                                             liElem.dataset.code = newCode;
                                             const msg = data.data && data.data.message ? data.data.message : 'QR code updated';
                                             showToast(msg);
+                                            refreshDropdowns(oldCode, newCode);
                                         } else {
                                             const err = data.data && data.data.message ? data.data.message : 'Failed to update QR code';
                                             showToast(err, true);
@@ -496,6 +516,7 @@ function initKerbcycleAdmin() {
                         li.dataset.code = newCode;
                         const msg = data.data && data.data.message ? data.data.message : 'QR code updated';
                         showToast(msg);
+                        refreshDropdowns(oldCode, newCode);
                     } else {
                         const err = data.data && data.data.message ? data.data.message : 'Failed to update QR code';
                         showToast(err, true);
