@@ -1,0 +1,41 @@
+/* Styles for the public pages */
+.kc-searchable-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+  margin-bottom: 1em;
+}
+
+.kc-search-input {
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.kc-search-dropdown {
+  display: none; /* Hidden by default */
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  z-index: 2000; /* Increased z-index */
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Show the dropdown when it has the .is-visible class */
+.kc-search-dropdown.is-visible {
+  display: block;
+}
+
+.kc-search-option {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.kc-search-option:hover {
+  background-color: #f0f0f0;
+}
