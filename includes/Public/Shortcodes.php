@@ -83,6 +83,19 @@ class Shortcodes
                 background: #f0f0f1;
                 font-weight: 600;
             }
+            .kerbcycle-qr-pagination {
+                text-align: center;
+                margin-top: 1em;
+            }
+            .kerbcycle-qr-pagination button {
+                margin: 0 2px;
+                padding: 4px 8px;
+                cursor: pointer;
+            }
+            .kerbcycle-qr-pagination button.active {
+                background: #2271b1;
+                color: #fff;
+            }
         </style>
         <table class="kerbcycle-qr-table">
             <thead>
@@ -114,6 +127,7 @@ class Shortcodes
                 <?php endif; ?>
             </tbody>
         </table>
+        <div class="kerbcycle-qr-pagination" data-rows="10"></div>
         <?php
         return ob_get_clean();
     }

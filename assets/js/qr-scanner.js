@@ -93,10 +93,47 @@ function initKerbcycleScanner() {
             });
         });
     }
+
+    const table = document.querySelector('.kerbcycle-qr-table');
+    const pagination = document.querySelector('.kerbcycle-qr-pagination');
+    if (table && pagination) {
+        const rowsPerPage = parseInt(pagination.dataset.rows || '10', 10);
+        paginateQrTable(table, pagination, rowsPerPage);
+    }
 }
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initKerbcycleScanner);
 } else {
     initKerbcycleScanner();
+}
+
+function paginateQrTable(table, pagination, rowsPerPage) {
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    const totalPages = Math.ceil(rows.length / rowsPerPage);
+    let currentPage = 1;
+
+    const renderPage = (page) => {
+        currentPage = page;
+        const start = (page - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        rows.forEach((row, index) => {
+            row.style.display = index >= start && index < end ? '' : 'none';
+        });
+        pagination.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+        const active = pagination.querySelector(`button[data-page="${page}"]`);
+        if (active) active.classList.add('active');
+    };
+
+    for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        btn.dataset.page = i;
+        btn.addEventListener('click', () => renderPage(i));
+        pagination.appendChild(btn);
+    }
+
+    if (totalPages > 0) {
+        renderPage(1);
+    }
 }
