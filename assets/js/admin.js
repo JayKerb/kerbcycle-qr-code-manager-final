@@ -53,6 +53,19 @@ function initKerbcycleAdmin() {
     const importBtn = document.getElementById("import-qr-btn");
     const importFile = document.getElementById("import-qr-file");
 
+    function adjustCounts(availChange, assignChange) {
+        document.querySelectorAll('.qr-code-counts').forEach(el => {
+            const avail = el.querySelector('.qr-available-count');
+            const assign = el.querySelector('.qr-assigned-count');
+            if (avail) {
+                avail.textContent = parseInt(avail.textContent, 10) + availChange;
+            }
+            if (assign) {
+                assign.textContent = parseInt(assign.textContent, 10) + assignChange;
+            }
+        });
+    }
+
     function refreshDropdowns(oldCode, newCode) {
         [qrSelect, assignedSelect].forEach(select => {
             if (!select) return;
@@ -173,6 +186,7 @@ function initKerbcycleAdmin() {
                             assignedSelect._searchable.updateOptions();
                         }
                     }
+                    adjustCounts(-1, 1);
                 } else {
                     const err = data.data && data.data.message ? data.data.message : "Failed to assign QR code.";
                     showToast(err, true);
@@ -239,6 +253,7 @@ function initKerbcycleAdmin() {
                             assignedSelect._searchable.input.value = '';
                         }
                     }
+                    adjustCounts(1, -1);
                 } else {
                     showToast("Failed to release QR code.", true);
                 }
@@ -280,6 +295,7 @@ function initKerbcycleAdmin() {
                         }
                     }
                     newCodeInput.value = '';
+                    adjustCounts(1, 0);
                     if (data.data && data.data.row) {
                         const row = data.data.row;
                         const list = document.getElementById('qr-code-list');
