@@ -72,7 +72,7 @@ function makeSearchableSelect(select) {
 
     // Also update the underlying select in case of an exact match
     const exactMatch = Array.from(select.options).find(
-      (opt) => opt.textContent.toLowerCase() === input.value.toLowerCase()
+      (opt) => opt.textContent.toLowerCase() === input.value.toLowerCase(),
     );
     select.value = exactMatch ? exactMatch.value : "";
     select.dispatchEvent(new Event("change"));
