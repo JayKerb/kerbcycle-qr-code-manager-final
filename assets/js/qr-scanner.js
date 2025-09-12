@@ -1,31 +1,74 @@
 function makeSearchableSelect(select) {
   if (!select) return;
-  const listId = select.id + "-list";
-  const dataList = document.createElement("datalist");
-  dataList.id = listId;
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "kc-searchable-wrapper";
+  select.parentNode.insertBefore(wrapper, select);
+
   const input = document.createElement("input");
-  input.setAttribute("list", listId);
   input.className = "kc-search-input";
-  input.style.minWidth = "200px";
+  input.placeholder = "Type to search...";
+  wrapper.appendChild(input);
+
+  const dropdown = document.createElement("div");
+  dropdown.className = "kc-search-dropdown";
+  wrapper.appendChild(dropdown);
+
   const updateOptions = () => {
-    dataList.innerHTML = "";
+    dropdown.innerHTML = "";
     Array.from(select.options).forEach((opt) => {
-      const option = document.createElement("option");
-      option.value = opt.textContent;
-      option.dataset.value = opt.value;
-      dataList.appendChild(option);
+      if (!opt.value) return;
+      const optionDiv = document.createElement("div");
+      optionDiv.className = "kc-search-option";
+      optionDiv.textContent = opt.textContent;
+      optionDiv.dataset.value = opt.value;
+      optionDiv.addEventListener("click", () => {
+        input.value = opt.textContent;
+        select.value = opt.value;
+        select.dispatchEvent(new Event("change"));
+        dropdown.style.display = "none";
+      });
+      dropdown.appendChild(optionDiv);
     });
   };
+
   updateOptions();
+
   input.addEventListener("input", () => {
-    const found = dataList.querySelector(
-      `option[value="${CSS.escape(input.value)}"]`,
+    const filter = input.value.toLowerCase();
+    const options = dropdown.querySelectorAll(".kc-search-option");
+    let hasVisibleOptions = false;
+    options.forEach((opt) => {
+      const isVisible = opt.textContent.toLowerCase().includes(filter);
+      opt.style.display = isVisible ? "" : "none";
+      if (isVisible) hasVisibleOptions = true;
+    });
+    dropdown.style.display = hasVisibleOptions ? "block" : "none";
+
+    const exactMatch = Array.from(select.options).find(
+      (opt) => opt.textContent === input.value,
     );
-    select.value = found ? found.dataset.value : "";
+    if (exactMatch) {
+      select.value = exactMatch.value;
+    } else {
+      select.value = "";
+    }
     select.dispatchEvent(new Event("change"));
   });
-  select.parentNode.insertBefore(input, select);
-  select.parentNode.insertBefore(dataList, select);
+
+  input.addEventListener("focus", () => {
+    if (input.value.trim().length > 0) {
+      dropdown.style.display = "block";
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!wrapper.contains(e.target)) {
+      dropdown.style.display = "none";
+    }
+  });
+
+  wrapper.appendChild(select);
   select.style.display = "none";
   select._searchable = { input, updateOptions };
 }
