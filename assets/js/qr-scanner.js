@@ -1,32 +1,42 @@
 function makeSearchableSelect(select) {
   if (!select) return;
 
+  // Create a wrapper for our custom elements
   const wrapper = document.createElement("div");
   wrapper.className = "kc-searchable-wrapper";
   select.parentNode.insertBefore(wrapper, select);
 
+  // Create the fake input field
   const input = document.createElement("input");
   input.className = "kc-search-input";
   input.placeholder = "Type to search...";
   wrapper.appendChild(input);
 
+  // Create the dropdown panel
   const dropdown = document.createElement("div");
   dropdown.className = "kc-search-dropdown";
   wrapper.appendChild(dropdown);
 
+  // Hide the original select element, but leave it in place
+  select.style.display = "none";
+
+  // Function to build options in the dropdown
   const updateOptions = () => {
     dropdown.innerHTML = "";
     Array.from(select.options).forEach((opt) => {
-      if (!opt.value) return;
+      if (!opt.value) return; // Skip placeholder/empty options
+
       const optionDiv = document.createElement("div");
       optionDiv.className = "kc-search-option";
       optionDiv.textContent = opt.textContent;
       optionDiv.dataset.value = opt.value;
-      optionDiv.addEventListener("click", () => {
+
+      // Use 'mousedown' to register click before input loses focus (blur)
+      optionDiv.addEventListener("mousedown", () => {
         input.value = opt.textContent;
         select.value = opt.value;
         select.dispatchEvent(new Event("change"));
-        dropdown.style.display = "none";
+        dropdown.classList.remove("is-visible"); // Hide dropdown
       });
       dropdown.appendChild(optionDiv);
     });
@@ -34,42 +44,41 @@ function makeSearchableSelect(select) {
 
   updateOptions();
 
+  // Show dropdown when the input is focused
+  input.addEventListener("focus", () => {
+    dropdown.classList.add("is-visible");
+  });
+
+  // Hide dropdown when clicking anywhere else on the page
+  document.addEventListener("mousedown", (e) => {
+    if (!wrapper.contains(e.target)) {
+      dropdown.classList.remove("is-visible");
+    }
+  });
+
+  // Filter results as the user types
   input.addEventListener("input", () => {
+    // Make sure dropdown is visible while typing
+    dropdown.classList.add("is-visible");
+
     const filter = input.value.toLowerCase();
     const options = dropdown.querySelectorAll(".kc-search-option");
-    let hasVisibleOptions = false;
-    options.forEach((opt) => {
-      const isVisible = opt.textContent.toLowerCase().includes(filter);
-      opt.style.display = isVisible ? "" : "none";
-      if (isVisible) hasVisibleOptions = true;
-    });
-    dropdown.style.display = hasVisibleOptions ? "block" : "none";
 
+    // Loop through options and hide/show based on filter
+    options.forEach((opt) => {
+      const text = opt.textContent.toLowerCase();
+      opt.style.display = text.includes(filter) ? "" : "none";
+    });
+
+    // Also update the underlying select in case of an exact match
     const exactMatch = Array.from(select.options).find(
-      (opt) => opt.textContent === input.value,
+      (opt) => opt.textContent.toLowerCase() === input.value.toLowerCase()
     );
-    if (exactMatch) {
-      select.value = exactMatch.value;
-    } else {
-      select.value = "";
-    }
+    select.value = exactMatch ? exactMatch.value : "";
     select.dispatchEvent(new Event("change"));
   });
 
-  input.addEventListener("focus", () => {
-    if (input.value.trim().length > 0) {
-      dropdown.style.display = "block";
-    }
-  });
-
-  document.addEventListener("click", (e) => {
-    if (!wrapper.contains(e.target)) {
-      dropdown.style.display = "none";
-    }
-  });
-
-  wrapper.appendChild(select);
-  select.style.display = "none";
+  // Storing a reference for potential future use, though not used in this impl.
   select._searchable = { input, updateOptions };
 }
 
