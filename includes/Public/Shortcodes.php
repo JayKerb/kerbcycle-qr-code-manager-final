@@ -45,7 +45,7 @@ class Shortcodes
                 'class'            => 'kc-searchable',
                 'show_option_none' => __('Select Customer', 'kerbcycle')
             ]);
-        ?>
+            ?>
             <button id="assign-qr-btn" class="button button-primary">Assign QR Code</button>
             <div id="reader" style="width: 100%; max-width: 400px; margin-top: 20px;"></div>
             <div id="scan-result" class="updated" style="display: none;"></div>

@@ -1,5 +1,4 @@
 <?php
-
 /*
 Plugin Name: KerbCycle QR Code Manager
 Description: Manage QR code scanning and assignment with drag-and-drop, inline editing, bulk actions, and notification toggles
@@ -21,6 +20,11 @@ if (!defined('KERBCYCLE_QR_URL')) {
 // Define plugin PATH constant
 if (!defined('KERBCYCLE_QR_PATH')) {
     define('KERBCYCLE_QR_PATH', plugin_dir_path(__FILE__));
+}
+
+// Define plugin version constant
+if (!defined('KERBCYCLE_QR_VERSION')) {
+    define('KERBCYCLE_QR_VERSION', '2.0');
 }
 
 // Require the autoloader

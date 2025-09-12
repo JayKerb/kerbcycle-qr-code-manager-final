@@ -172,7 +172,7 @@ class Admin
         foreach ($errors as $err) {
             ErrorLogRepository::log([
                 'type'   => $err['code'] ?? '',
-                'message' => $err['message'] ?? '',
+                'message'=> $err['message'] ?? '',
                 'page'   => $page,
                 'status' => ($err['type'] ?? '') === 'updated' ? 'success' : 'failure',
             ]);

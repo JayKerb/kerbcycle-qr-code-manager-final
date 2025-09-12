@@ -35,7 +35,7 @@ class RestService
         register_rest_route('kerbcycle/v1', '/qr-code/scanned', [
             'methods'  => 'POST',
             'callback' => [new Controllers\QrController(), 'handle_qr_code_scan'],
-            'permission_callback' => function () {
+            'permission_callback' => function() {
                 return current_user_can('edit_posts');
             },
         ]);
@@ -43,7 +43,7 @@ class RestService
         register_rest_route('kerbcycle/v1', '/qr-status/(?P<qr_code>[a-zA-Z0-9-]+)', [
             'methods'  => 'GET',
             'callback' => [new Controllers\QrController(), 'get_qr_status'],
-            'permission_callback' => function () {
+            'permission_callback' => function() {
                 return is_user_logged_in();
             },
         ]);
