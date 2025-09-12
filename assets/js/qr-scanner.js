@@ -1,4 +1,35 @@
+function makeSearchableSelect(select) {
+    if (!select) return;
+    const listId = select.id + '-list';
+    const dataList = document.createElement('datalist');
+    dataList.id = listId;
+    const input = document.createElement('input');
+    input.setAttribute('list', listId);
+    input.className = 'kc-search-input';
+    input.style.minWidth = '200px';
+    const updateOptions = () => {
+        dataList.innerHTML = '';
+        Array.from(select.options).forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.textContent;
+            option.dataset.value = opt.value;
+            dataList.appendChild(option);
+        });
+    };
+    updateOptions();
+    input.addEventListener('input', () => {
+        const found = dataList.querySelector(`option[value="${CSS.escape(input.value)}"]`);
+        select.value = found ? found.dataset.value : '';
+        select.dispatchEvent(new Event('change'));
+    });
+    select.parentNode.insertBefore(input, select);
+    select.parentNode.insertBefore(dataList, select);
+    select.style.display = 'none';
+    select._searchable = { input, updateOptions };
+}
+
 function initKerbcycleScanner() {
+    document.querySelectorAll('select.kc-searchable').forEach(makeSearchableSelect);
     const scannerAllowed = kerbcycle_ajax.scanner_enabled;
     const scanResult = document.getElementById("scan-result");
     const assignBtn = document.getElementById("assign-qr-btn");
@@ -30,7 +61,7 @@ function initKerbcycleScanner() {
             const userId = customerIdField ? customerIdField.value : '';
 
             if (!userId || !scannedCode) {
-                alert("Please enter a customer ID and scan a QR code.");
+                alert("Please select a customer and scan a QR code.");
                 return;
             }
 
