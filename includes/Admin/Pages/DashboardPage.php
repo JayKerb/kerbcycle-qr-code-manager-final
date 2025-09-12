@@ -138,6 +138,7 @@ class DashboardPage
                     <input type="text" id="new-qr-code" placeholder="<?php esc_attr_e('Enter QR Code', 'kerbcycle'); ?>" />
                     <button id="add-qr-btn" class="button"><?php esc_html_e('Add QR Code', 'kerbcycle'); ?></button>
                 </div>
+                <p class="description"><?php esc_html_e('Manually add a QR Code.', 'kerbcycle'); ?></p>
                 <div class="qr-select-group">
                     <input type="file" id="import-qr-file" accept=".csv" />
                 </div>
