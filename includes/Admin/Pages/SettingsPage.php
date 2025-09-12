@@ -38,9 +38,9 @@ class SettingsPage
             <form method="post" action="options.php">
                 <?php
                 settings_fields('kerbcycle_qr_settings');
-                do_settings_sections('kerbcycle_qr_settings');
-                submit_button();
-                ?>
+        do_settings_sections('kerbcycle_qr_settings');
+        submit_button();
+        ?>
             </form>
         </div>
         <?php

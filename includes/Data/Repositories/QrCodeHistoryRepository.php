@@ -32,7 +32,7 @@ class QrCodeHistoryRepository
                 'qr_code'   => $qr_code,
                 'user_id'   => $user_id,
                 'status'    => $status,
-                'changed_at'=> current_time('mysql'),
+                'changed_at' => current_time('mysql'),
             ],
             ['%s', '%d', '%s', '%s']
         );
