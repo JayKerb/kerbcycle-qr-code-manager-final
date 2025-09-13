@@ -158,6 +158,24 @@ function makeSearchableSelect(select) {
   select._kcEnhanced = { input, btn, list, openList, closeList, refresh: buildList };
 }
 
+function shortenQrDates() {
+  const mm = window.matchMedia("(max-width: 480px)");
+  if (!mm.matches) return;
+
+  document
+    .querySelectorAll(
+      ".kerbcycle-qr-scanner-container.kc-compact tbody tr",
+    )
+    .forEach((tr) => {
+      const td =
+        tr.querySelector("td.kc-date") || tr.querySelector("td:nth-child(6)");
+      if (!td) return;
+      const full = td.getAttribute("data-full") || td.textContent.trim();
+      const m = full.match(/^(\\d{4})-(\\d{2})-(\\d{2})\s+(\\d{2}):(\\d{2})/);
+      if (m) td.textContent = `${m[2]}/${m[3]} ${m[4]}:${m[5]}`;
+    });
+}
+
 function initKerbcycleScanner() {
   document
     .querySelectorAll("select.kc-searchable")
@@ -251,6 +269,20 @@ if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", initKerbcycleScanner);
 } else {
   initKerbcycleScanner();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", shortenQrDates);
+} else {
+  shortenQrDates();
+}
+
+const kcContainer = document.querySelector(
+  ".kerbcycle-qr-scanner-container.kc-compact",
+);
+if (kcContainer) {
+  const mo = new MutationObserver(shortenQrDates);
+  mo.observe(kcContainer, { childList: true, subtree: true });
 }
 
 function paginateQrTable(table, pagination, rowsPerPage) {
