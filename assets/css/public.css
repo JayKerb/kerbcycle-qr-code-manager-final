@@ -95,3 +95,68 @@
     font-size: 16px;
   }
 }
+
+/* --- Compact 6-column mode (<= 420px) --- */
+@media (max-width: 420px) {
+  .kerbcycle-qr-scanner-container.kc-compact table {
+    table-layout: fixed;
+    width: 100%;
+    font-size: 12px;
+  }
+  .kerbcycle-qr-scanner-container.kc-compact th,
+  .kerbcycle-qr-scanner-container.kc-compact td {
+    padding: 4px 6px;
+    vertical-align: middle;
+  }
+  .kerbcycle-qr-scanner-container.kc-compact th,
+  .kerbcycle-qr-scanner-container.kc-compact td {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  /* Suggested column widths — adjust to your real data */
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(1),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(1) { width: 10%; } /* ID */
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(2),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(2) { width: 22%; } /* QR Code */
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(3),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(3) { width: 18%; } /* User */
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(4),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(4) { width: 15%; } /* Status */
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(5),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(5) { width: 20%; } /* Assigned */
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(6),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(6) { width: 15%; } /* Actions */
+
+  /* Abbreviate long headers using data-short attr */
+  .kerbcycle-qr-scanner-container.kc-compact th[data-short]::after {
+    content: attr(data-short);
+  }
+  .kerbcycle-qr-scanner-container.kc-compact th[data-short] > * {
+    display: none;
+  }
+
+  /* Make action buttons tappable but tiny */
+  .kerbcycle-qr-scanner-container.kc-compact .button,
+  .kerbcycle-qr-scanner-container.kc-compact button,
+  .kerbcycle-qr-scanner-container.kc-compact .components-button {
+    padding: 2px 6px;
+    line-height: 1.2;
+    font-size: 12px;
+  }
+
+  /* If you display a QR image thumbnail, cap it */
+  .kerbcycle-qr-scanner-container.kc-compact .qr-thumb {
+    max-width: 28px;
+    max-height: 28px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  /* Allow designated cells to wrap if needed */
+  .kerbcycle-qr-scanner-container.kc-compact td.wrap {
+    white-space: normal;
+    word-break: break-word;
+  }
+}
