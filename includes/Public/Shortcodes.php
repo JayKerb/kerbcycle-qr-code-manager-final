@@ -103,17 +103,17 @@ class Shortcodes
                 color: #fff;
             }
         </style>
-        <div class="kerbcycle-qr-scanner-container">
+        <div class="kerbcycle-qr-scanner-container kc-compact">
         <div class="kerbcycle-table-wrap">
         <table class="kerbcycle-qr-table widefat fixed striped">
             <thead>
                 <tr>
-                    <th><?php esc_html_e('ID', 'kerbcycle'); ?></th>
-                    <th><?php esc_html_e('QR Code', 'kerbcycle'); ?></th>
-                    <th><?php esc_html_e('User ID', 'kerbcycle'); ?></th>
-                    <th><?php esc_html_e('Customer', 'kerbcycle'); ?></th>
-                    <th><?php esc_html_e('Status', 'kerbcycle'); ?></th>
-                    <th><?php esc_html_e('Assigned At', 'kerbcycle'); ?></th>
+                    <th data-short="ID"><?php esc_html_e('ID', 'kerbcycle'); ?></th>
+                    <th data-short="QR"><?php esc_html_e('QR Code', 'kerbcycle'); ?></th>
+                    <th data-short="User"><?php esc_html_e('User ID', 'kerbcycle'); ?></th>
+                    <th data-short="Cust"><?php esc_html_e('Customer', 'kerbcycle'); ?></th>
+                    <th data-short="Sts"><?php esc_html_e('Status', 'kerbcycle'); ?></th>
+                    <th data-short="Asg"><?php esc_html_e('Assigned At', 'kerbcycle'); ?></th>
                 </tr>
             </thead>
             <tbody>
@@ -121,11 +121,11 @@ class Shortcodes
                     <?php foreach ($codes as $code) : ?>
                         <tr>
                             <td><?= esc_html($code->id); ?></td>
-                            <td><?= esc_html($code->qr_code); ?></td>
+                            <td title="<?= esc_attr($code->qr_code); ?>"><?= esc_html($code->qr_code); ?></td>
                             <td><?= $code->user_id ? esc_html($code->user_id) : '—'; ?></td>
-                            <td><?= $code->display_name ? esc_html($code->display_name) : '—'; ?></td>
+                            <td title="<?= $code->display_name ? esc_attr($code->display_name) : ''; ?>"><?= $code->display_name ? esc_html($code->display_name) : '—'; ?></td>
                             <td><?= esc_html(ucfirst($code->status)); ?></td>
-                            <td><?= $code->assigned_at ? esc_html($code->assigned_at) : '—'; ?></td>
+                            <td title="<?= $code->assigned_at ? esc_attr($code->assigned_at) : ''; ?>"><?= $code->assigned_at ? esc_html($code->assigned_at) : '—'; ?></td>
                         </tr>
                     <?php endforeach; ?>
                 <?php else : ?>
