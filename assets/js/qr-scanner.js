@@ -1,33 +1,161 @@
 function makeSearchableSelect(select) {
-  if (!select) return;
-  const listId = select.id + "-list";
-  const dataList = document.createElement("datalist");
-  dataList.id = listId;
-  const input = document.createElement("input");
-  input.setAttribute("list", listId);
-  input.className = "kc-search-input";
-  input.style.minWidth = "200px";
-  const updateOptions = () => {
-    dataList.innerHTML = "";
-    Array.from(select.options).forEach((opt) => {
-      const option = document.createElement("option");
-      option.value = opt.textContent;
-      option.dataset.value = opt.value;
-      dataList.appendChild(option);
-    });
-  };
-  updateOptions();
-  input.addEventListener("input", () => {
-    const found = dataList.querySelector(
-      `option[value="${CSS.escape(input.value)}"]`,
-    );
-    select.value = found ? found.dataset.value : "";
-    select.dispatchEvent(new Event("change"));
-  });
-  select.parentNode.insertBefore(input, select);
-  select.parentNode.insertBefore(dataList, select);
+  if (!select || select._kcEnhanced) return;
+
+  // Wrapper
+  const wrapper = document.createElement("div");
+  wrapper.className = "kc-combobox";
+
+  // Hidden original select stays for value + form submit
   select.style.display = "none";
-  select._searchable = { input, updateOptions };
+  select.parentNode.insertBefore(wrapper, select);
+  wrapper.appendChild(select);
+
+  // Visible input + caret button
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "kc-combobox-input";
+  input.placeholder = select.getAttribute("data-placeholder") || "Select…";
+  input.autocomplete = "off";
+  input.inputMode = "search";
+  input.setAttribute("aria-autocomplete", "list");
+  input.setAttribute("aria-expanded", "false");
+  input.setAttribute("role", "combobox");
+
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "kc-combobox-toggle";
+  btn.setAttribute("aria-label", "Open options");
+  btn.innerHTML = "▾";
+
+  const list = document.createElement("ul");
+  list.className = "kc-combobox-list";
+  list.setAttribute("role", "listbox");
+  list.hidden = true;
+
+  wrapper.appendChild(input);
+  wrapper.appendChild(btn);
+  wrapper.appendChild(list);
+
+  // Build items from <select> options
+  function buildList() {
+    list.innerHTML = "";
+    const q = input.value.trim().toLowerCase();
+    const opts = Array.from(
+      select.querySelectorAll("option"),
+    ).filter((opt) => opt.value && opt.value !== "-1");
+    let any = false;
+    opts.forEach((opt) => {
+      const label = (opt.textContent || "").trim();
+      if (!q || label.toLowerCase().includes(q)) {
+        const li = document.createElement("li");
+        li.className = "kc-combobox-item";
+        li.textContent = label;
+        li.setAttribute("role", "option");
+        li.dataset.value = opt.value;
+        li.tabIndex = -1;
+        list.appendChild(li);
+        any = true;
+      }
+    });
+    if (!any) {
+      const li = document.createElement("li");
+      li.className = "kc-combobox-empty";
+      li.textContent = "No matches";
+      li.setAttribute("aria-disabled", "true");
+      list.appendChild(li);
+    }
+  }
+
+  function openList() {
+    buildList();
+    list.hidden = false;
+    input.setAttribute("aria-expanded", "true");
+  }
+
+  function closeList() {
+    list.hidden = true;
+    input.setAttribute("aria-expanded", "false");
+  }
+
+  function commitValue(label) {
+    // Find the option by label text
+    const found = Array.from(select.options).find(
+      (o) => (o.textContent || "").trim() === label.trim(),
+    );
+    if (found) {
+      select.value = found.value;
+      input.value = found.textContent;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    } else {
+      // Clear if not an exact match
+      select.value = "";
+    }
+    closeList();
+  }
+
+  // Initialize input with currently selected option
+  if (select.value && select.value !== "-1") {
+    const cur = select.options[select.selectedIndex];
+    if (cur) input.value = cur.textContent || "";
+  }
+
+  // Events — keyboard, click, touch
+  input.addEventListener("focus", openList);
+  input.addEventListener("input", openList);
+
+  // Enter/Arrow nav
+  input.addEventListener("keydown", (e) => {
+    if (list.hidden) return;
+    const items = Array.from(list.querySelectorAll(".kc-combobox-item"));
+    const active = document.activeElement;
+    const idx = items.indexOf(active);
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const next = items[Math.max(0, Math.min(items.length - 1, idx + 1))] || items[0];
+      next?.focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prev = items[Math.max(0, Math.min(items.length - 1, idx - 1))] || items[items.length - 1];
+      prev?.focus();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (active && active.classList.contains("kc-combobox-item")) {
+        commitValue(active.textContent || "");
+      } else if (items.length) {
+        commitValue(items[0].textContent || "");
+      }
+    } else if (e.key === "Escape") {
+      closeList();
+    }
+  });
+
+  // Click/tap on caret button toggles list
+  ["click", "pointerdown", "touchstart"].forEach((ev) => {
+    btn.addEventListener(ev, (e) => {
+      e.preventDefault();
+      if (list.hidden) openList();
+      else closeList();
+    });
+  });
+
+  // Click/tap on options
+  ["click", "pointerdown", "touchstart"].forEach((ev) => {
+    list.addEventListener(ev, (e) => {
+      const li = e.target.closest(".kc-combobox-item");
+      if (!li) return;
+      e.preventDefault();
+      commitValue(li.textContent || "");
+    });
+  });
+
+  // Close when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!wrapper.contains(e.target)) closeList();
+  });
+
+  // Mark enhanced to avoid double init
+  select._kcEnhanced = { input, btn, list, openList, closeList, refresh: buildList };
 }
 
 function initKerbcycleScanner() {

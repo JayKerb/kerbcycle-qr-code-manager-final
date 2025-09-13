@@ -1,1 +1,97 @@
 /* Styles for the public pages */
+
+/* Combobox styles */
+.kc-combobox {
+  position: relative;
+  display: inline-flex;
+  gap: 6px;
+  align-items: stretch;
+  max-width: 100%;
+}
+
+.kc-combobox-input {
+  flex: 1 1 auto;
+  min-width: 200px;
+  padding: 8px 10px;
+  font-size: 16px; /* prevents iOS zoom */
+  border: 1px solid #c3c4c7;
+  border-radius: 4px;
+}
+
+.kc-combobox-toggle {
+  flex: 0 0 auto;
+  padding: 0 12px;
+  font-size: 18px;
+  line-height: 1;
+  border: 1px solid #c3c4c7;
+  border-radius: 4px;
+  background: #f6f7f7;
+  cursor: pointer;
+}
+
+.kc-combobox-list {
+  position: absolute;
+  z-index: 10000;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  max-height: 260px;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #c3c4c7;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+}
+
+.kc-combobox-item {
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.kc-combobox-item:hover,
+.kc-combobox-item:focus {
+  background: #f0f0f0;
+  outline: none;
+}
+
+.kc-combobox-empty {
+  color: #777;
+  padding: 8px 10px;
+}
+
+/* Table responsiveness for the scanner page */
+.kerbcycle-qr-scanner-container .kerbcycle-table-wrap {
+  width: 100%;
+  overflow-x: auto;         /* important for small screens */
+  -webkit-overflow-scrolling: touch;
+}
+
+.kerbcycle-qr-scanner-container table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 640px;         /* let it scroll instead of squishing */
+  white-space: nowrap;      /* keep labels readable */
+}
+
+.kerbcycle-qr-scanner-container th,
+.kerbcycle-qr-scanner-container td {
+  padding: 8px 10px;
+}
+
+/* Larger tap targets for pagination on mobile */
+.kerbcycle-qr-pagination button {
+  min-width: 40px;
+  min-height: 40px;
+  margin: 2px;
+  border-radius: 6px;
+}
+
+/* Mobile text size to avoid iOS zoom on inputs */
+@media (max-width: 480px) {
+  .kc-combobox-input {
+    font-size: 16px;
+  }
+}
