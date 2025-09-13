@@ -51,6 +51,13 @@ class FrontAssets
             $deps[] = 'html5-qrcode';
         }
 
+        wp_enqueue_style(
+            'kerbcycle-qr-frontend-css',
+            KERBCYCLE_QR_URL . 'assets/css/public.css',
+            [],
+            KERBCYCLE_QR_VERSION
+        );
+
         wp_enqueue_script(
             'kerbcycle-qr-frontend-js',
             KERBCYCLE_QR_URL . 'assets/js/qr-scanner.js',
