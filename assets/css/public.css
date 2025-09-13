@@ -95,3 +95,54 @@
     font-size: 16px;
   }
 }
+
+/* --- Compact 6-col table for phones --- */
+@media (max-width: 480px) {
+  .kerbcycle-qr-scanner-container.kc-compact table {
+    table-layout: fixed;
+    width: 100%;
+    font-size: 12px;                 /* tight but readable */
+    box-sizing: border-box;           /* ensure widths stay true */
+  }
+  .kerbcycle-qr-scanner-container.kc-compact th,
+  .kerbcycle-qr-scanner-container.kc-compact td {
+    padding: 4px 6px;
+    vertical-align: middle;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+  }
+
+  /* Column widths tuned to your data (sum = 100%) */
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(1),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(1) { width: 10%; } /* ID (203) */
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(2),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(2) { width: 18%; } /* QR Code (62754963) */
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(3),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(3) { width: 10%; } /* User ID (5) */
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(4),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(4) { width: 26%; } /* Customer */
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(5),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(5) { width: 14%; } /* Status */
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(6),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(6) { width: 22%; } /* Assigned At */
+
+  /* Short header labels on phones */
+  .kerbcycle-qr-scanner-container.kc-compact th[data-short]::after { content: attr(data-short); }
+  .kerbcycle-qr-scanner-container.kc-compact th[data-short] > * { display: none; }
+
+  /* Make digits align nicely */
+  .kerbcycle-qr-scanner-container.kc-compact td,
+  .kerbcycle-qr-scanner-container.kc-compact th {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Action buttons inside table (if any) */
+  .kerbcycle-qr-scanner-container.kc-compact .button,
+  .kerbcycle-qr-scanner-container.kc-compact button {
+    padding: 2px 6px;
+    line-height: 1.2;
+    font-size: 12px;
+  }
+}
