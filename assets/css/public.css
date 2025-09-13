@@ -95,3 +95,80 @@
     font-size: 16px;
   }
 }
+
+/* Compact header: hide full text and show data-short only */
+@media (max-width: 480px) {
+  .kerbcycle-qr-scanner-container.kc-compact th[data-short] {
+    font-size: 0;
+    line-height: 1.2;
+  }
+  .kerbcycle-qr-scanner-container.kc-compact th[data-short]::after {
+    content: attr(data-short);
+    font-size: 12px;
+  }
+}
+
+/* --- Compact 6-col table for phones --- */
+@media (max-width: 480px) {
+  .kerbcycle-qr-scanner-container.kc-compact .kerbcycle-table-wrap {
+    overflow-x: visible;
+  }
+
+  .kerbcycle-qr-scanner-container.kc-compact table {
+    table-layout: fixed;
+    width: 100%;
+    min-width: 0 !important;     /* kill old 640px min-width */
+    border-collapse: collapse;
+    border-spacing: 0;
+    font-size: 12px;
+    box-sizing: border-box;
+  }
+
+  .kerbcycle-qr-scanner-container.kc-compact th,
+  .kerbcycle-qr-scanner-container.kc-compact td {
+    padding: 2px 4px !important;
+    vertical-align: middle;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+  }
+
+  /* Widths tuned to sample data (sum = 100%) */
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(1),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(1) { width: 8% !important; }
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(2),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(2) { width: 17% !important; }
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(3),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(3) { width: 8% !important; }
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(4),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(4) { width: 31% !important; }
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(5),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(5) { width: 12% !important; }
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(6),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(6) { width: 24% !important; }
+
+  /* Make digits align nicely */
+  .kerbcycle-qr-scanner-container.kc-compact td,
+  .kerbcycle-qr-scanner-container.kc-compact th {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Buttons inside cells shouldn't force columns wide */
+  .kerbcycle-qr-scanner-container.kc-compact .button,
+  .kerbcycle-qr-scanner-container.kc-compact button,
+  .kerbcycle-qr-scanner-container.kc-compact .components-button {
+    padding: 1px 4px !important;
+    line-height: 1.1 !important;
+    font-size: 12px !important;
+    min-width: 0 !important;
+  }
+
+  /* If a QR thumbnail exists, cap it */
+  .kerbcycle-qr-scanner-container.kc-compact .qr-thumb {
+    max-width: 24px;
+    max-height: 24px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+}
