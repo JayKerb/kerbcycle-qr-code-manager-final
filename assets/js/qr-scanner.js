@@ -40,9 +40,9 @@ function makeSearchableSelect(select) {
   function buildList() {
     list.innerHTML = "";
     const q = input.value.trim().toLowerCase();
-    const opts = Array.from(select.querySelectorAll("option")).filter(
-      (opt) => opt.value && opt.value !== "-1",
-    );
+    const opts = Array.from(
+      select.querySelectorAll("option"),
+    ).filter((opt) => opt.value && opt.value !== "-1");
     let any = false;
     opts.forEach((opt) => {
       const label = (opt.textContent || "").trim();
@@ -112,14 +112,11 @@ function makeSearchableSelect(select) {
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      const next =
-        items[Math.max(0, Math.min(items.length - 1, idx + 1))] || items[0];
+      const next = items[Math.max(0, Math.min(items.length - 1, idx + 1))] || items[0];
       next?.focus();
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      const prev =
-        items[Math.max(0, Math.min(items.length - 1, idx - 1))] ||
-        items[items.length - 1];
+      const prev = items[Math.max(0, Math.min(items.length - 1, idx - 1))] || items[items.length - 1];
       prev?.focus();
     } else if (e.key === "Enter") {
       e.preventDefault();
@@ -158,30 +155,42 @@ function makeSearchableSelect(select) {
   });
 
   // Mark enhanced to avoid double init
-  select._kcEnhanced = {
-    input,
-    btn,
-    list,
-    openList,
-    closeList,
-    refresh: buildList,
-  };
+  select._kcEnhanced = { input, btn, list, openList, closeList, refresh: buildList };
 }
 
-function shortenQrDates() {
-  const mm = window.matchMedia("(max-width: 480px)");
-  if (!mm.matches) return;
-
+function updateQrDatesView(isMobile) {
   document
     .querySelectorAll(".kerbcycle-qr-scanner-container tbody tr")
     .forEach((tr) => {
       const td =
         tr.querySelector("td.kc-date") || tr.querySelector("td:nth-child(6)");
       if (!td) return;
-      const full = td.getAttribute("data-full") || td.textContent.trim();
-      const m = full.match(/^(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2})/);
-      if (m) td.textContent = `${m[2]}/${m[3]} ${m[4]}:${m[5]}`;
+
+      const fullDate = td.getAttribute("data-full");
+      if (!fullDate) return; // Can't do anything without the full date.
+
+      if (isMobile) {
+        const m = fullDate.match(/^(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2})/);
+        if (m) {
+          td.textContent = `${m[2]}/${m[3]} ${m[4]}:${m[5]}`;
+        }
+      } else {
+        // Revert to the full date
+        td.textContent = fullDate;
+      }
     });
+}
+
+function initResponsiveDates() {
+  const mm = window.matchMedia("(max-width: 480px)");
+
+  // Set initial state
+  updateQrDatesView(mm.matches);
+
+  // Listen for changes
+  mm.addEventListener("change", (e) => {
+    updateQrDatesView(e.matches);
+  });
 }
 
 function initKerbcycleScanner() {
@@ -273,21 +282,22 @@ function initKerbcycleScanner() {
   }
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initKerbcycleScanner);
-} else {
+function setupKerbcycleFrontend() {
   initKerbcycleScanner();
+  initResponsiveDates();
 }
 
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", shortenQrDates);
+  document.addEventListener("DOMContentLoaded", setupKerbcycleFrontend);
 } else {
-  shortenQrDates();
+  setupKerbcycleFrontend();
 }
 
+// Ensure new rows added via pagination also get the correct date format
 const kcContainer = document.querySelector(".kerbcycle-qr-scanner-container");
 if (kcContainer) {
-  const mo = new MutationObserver(shortenQrDates);
+  const mm = window.matchMedia("(max-width: 480px)");
+  const mo = new MutationObserver(() => updateQrDatesView(mm.matches));
   mo.observe(kcContainer, { childList: true, subtree: true });
 }
 
