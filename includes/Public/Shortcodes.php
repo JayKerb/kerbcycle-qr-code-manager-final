@@ -35,7 +35,7 @@ class Shortcodes
     {
         ob_start();
         ?>
-        <div class="kerbcycle-qr-scanner-container">
+        <div class="kerbcycle-qr-scanner-container kc-compact">
             <h2>Assign QR Code</h2>
             <p><?php esc_html_e('Select the customer and scan the QR code to assign it.', 'kerbcycle'); ?></p>
         <?php
@@ -103,40 +103,47 @@ class Shortcodes
                 color: #fff;
             }
         </style>
-        <div class="kerbcycle-qr-scanner-container">
-        <div class="kerbcycle-table-wrap">
-        <table class="kerbcycle-qr-table widefat fixed striped">
-            <thead>
-                <tr>
-                    <th><?php esc_html_e('ID', 'kerbcycle'); ?></th>
-                    <th><?php esc_html_e('QR Code', 'kerbcycle'); ?></th>
-                    <th><?php esc_html_e('User ID', 'kerbcycle'); ?></th>
-                    <th><?php esc_html_e('Customer', 'kerbcycle'); ?></th>
-                    <th><?php esc_html_e('Status', 'kerbcycle'); ?></th>
-                    <th><?php esc_html_e('Assigned At', 'kerbcycle'); ?></th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (!empty($codes)) : ?>
-                    <?php foreach ($codes as $code) : ?>
+        <!-- Wrap the table so compact CSS/JS can target it -->
+        <div class="kerbcycle-qr-scanner-container kc-compact">
+            <div class="kerbcycle-table-wrap">
+                <table class="kerbcycle-qr-table widefat fixed striped">
+                    <thead>
                         <tr>
-                            <td><?= esc_html($code->id); ?></td>
-                            <td><?= esc_html($code->qr_code); ?></td>
-                            <td><?= $code->user_id ? esc_html($code->user_id) : '—'; ?></td>
-                            <td><?= $code->display_name ? esc_html($code->display_name) : '—'; ?></td>
-                            <td><?= esc_html(ucfirst($code->status)); ?></td>
-                            <td><?= $code->assigned_at ? esc_html($code->assigned_at) : '—'; ?></td>
+                            <th data-short="ID"><?php esc_html_e('ID', 'kerbcycle'); ?></th>
+                            <th data-short="QR"><?php esc_html_e('QR Code', 'kerbcycle'); ?></th>
+                            <th data-short="UID"><?php esc_html_e('User ID', 'kerbcycle'); ?></th>
+                            <th data-short="Cust"><?php esc_html_e('Customer', 'kerbcycle'); ?></th>
+                            <th data-short="Sts"><?php esc_html_e('Status', 'kerbcycle'); ?></th>
+                            <th data-short="At"><?php esc_html_e('Assigned At', 'kerbcycle'); ?></th>
                         </tr>
-                    <?php endforeach; ?>
-                <?php else : ?>
-                    <tr>
-                        <td colspan="6" class="description"><?php esc_html_e('No QR codes found', 'kerbcycle'); ?></td>
-                    </tr>
-                <?php endif; ?>
-            </tbody>
-        </table>
-        </div>
-        <div class="kerbcycle-qr-pagination" data-rows="10"></div>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($codes)) : ?>
+                            <?php foreach ($codes as $code) : ?>
+                                <tr>
+                                    <td><?= esc_html($code->id); ?></td>
+                                    <td title="<?= esc_attr($code->qr_code); ?>"><?= esc_html($code->qr_code); ?></td>
+                                    <td><?= $code->user_id ? esc_html($code->user_id) : '—'; ?></td>
+                                    <td title="<?= $code->display_name ? esc_attr($code->display_name) : '—'; ?>"><?= $code->display_name ? esc_html($code->display_name) : '—'; ?></td>
+                                    <td><?= esc_html(ucfirst($code->status)); ?></td>
+                                    <td
+                                        class="kc-date"
+                                        title="<?= $code->assigned_at ? esc_attr($code->assigned_at) : '—'; ?>"
+                                        data-full="<?= $code->assigned_at ? esc_attr($code->assigned_at) : ''; ?>"
+                                    >
+                                        <?= $code->assigned_at ? esc_html($code->assigned_at) : '—'; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else : ?>
+                            <tr>
+                                <td colspan="6" class="description"><?php esc_html_e('No QR codes found', 'kerbcycle'); ?></td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+            <div class="kerbcycle-qr-pagination" data-rows="10"></div>
         </div>
         <?php
         return ob_get_clean();
