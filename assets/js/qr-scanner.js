@@ -169,8 +169,8 @@ function shortenQrDates() {
         tr.querySelector("td.kc-date") || tr.querySelector("td:nth-child(6)");
       if (!td) return;
       const full = td.getAttribute("data-full") || td.textContent.trim();
-      const m = full.match(/^(\d{4})-(\d{2})-(\d{2})/);
-      if (m) td.textContent = `${m[2]}/${m[3]}`;
+      const m = full.match(/^(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2})/);
+      if (m) td.textContent = `${m[2]}/${m[3]} ${m[4]}:${m[5]}`;
     });
 }
 
