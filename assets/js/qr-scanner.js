@@ -168,6 +168,186 @@ function makeSearchableSelect(select) {
   };
 }
 
+function escapeHtml(value) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  return String(value).replace(/[&<>"']/g, (char) => {
+    switch (char) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      case "'":
+        return "&#039;";
+      default:
+        return char;
+    }
+  });
+}
+
+function cssEscape(value) {
+  const stringValue = value === null || value === undefined ? "" : String(value);
+  if (window.CSS && typeof window.CSS.escape === "function") {
+    return window.CSS.escape(stringValue);
+  }
+  return stringValue.replace(/(["'\\])/g, "\\$1");
+}
+
+function formatStatus(status) {
+  if (!status) return "";
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function buildQrTableRow(row, record) {
+  if (!row || !record) return;
+
+  const dash = "—";
+  const cells = [];
+  row.innerHTML = "";
+  row.dataset.qrCode = record.qr_code ? String(record.qr_code) : "";
+
+  const idCell = document.createElement("td");
+  idCell.textContent = record.id ? String(record.id) : dash;
+  cells.push(idCell);
+
+  const codeCell = document.createElement("td");
+  const codeValue = record.qr_code ? String(record.qr_code) : "";
+  codeCell.textContent = codeValue || dash;
+  if (codeValue) {
+    codeCell.title = codeValue;
+  } else {
+    codeCell.removeAttribute("title");
+  }
+  cells.push(codeCell);
+
+  const userCell = document.createElement("td");
+  if (record.user_id) {
+    userCell.textContent = String(record.user_id);
+  } else {
+    userCell.textContent = dash;
+  }
+  cells.push(userCell);
+
+  const displayCell = document.createElement("td");
+  const displayName = record.display_name ? String(record.display_name) : "";
+  displayCell.textContent = displayName || dash;
+  if (displayName) {
+    displayCell.title = displayName;
+  } else {
+    displayCell.title = dash;
+  }
+  cells.push(displayCell);
+
+  const statusCell = document.createElement("td");
+  statusCell.textContent = formatStatus(record.status);
+  cells.push(statusCell);
+
+  const assignedCell = document.createElement("td");
+  assignedCell.className = "kc-date";
+  const assignedValue = record.assigned_at ? String(record.assigned_at) : "";
+  if (assignedValue) {
+    assignedCell.textContent = assignedValue;
+    assignedCell.dataset.full = assignedValue;
+    assignedCell.title = assignedValue;
+  } else {
+    assignedCell.textContent = dash;
+    assignedCell.dataset.full = "";
+    assignedCell.title = dash;
+  }
+  cells.push(assignedCell);
+
+  cells.forEach((cell) => row.appendChild(cell));
+}
+
+function updateFrontendQrTable(record) {
+  if (!record) {
+    return { updated: false, existed: false };
+  }
+
+  const table = document.querySelector(".kerbcycle-qr-table");
+  if (!table) {
+    return { updated: false, existed: false };
+  }
+  const tbody = table.querySelector("tbody");
+  if (!tbody) {
+    return { updated: false, existed: false };
+  }
+
+  const code = record.qr_code ? String(record.qr_code) : "";
+  const selector = code
+    ? `tr[data-qr-code="${cssEscape(code)}"]`
+    : null;
+  let row = selector ? tbody.querySelector(selector) : null;
+  const existed = !!row;
+
+  if (!row) {
+    const emptyRow = tbody.querySelector("td.description")?.parentElement;
+    if (emptyRow) {
+      emptyRow.remove();
+    }
+    row = document.createElement("tr");
+    buildQrTableRow(row, record);
+
+    const recordId = record.id ? Number(record.id) : NaN;
+    const rows = Array.from(tbody.querySelectorAll("tr"));
+    let inserted = false;
+    if (!Number.isNaN(recordId)) {
+      for (const existingRow of rows) {
+        const idCell = existingRow.querySelector("td");
+        if (!idCell || idCell.classList.contains("description")) {
+          continue;
+        }
+        const existingId = Number(idCell.textContent || 0);
+        if (Number.isNaN(existingId)) {
+          continue;
+        }
+        if (existingId < recordId) {
+          tbody.insertBefore(row, existingRow);
+          inserted = true;
+          break;
+        }
+      }
+    }
+    if (!inserted) {
+      tbody.appendChild(row);
+    }
+  } else {
+    buildQrTableRow(row, record);
+  }
+
+  const mm = window.matchMedia("(max-width: 480px)");
+  updateQrDatesView(mm.matches);
+
+  const pagination = document.querySelector(".kerbcycle-qr-pagination");
+  if (pagination) {
+    const rowsPerPage = parseInt(pagination.dataset.rows || "10", 10);
+    const currentPage =
+      existed && table._kcPagination
+        ? table._kcPagination.currentPage || 1
+        : 1;
+    paginateQrTable(table, pagination, rowsPerPage, currentPage);
+  }
+
+  return { updated: true, existed };
+}
+
+function setScanResult(element, type, html) {
+  if (!element) return;
+  element.style.display = "block";
+  element.classList.remove("error", "updated");
+  if (type === "error") {
+    element.classList.add("error");
+  } else {
+    element.classList.add("updated");
+  }
+  element.innerHTML = html;
+}
+
 function updateQrDatesView(isMobile) {
   document
     .querySelectorAll(".kerbcycle-qr-scanner-container tbody tr")
@@ -213,19 +393,26 @@ function initKerbcycleScanner() {
   const customerIdField = document.getElementById("customer-id");
   let scannedCode = "";
 
+  let scanner = null;
+
   if (
     scannerAllowed &&
     typeof Html5Qrcode !== "undefined" &&
     document.getElementById("reader")
   ) {
-    const scanner = new Html5Qrcode("reader", true);
+    scanner = new Html5Qrcode("reader", true);
 
     function onScanSuccess(decodedText) {
-      scanner.pause();
-      scannedCode = decodedText;
-      scanResult.style.display = "block";
-      scanResult.classList.add("updated");
-      scanResult.innerHTML = `<strong>✅ QR Code Scanned Successfully!</strong><br>Content: <code>${decodedText}</code>`;
+      if (scanner && typeof scanner.pause === "function") {
+        scanner.pause();
+      }
+      scannedCode = decodedText || "";
+      const safeCode = escapeHtml(decodedText || "");
+      setScanResult(
+        scanResult,
+        "success",
+        `<strong>✅ QR Code Scanned Successfully!</strong><br>Content: <code>${safeCode}</code>`,
+      );
     }
 
     scanner
@@ -236,50 +423,117 @@ function initKerbcycleScanner() {
       )
       .catch((err) => {
         console.error(`Unable to start scanning, error: ${err}`);
-        scanResult.style.display = "block";
-        scanResult.classList.add("error");
-        scanResult.innerHTML =
-          "<strong>❌ Unable to start scanner.</strong> Please ensure you have a camera and have granted permission.";
+        const safeErr = escapeHtml(String(err));
+        setScanResult(
+          scanResult,
+          "error",
+          `<strong>❌ Unable to start scanner.</strong> Please ensure you have a camera and have granted permission.<br>${safeErr}`,
+        );
       });
   }
 
   if (assignBtn) {
-    assignBtn.addEventListener("click", function () {
+    assignBtn.addEventListener("click", () => {
       const userId = customerIdField ? customerIdField.value : "";
 
       if (!userId || !scannedCode) {
-        alert("Please select a customer and scan a QR code.");
+        setScanResult(
+          scanResult,
+          "error",
+          "<strong>❌ Please select a customer and scan a QR code before assigning.</strong>",
+        );
         return;
       }
+
+      assignBtn.disabled = true;
+      assignBtn.setAttribute("aria-busy", "true");
+
+      const params = new URLSearchParams({
+        action: "assign_qr_code",
+        qr_code: scannedCode,
+        customer_id: userId,
+        security: kerbcycle_ajax.nonce,
+      });
 
       fetch(kerbcycle_ajax.ajax_url, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
         },
-        body: new URLSearchParams({
-          action: "assign_qr_code",
-          qr_code: scannedCode,
-          customer_id: userId,
-          security: kerbcycle_ajax.nonce,
-        }),
+        body: params,
       })
         .then((response) => response.json())
         .then((data) => {
           if (data.success) {
-            alert("QR code assigned successfully.");
-            location.reload();
+            const record = data.data ? data.data.record : null;
+            if (record) {
+              updateFrontendQrTable(record);
+            }
+
+            const assignedCode = scannedCode;
+            const selectedOption =
+              customerIdField && customerIdField.selectedIndex >= 0
+                ? customerIdField.options[customerIdField.selectedIndex]
+                : null;
+            const customerLabel = selectedOption
+              ? selectedOption.textContent.trim()
+              : "";
+
+            const messageParts = [
+              "<strong>✅ QR code assigned successfully.</strong>",
+            ];
+            if (assignedCode) {
+              messageParts.push(
+                `Code: <code>${escapeHtml(assignedCode)}</code>`,
+              );
+            }
+            if (customerLabel) {
+              messageParts.push(
+                `Customer: ${escapeHtml(customerLabel)}`,
+              );
+            }
+            messageParts.push("Scan another code to continue.");
+
+            setScanResult(scanResult, "success", messageParts.join("<br>"));
+
+            scannedCode = "";
+            if (scanner && typeof scanner.resume === "function") {
+              try {
+                const resumeResult = scanner.resume();
+                if (resumeResult && typeof resumeResult.catch === "function") {
+                  resumeResult.catch((resumeError) => {
+                    console.warn("Unable to resume scanner", resumeError);
+                  });
+                }
+              } catch (resumeError) {
+                console.warn("Unable to resume scanner", resumeError);
+              }
+            }
           } else {
             const err =
               data.data && data.data.message
                 ? data.data.message
                 : "Failed to assign QR code.";
-            alert(err);
+            setScanResult(
+              scanResult,
+              "error",
+              `<strong>❌ ${escapeHtml(err)}</strong>`,
+            );
           }
         })
         .catch((error) => {
           console.error("Error:", error);
-          alert("An error occurred while assigning the QR code.");
+          setScanResult(
+            scanResult,
+            "error",
+            `<strong>❌ An error occurred while assigning the QR code.</strong><br>${escapeHtml(
+              String(error),
+            )}`,
+          );
+        })
+        .finally(() => {
+          assignBtn.disabled = false;
+          assignBtn.removeAttribute("aria-busy");
         });
     });
   }
@@ -311,22 +565,52 @@ if (kcContainer) {
   mo.observe(kcContainer, { childList: true, subtree: true });
 }
 
-function paginateQrTable(table, pagination, rowsPerPage) {
+function paginateQrTable(table, pagination, rowsPerPage, targetPage) {
+  const perPage =
+    Number.isFinite(rowsPerPage) && rowsPerPage > 0 ? rowsPerPage : 10;
   const rows = Array.from(table.querySelectorAll("tbody tr"));
-  const totalPages = Math.ceil(rows.length / rowsPerPage);
-  let currentPage = 1;
+
+  pagination.innerHTML = "";
+
+  if (!rows.length) {
+    table._kcPagination = {
+      currentPage: 1,
+      rowsPerPage: perPage,
+      totalPages: 0,
+      pagination,
+    };
+    return;
+  }
+
+  const totalPages = Math.ceil(rows.length / perPage);
+
+  if (totalPages <= 1) {
+    rows.forEach((row) => {
+      row.style.display = "";
+    });
+    table._kcPagination = {
+      currentPage: 1,
+      rowsPerPage: perPage,
+      totalPages,
+      pagination,
+    };
+    return;
+  }
+
+  const state = table._kcPagination || { currentPage: 1 };
 
   const renderPage = (page) => {
-    currentPage = page;
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
+    const safePage = Math.max(1, Math.min(page, totalPages));
+    state.currentPage = safePage;
+    const start = (safePage - 1) * perPage;
+    const end = start + perPage;
     rows.forEach((row, index) => {
       row.style.display = index >= start && index < end ? "" : "none";
     });
     pagination
       .querySelectorAll("button")
       .forEach((btn) => btn.classList.remove("active"));
-    const active = pagination.querySelector(`button[data-page="${page}"]`);
+    const active = pagination.querySelector(`button[data-page="${safePage}"]`);
     if (active) active.classList.add("active");
   };
 
@@ -338,7 +622,12 @@ function paginateQrTable(table, pagination, rowsPerPage) {
     pagination.appendChild(btn);
   }
 
-  if (totalPages > 0) {
-    renderPage(1);
-  }
+  state.rowsPerPage = perPage;
+  state.totalPages = totalPages;
+  state.pagination = pagination;
+  table._kcPagination = state;
+
+  const desiredPage =
+    typeof targetPage === "number" ? targetPage : state.currentPage || 1;
+  renderPage(desiredPage);
 }
