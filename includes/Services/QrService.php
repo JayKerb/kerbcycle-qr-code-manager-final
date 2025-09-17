@@ -64,7 +64,10 @@ class QrService
         // Reminder logic would go here
         // if ($send_reminder) { ... }
 
-        return ['sms_result' => $sms_result];
+        return [
+            'sms_result' => $sms_result,
+            'record'     => $this->repository->find_by_qr_code($qr_code),
+        ];
     }
 
     public function release($qr_code, $send_email, $send_sms)

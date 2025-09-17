@@ -120,11 +120,15 @@ class Shortcodes
                     <tbody>
                         <?php if (!empty($codes)) : ?>
                             <?php foreach ($codes as $code) : ?>
-                                <tr>
+                                <tr data-qr-code="<?= esc_attr($code->qr_code); ?>">
                                     <td><?= esc_html($code->id); ?></td>
                                     <td title="<?= esc_attr($code->qr_code); ?>"><?= esc_html($code->qr_code); ?></td>
                                     <td><?= $code->user_id ? esc_html($code->user_id) : '—'; ?></td>
-                                    <td title="<?= $code->display_name ? esc_attr($code->display_name) : '—'; ?>"><?= $code->display_name ? esc_html($code->display_name) : '—'; ?></td>
+                                    <td
+                                        title="<?= $code->display_name ? esc_attr($code->display_name) : '—'; ?>"
+                                    >
+                                        <?= $code->display_name ? esc_html($code->display_name) : '—'; ?>
+                                    </td>
                                     <td><?= esc_html(ucfirst($code->status)); ?></td>
                                     <td
                                         class="kc-date"
