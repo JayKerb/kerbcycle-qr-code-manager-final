@@ -62,7 +62,7 @@ class FrontAssets
             'kerbcycle-qr-frontend-js',
             KERBCYCLE_QR_URL . 'assets/js/qr-scanner.js',
             $deps,
-            KERBCYCLE_QR_VERSION,
+            filemtime(KERBCYCLE_QR_PATH . 'assets/js/qr-scanner.js'),
             true
         );
 

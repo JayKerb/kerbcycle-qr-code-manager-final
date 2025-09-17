@@ -40,9 +40,9 @@ function makeSearchableSelect(select) {
   function buildList() {
     list.innerHTML = "";
     const q = input.value.trim().toLowerCase();
-    const opts = Array.from(select.querySelectorAll("option")).filter(
-      (opt) => opt.value && opt.value !== "-1",
-    );
+    const opts = Array.from(
+      select.querySelectorAll("option"),
+    ).filter((opt) => opt.value && opt.value !== "-1");
     let any = false;
     opts.forEach((opt) => {
       const label = (opt.textContent || "").trim();
@@ -112,14 +112,11 @@ function makeSearchableSelect(select) {
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      const next =
-        items[Math.max(0, Math.min(items.length - 1, idx + 1))] || items[0];
+      const next = items[Math.max(0, Math.min(items.length - 1, idx + 1))] || items[0];
       next?.focus();
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      const prev =
-        items[Math.max(0, Math.min(items.length - 1, idx - 1))] ||
-        items[items.length - 1];
+      const prev = items[Math.max(0, Math.min(items.length - 1, idx - 1))] || items[items.length - 1];
       prev?.focus();
     } else if (e.key === "Enter") {
       e.preventDefault();
@@ -158,14 +155,7 @@ function makeSearchableSelect(select) {
   });
 
   // Mark enhanced to avoid double init
-  select._kcEnhanced = {
-    input,
-    btn,
-    list,
-    openList,
-    closeList,
-    refresh: buildList,
-  };
+  select._kcEnhanced = { input, btn, list, openList, closeList, refresh: buildList };
 }
 
 function shortenQrDates() {

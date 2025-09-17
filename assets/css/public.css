@@ -65,15 +65,15 @@
 /* Table responsiveness for the scanner page */
 .kerbcycle-qr-scanner-container .kerbcycle-table-wrap {
   width: 100%;
-  overflow-x: auto; /* important for small screens */
+  overflow-x: auto;         /* important for small screens */
   -webkit-overflow-scrolling: touch;
 }
 
 .kerbcycle-qr-scanner-container table {
   border-collapse: collapse;
   width: 100%;
-  min-width: 640px; /* let it scroll instead of squishing */
-  white-space: nowrap; /* keep labels readable */
+  min-width: 640px;         /* let it scroll instead of squishing */
+  white-space: nowrap;      /* keep labels readable */
 }
 
 .kerbcycle-qr-scanner-container th,
@@ -117,7 +117,7 @@
   .kerbcycle-qr-scanner-container.kc-compact table {
     table-layout: fixed;
     width: 100%;
-    min-width: 0 !important; /* kill old 640px min-width */
+    min-width: 0 !important;     /* kill old 640px min-width */
     border-collapse: collapse;
     border-spacing: 0;
     font-size: 12px;
@@ -136,29 +136,17 @@
 
   /* Widths tuned to sample data (sum = 100%) */
   .kerbcycle-qr-scanner-container.kc-compact th:nth-child(1),
-  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(1) {
-    width: 8% !important;
-  }
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(1) { width: 8% !important; }
   .kerbcycle-qr-scanner-container.kc-compact th:nth-child(2),
-  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(2) {
-    width: 17% !important;
-  }
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(2) { width: 17% !important; }
   .kerbcycle-qr-scanner-container.kc-compact th:nth-child(3),
-  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(3) {
-    width: 8% !important;
-  }
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(3) { width: 8% !important; }
   .kerbcycle-qr-scanner-container.kc-compact th:nth-child(4),
-  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(4) {
-    width: 31% !important;
-  }
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(4) { width: 31% !important; }
   .kerbcycle-qr-scanner-container.kc-compact th:nth-child(5),
-  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(5) {
-    width: 12% !important;
-  }
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(5) { width: 12% !important; }
   .kerbcycle-qr-scanner-container.kc-compact th:nth-child(6),
-  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(6) {
-    width: 24% !important;
-  }
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(6) { width: 24% !important; }
 
   /* Make digits align nicely */
   .kerbcycle-qr-scanner-container.kc-compact td,
