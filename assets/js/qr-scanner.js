@@ -168,9 +168,13 @@ function makeSearchableSelect(select) {
   };
 }
 
+const kcCompactMedia =
+  typeof window.matchMedia === "function"
+    ? window.matchMedia("(max-width: 480px)")
+    : null;
+
 function shortenQrDates() {
-  const mm = window.matchMedia("(max-width: 480px)");
-  if (!mm.matches) return;
+  const isCompact = kcCompactMedia ? kcCompactMedia.matches : false;
 
   document
     .querySelectorAll(".kerbcycle-qr-scanner-container tbody tr")
@@ -178,9 +182,27 @@ function shortenQrDates() {
       const td =
         tr.querySelector("td.kc-date") || tr.querySelector("td:nth-child(6)");
       if (!td) return;
-      const full = td.getAttribute("data-full") || td.textContent.trim();
+
+      if (!td.dataset.kcOriginal) {
+        td.dataset.kcOriginal = (td.textContent || "").trim();
+      }
+
+      const attrFull = td.getAttribute("data-full");
+      const original = td.dataset.kcOriginal || "";
+      const full = attrFull && attrFull.trim() ? attrFull.trim() : original;
+
+      if (!isCompact) {
+        td.textContent = full || original || "—";
+        return;
+      }
+
+      if (!full || full === "—") {
+        td.textContent = "—";
+        return;
+      }
+
       const m = full.match(/^(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2})/);
-      if (m) td.textContent = `${m[2]}/${m[3]} ${m[4]}:${m[5]}`;
+      td.textContent = m ? `${m[2]}/${m[3]} ${m[4]}:${m[5]}` : full;
     });
 }
 
@@ -291,6 +313,15 @@ if (kcContainer) {
   mo.observe(kcContainer, { childList: true, subtree: true });
 }
 
+if (kcCompactMedia) {
+  const mediaRefresh = () => shortenQrDates();
+  if (typeof kcCompactMedia.addEventListener === "function") {
+    kcCompactMedia.addEventListener("change", mediaRefresh);
+  } else if (typeof kcCompactMedia.addListener === "function") {
+    kcCompactMedia.addListener(mediaRefresh);
+  }
+}
+
 function paginateQrTable(table, pagination, rowsPerPage) {
   const rows = Array.from(table.querySelectorAll("tbody tr"));
   const totalPages = Math.ceil(rows.length / rowsPerPage);
@@ -308,6 +339,8 @@ function paginateQrTable(table, pagination, rowsPerPage) {
       .forEach((btn) => btn.classList.remove("active"));
     const active = pagination.querySelector(`button[data-page="${page}"]`);
     if (active) active.classList.add("active");
+
+    shortenQrDates();
   };
 
   for (let i = 1; i <= totalPages; i++) {
