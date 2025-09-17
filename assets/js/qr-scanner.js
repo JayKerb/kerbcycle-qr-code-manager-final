@@ -168,9 +168,13 @@ function makeSearchableSelect(select) {
   };
 }
 
+const kcCompactMedia =
+  typeof window.matchMedia === "function"
+    ? window.matchMedia("(max-width: 480px)")
+    : null;
+
 function shortenQrDates() {
-  const mm = window.matchMedia("(max-width: 480px)");
-  if (!mm.matches) return;
+  const isCompact = kcCompactMedia ? kcCompactMedia.matches : false;
 
   document
     .querySelectorAll(".kerbcycle-qr-scanner-container tbody tr")
@@ -178,10 +182,101 @@ function shortenQrDates() {
       const td =
         tr.querySelector("td.kc-date") || tr.querySelector("td:nth-child(6)");
       if (!td) return;
-      const full = td.getAttribute("data-full") || td.textContent.trim();
+
+      if (!td.dataset.kcOriginal) {
+        td.dataset.kcOriginal = (td.textContent || "").trim();
+      }
+
+      const attrFull = td.getAttribute("data-full");
+      const original = td.dataset.kcOriginal || "";
+      const full = attrFull && attrFull.trim() ? attrFull.trim() : original;
+
+      if (!isCompact) {
+        td.textContent = full || original || "—";
+        return;
+      }
+
+      if (!full || full === "—") {
+        td.textContent = "—";
+        return;
+      }
+
       const m = full.match(/^(\d{4})-(\d{2})-(\d{2})\s(\d{2}):(\d{2})/);
-      if (m) td.textContent = `${m[2]}/${m[3]} ${m[4]}:${m[5]}`;
+      td.textContent = m ? `${m[2]}/${m[3]} ${m[4]}:${m[5]}` : full;
     });
+}
+
+const kcContainerObservers = new WeakMap();
+let kcContainerDiscoveryStarted = false;
+
+function observeScannerContainer(container) {
+  if (!(container instanceof Element) || kcContainerObservers.has(container)) {
+    return false;
+  }
+
+  const observer = new MutationObserver(shortenQrDates);
+  observer.observe(container, { childList: true, subtree: true });
+  kcContainerObservers.set(container, observer);
+  return true;
+}
+
+function scanForScannerContainers(root) {
+  if (!root) return false;
+
+  let discovered = false;
+
+  if (
+    root instanceof Element &&
+    root.matches &&
+    root.matches(".kerbcycle-qr-scanner-container")
+  ) {
+    discovered = observeScannerContainer(root) || discovered;
+  }
+
+  if (typeof root.querySelectorAll === "function") {
+    root
+      .querySelectorAll(".kerbcycle-qr-scanner-container")
+      .forEach((container) => {
+        discovered = observeScannerContainer(container) || discovered;
+      });
+  }
+
+  return discovered;
+}
+
+const kcContainerDiscoveryObserver = new MutationObserver((mutations) => {
+  let foundNewContainer = false;
+
+  mutations.forEach((mutation) => {
+    mutation.addedNodes.forEach((node) => {
+      foundNewContainer = scanForScannerContainers(node) || foundNewContainer;
+    });
+  });
+
+  if (foundNewContainer) {
+    shortenQrDates();
+  }
+});
+
+function ensureScannerContainerObserver() {
+  if (kcContainerDiscoveryStarted) return;
+
+  const target = document.body || document.documentElement;
+  if (!target) {
+    return;
+  }
+
+  kcContainerDiscoveryObserver.observe(target, {
+    childList: true,
+    subtree: true,
+  });
+  kcContainerDiscoveryStarted = true;
+}
+
+function initCompactTables() {
+  scanForScannerContainers(document);
+  ensureScannerContainerObserver();
+  shortenQrDates();
 }
 
 function initKerbcycleScanner() {
@@ -280,15 +375,18 @@ if (document.readyState === "loading") {
 }
 
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", shortenQrDates);
+  document.addEventListener("DOMContentLoaded", initCompactTables);
 } else {
-  shortenQrDates();
+  initCompactTables();
 }
 
-const kcContainer = document.querySelector(".kerbcycle-qr-scanner-container");
-if (kcContainer) {
-  const mo = new MutationObserver(shortenQrDates);
-  mo.observe(kcContainer, { childList: true, subtree: true });
+if (kcCompactMedia) {
+  const mediaRefresh = () => shortenQrDates();
+  if (typeof kcCompactMedia.addEventListener === "function") {
+    kcCompactMedia.addEventListener("change", mediaRefresh);
+  } else if (typeof kcCompactMedia.addListener === "function") {
+    kcCompactMedia.addListener(mediaRefresh);
+  }
 }
 
 function paginateQrTable(table, pagination, rowsPerPage) {
@@ -308,6 +406,8 @@ function paginateQrTable(table, pagination, rowsPerPage) {
       .forEach((btn) => btn.classList.remove("active"));
     const active = pagination.querySelector(`button[data-page="${page}"]`);
     if (active) active.classList.add("active");
+
+    shortenQrDates();
   };
 
   for (let i = 1; i <= totalPages; i++) {
