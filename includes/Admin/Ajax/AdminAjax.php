@@ -72,8 +72,30 @@ class AdminAjax
                     $response['sms_error'] = is_wp_error($result['sms_result']) ? $result['sms_result']->get_error_message() : __('Unknown error', 'kerbcycle');
                 }
             }
+            if (!empty($result['record'])) {
+                $formatted = $this->format_qr_record($result['record']);
+                if ($formatted) {
+                    $response['record'] = $formatted;
+                }
+            }
             wp_send_json_success($response);
         }
+    }
+
+    private function format_qr_record($record)
+    {
+        if (!is_object($record)) {
+            return null;
+        }
+
+        return [
+            'id'           => isset($record->id) ? (int) $record->id : 0,
+            'qr_code'      => isset($record->qr_code) ? (string) $record->qr_code : '',
+            'user_id'      => isset($record->user_id) ? (int) $record->user_id : 0,
+            'display_name' => isset($record->display_name) ? (string) $record->display_name : '',
+            'status'       => isset($record->status) ? (string) $record->status : '',
+            'assigned_at'  => isset($record->assigned_at) ? (string) $record->assigned_at : '',
+        ];
     }
 
     public function release_qr_code()
