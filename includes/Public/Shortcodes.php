@@ -54,6 +54,7 @@ class Shortcodes
             </script>
             <button id="assign-qr-btn" class="button button-primary">Assign QR Code</button>
             <div id="reader" style="width: 100%; max-width: 400px; margin-top: 20px;"></div>
+            <button id="resume-scan-btn" type="button" class="kc-resume-scan"><?php esc_html_e('Scan Again', 'kerbcycle'); ?></button>
             <div id="scan-result" class="updated" style="display: none;"></div>
         </div>
         <?php
