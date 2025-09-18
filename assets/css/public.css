@@ -13,9 +13,7 @@
   border: 1px solid #2271b1;
   border-radius: 4px;
   cursor: pointer;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 #resume-scan-btn.is-visible {
