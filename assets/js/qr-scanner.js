@@ -559,6 +559,21 @@ function initKerbcycleScanner() {
         .finally(() => {
           assignBtn.disabled = false;
           assignBtn.removeAttribute("aria-busy");
+
+          // Always attempt to resume the scanner after handling the
+          // assignment request, even when the server returns an error.
+          try {
+            if (scannerAllowed && scanner && typeof scanner.resume === "function") {
+              const resumeResult = scanner.resume();
+              if (resumeResult && typeof resumeResult.catch === "function") {
+                resumeResult.catch((resumeError) => {
+                  console.warn("Unable to resume scanner", resumeError);
+                });
+              }
+            }
+          } catch (resumeError) {
+            console.warn("Unable to resume scanner", resumeError);
+          }
         });
     });
   }
