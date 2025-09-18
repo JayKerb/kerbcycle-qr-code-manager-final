@@ -405,54 +405,6 @@ function initKerbcycleScanner() {
   const cameraConstraints = { facingMode: "environment" };
   const scannerConfig = { fps: 10, qrbox: 250 };
   let scanSuccessHandler = null;
-  let isScannerPaused = false;
-
-  const startScanner = () => {
-    if (!scanner) {
-      return Promise.reject(new Error("Scanner is not initialized."));
-    }
-    if (!scanSuccessHandler) {
-      return Promise.reject(
-        new Error("Scanner callback is not configured."),
-      );
-    }
-
-    return scanner
-      .start(cameraConstraints, scannerConfig, scanSuccessHandler)
-      .then(() => {
-        isScannerPaused = false;
-      });
-  };
-
-  const ensureScannerActive = async () => {
-    if (!scanner) {
-      throw new Error("Scanner is not initialized.");
-    }
-
-    if (!isScannerPaused) {
-      return;
-    }
-
-    if (typeof scanner.resume === "function") {
-      try {
-        await scanner.resume();
-        isScannerPaused = false;
-        return;
-      } catch (resumeError) {
-        console.warn("Unable to resume scanner via resume()", resumeError);
-      }
-    }
-
-    if (typeof scanner.stop === "function") {
-      try {
-        await scanner.stop();
-      } catch (stopError) {
-        console.warn("Unable to stop scanner before restart", stopError);
-      }
-    }
-
-    await startScanner();
-  };
 
   const hideResumeButton = () => {
     if (!resumeBtn) return;
@@ -479,20 +431,23 @@ function initKerbcycleScanner() {
 
     scanSuccessHandler = (decodedText) => {
       if (scanner && typeof scanner.pause === "function") {
-        scanner.pause();
-        isScannerPaused = true;
+        const state = scanner.getState();
+        if (state === Html5QrcodeScannerState.SCANNING) {
+          scanner.pause();
+        }
       }
       scannedCode = decodedText || "";
       const safeCode = escapeHtml(decodedText || "");
       setScanResult(
         scanResult,
         "success",
-        `<strong>✅ QR Code Scanned Successfully!</strong><br>Content: <code>${safeCode}</code><br><em>Use "Scan Again" to capture a different code.</em>`,
+        `<strong>✅ QR Code Scanned Successfully!</strong><br>Content: <code>${safeCode}</code><br><em>Click "Scan Again" to continue.</em>`,
       );
       showResumeButton();
     };
 
-    startScanner()
+    scanner
+      .start(cameraConstraints, scannerConfig, scanSuccessHandler)
       .catch((err) => {
         console.error(`Unable to start scanning, error: ${err}`);
         const safeErr = escapeHtml(String(err));
@@ -593,15 +548,12 @@ function initKerbcycleScanner() {
             }
 
             scannedCode = "";
-            if (scanner) {
-              ensureScannerActive()
-                .then(() => {
-                  hideResumeButton();
-                })
-                .catch((resumeError) => {
-                  console.warn("Unable to resume scanner", resumeError);
-                  showResumeButton();
-                });
+            if (scanner && typeof scanner.resume === "function") {
+              const state = scanner.getState();
+              if (state === Html5QrcodeScannerState.PAUSED) {
+                scanner.resume();
+              }
+              hideResumeButton();
             }
           } else {
             const err =
@@ -641,43 +593,19 @@ function initKerbcycleScanner() {
       resumeBtn.disabled = true;
       resumeBtn.setAttribute("aria-busy", "true");
 
-      const onResumeSuccess = () => {
-        scannedCode = "";
-        clearScanResult(scanResult);
-        hideResumeButton();
-        isScannerPaused = false;
-      };
+      if (scanner && typeof scanner.resume === "function") {
+        const state = scanner.getState();
+        if (state === Html5QrcodeScannerState.PAUSED) {
+          scanner.resume();
+        }
+      }
 
-      const onResumeFailure = (resumeError) => {
-        console.warn("Unable to resume scanner", resumeError);
-        const resumeMessage =
-          resumeError && typeof resumeError === "object" && "message" in resumeError
-            ? resumeError.message
-            : String(resumeError);
-        setScanResult(
-          scanResult,
-          "error",
-          `<strong>❌ Unable to resume the scanner.</strong><br>${escapeHtml(
-            resumeMessage,
-          )}`,
-        );
-        showResumeButton();
-        isScannerPaused = true;
-      };
+      scannedCode = "";
+      clearScanResult(scanResult);
+      hideResumeButton();
 
-      const finalizeResumeAttempt = () => {
-        resumeBtn.disabled = false;
-        resumeBtn.removeAttribute("aria-busy");
-      };
-
-      ensureScannerActive()
-        .then(() => {
-          onResumeSuccess();
-        })
-        .catch((resumeError) => {
-          onResumeFailure(resumeError);
-        })
-        .finally(finalizeResumeAttempt);
+      resumeBtn.disabled = false;
+      resumeBtn.removeAttribute("aria-busy");
     });
   }
 
