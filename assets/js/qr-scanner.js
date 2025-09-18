@@ -191,7 +191,8 @@ function escapeHtml(value) {
 }
 
 function cssEscape(value) {
-  const stringValue = value === null || value === undefined ? "" : String(value);
+  const stringValue =
+    value === null || value === undefined ? "" : String(value);
   if (window.CSS && typeof window.CSS.escape === "function") {
     return window.CSS.escape(stringValue);
   }
@@ -279,9 +280,7 @@ function updateFrontendQrTable(record) {
   }
 
   const code = record.qr_code ? String(record.qr_code) : "";
-  const selector = code
-    ? `tr[data-qr-code="${cssEscape(code)}"]`
-    : null;
+  const selector = code ? `tr[data-qr-code="${cssEscape(code)}"]` : null;
   let row = selector ? tbody.querySelector(selector) : null;
   const existed = !!row;
 
@@ -327,9 +326,7 @@ function updateFrontendQrTable(record) {
   if (pagination) {
     const rowsPerPage = parseInt(pagination.dataset.rows || "10", 10);
     const currentPage =
-      existed && table._kcPagination
-        ? table._kcPagination.currentPage || 1
-        : 1;
+      existed && table._kcPagination ? table._kcPagination.currentPage || 1 : 1;
     paginateQrTable(table, pagination, rowsPerPage, currentPage);
   }
 
@@ -515,9 +512,7 @@ function initKerbcycleScanner() {
               );
             }
             if (customerLabel) {
-              messageParts.push(
-                `Customer: ${escapeHtml(customerLabel)}`,
-              );
+              messageParts.push(`Customer: ${escapeHtml(customerLabel)}`);
             }
             messageParts.push("Scan another code to continue.");
 
