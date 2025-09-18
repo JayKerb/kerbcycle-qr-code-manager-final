@@ -348,6 +348,13 @@ function setScanResult(element, type, html) {
   element.innerHTML = html;
 }
 
+function clearScanResult(element) {
+  if (!element) return;
+  element.style.display = "none";
+  element.classList.remove("error", "updated");
+  element.innerHTML = "";
+}
+
 function updateQrDatesView(isMobile) {
   document
     .querySelectorAll(".kerbcycle-qr-scanner-container tbody tr")
@@ -391,9 +398,77 @@ function initKerbcycleScanner() {
   const scanResult = document.getElementById("scan-result");
   const assignBtn = document.getElementById("assign-qr-btn");
   const customerIdField = document.getElementById("customer-id");
+  const resumeBtn = document.getElementById("resume-scan-btn");
   let scannedCode = "";
 
   let scanner = null;
+  const cameraConstraints = { facingMode: "environment" };
+  const scannerConfig = { fps: 10, qrbox: 250 };
+  let scanSuccessHandler = null;
+  let isScannerPaused = false;
+
+  const startScanner = () => {
+    if (!scanner) {
+      return Promise.reject(new Error("Scanner is not initialized."));
+    }
+    if (!scanSuccessHandler) {
+      return Promise.reject(
+        new Error("Scanner callback is not configured."),
+      );
+    }
+
+    return scanner
+      .start(cameraConstraints, scannerConfig, scanSuccessHandler)
+      .then(() => {
+        isScannerPaused = false;
+      });
+  };
+
+  const ensureScannerActive = async () => {
+    if (!scanner) {
+      throw new Error("Scanner is not initialized.");
+    }
+
+    if (!isScannerPaused) {
+      return;
+    }
+
+    if (typeof scanner.resume === "function") {
+      try {
+        await scanner.resume();
+        isScannerPaused = false;
+        return;
+      } catch (resumeError) {
+        console.warn("Unable to resume scanner via resume()", resumeError);
+      }
+    }
+
+    if (typeof scanner.stop === "function") {
+      try {
+        await scanner.stop();
+      } catch (stopError) {
+        console.warn("Unable to stop scanner before restart", stopError);
+      }
+    }
+
+    await startScanner();
+  };
+
+  const hideResumeButton = () => {
+    if (!resumeBtn) return;
+    resumeBtn.classList.remove("is-visible");
+    resumeBtn.disabled = false;
+    resumeBtn.removeAttribute("aria-busy");
+  };
+
+  const showResumeButton = () => {
+    if (!resumeBtn) return;
+    resumeBtn.classList.add("is-visible");
+    resumeBtn.disabled = false;
+    resumeBtn.removeAttribute("aria-busy");
+  };
+
+  hideResumeButton();
 
   if (
     scannerAllowed &&
@@ -402,25 +477,22 @@ function initKerbcycleScanner() {
   ) {
     scanner = new Html5Qrcode("reader", true);
 
-    function onScanSuccess(decodedText) {
+    scanSuccessHandler = (decodedText) => {
       if (scanner && typeof scanner.pause === "function") {
         scanner.pause();
+        isScannerPaused = true;
       }
       scannedCode = decodedText || "";
       const safeCode = escapeHtml(decodedText || "");
       setScanResult(
         scanResult,
         "success",
-        `<strong>✅ QR Code Scanned Successfully!</strong><br>Content: <code>${safeCode}</code>`,
+        `<strong>✅ QR Code Scanned Successfully!</strong><br>Content: <code>${safeCode}</code><br><em>Use "Scan Again" to capture a different code.</em>`,
       );
-    }
+      showResumeButton();
+    };
 
-    scanner
-      .start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        onScanSuccess,
-      )
+    startScanner()
       .catch((err) => {
         console.error(`Unable to start scanning, error: ${err}`);
         const safeErr = escapeHtml(String(err));
@@ -495,7 +567,6 @@ function initKerbcycleScanner() {
             messageParts.push("Scan another code to continue.");
 
             setScanResult(scanResult, "success", messageParts.join("<br>"));
-
             if (customerIdField) {
               const placeholderIndex = Array.from(
                 customerIdField.options || [],
@@ -522,17 +593,15 @@ function initKerbcycleScanner() {
             }
 
             scannedCode = "";
-            if (scanner && typeof scanner.resume === "function") {
-              try {
-                const resumeResult = scanner.resume();
-                if (resumeResult && typeof resumeResult.catch === "function") {
-                  resumeResult.catch((resumeError) => {
-                    console.warn("Unable to resume scanner", resumeError);
-                  });
-                }
-              } catch (resumeError) {
-                console.warn("Unable to resume scanner", resumeError);
-              }
+            if (scanner) {
+              ensureScannerActive()
+                .then(() => {
+                  hideResumeButton();
+                })
+                .catch((resumeError) => {
+                  console.warn("Unable to resume scanner", resumeError);
+                  showResumeButton();
+                });
             }
           } else {
             const err =
@@ -560,6 +629,55 @@ function initKerbcycleScanner() {
           assignBtn.disabled = false;
           assignBtn.removeAttribute("aria-busy");
         });
+    });
+  }
+
+  if (resumeBtn) {
+    resumeBtn.addEventListener("click", () => {
+      if (resumeBtn.disabled) {
+        return;
+      }
+
+      resumeBtn.disabled = true;
+      resumeBtn.setAttribute("aria-busy", "true");
+
+      const onResumeSuccess = () => {
+        scannedCode = "";
+        clearScanResult(scanResult);
+        hideResumeButton();
+        isScannerPaused = false;
+      };
+
+      const onResumeFailure = (resumeError) => {
+        console.warn("Unable to resume scanner", resumeError);
+        const resumeMessage =
+          resumeError && typeof resumeError === "object" && "message" in resumeError
+            ? resumeError.message
+            : String(resumeError);
+        setScanResult(
+          scanResult,
+          "error",
+          `<strong>❌ Unable to resume the scanner.</strong><br>${escapeHtml(
+            resumeMessage,
+          )}`,
+        );
+        showResumeButton();
+        isScannerPaused = true;
+      };
+
+      const finalizeResumeAttempt = () => {
+        resumeBtn.disabled = false;
+        resumeBtn.removeAttribute("aria-busy");
+      };
+
+      ensureScannerActive()
+        .then(() => {
+          onResumeSuccess();
+        })
+        .catch((resumeError) => {
+          onResumeFailure(resumeError);
+        })
+        .finally(finalizeResumeAttempt);
     });
   }
 
