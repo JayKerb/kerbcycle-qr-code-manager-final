@@ -1,0 +1,221 @@
+/* Styles for the public pages */
+
+/* Resume scan button */
+#resume-scan-btn {
+  display: none;
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #2271b1;
+  background: #f6f7f7;
+  border: 1px solid #2271b1;
+  border-radius: 4px;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+#resume-scan-btn.is-visible {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#resume-scan-btn:hover:not([disabled]),
+#resume-scan-btn:focus-visible:not([disabled]) {
+  background: #2271b1;
+  color: #fff;
+}
+
+#resume-scan-btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Combobox styles */
+.kc-combobox {
+  position: relative;
+  display: inline-flex;
+  gap: 6px;
+  align-items: stretch;
+  max-width: 100%;
+}
+
+.kc-combobox-input {
+  flex: 1 1 auto;
+  min-width: 200px;
+  padding: 8px 10px;
+  font-size: 16px; /* prevents iOS zoom */
+  border: 1px solid #c3c4c7;
+  border-radius: 4px;
+}
+
+.kc-combobox-toggle {
+  flex: 0 0 auto;
+  padding: 0 12px;
+  font-size: 18px;
+  line-height: 1;
+  border: 1px solid #c3c4c7;
+  border-radius: 4px;
+  background: #f6f7f7;
+  cursor: pointer;
+}
+
+.kc-combobox-list {
+  position: absolute;
+  z-index: 10000;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  max-height: 260px;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #c3c4c7;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+}
+
+.kc-combobox-item {
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.kc-combobox-item:hover,
+.kc-combobox-item:focus {
+  background: #f0f0f0;
+  outline: none;
+}
+
+.kc-combobox-empty {
+  color: #777;
+  padding: 8px 10px;
+}
+
+/* Table responsiveness for the scanner page */
+.kerbcycle-qr-scanner-container .kerbcycle-table-wrap {
+  width: 100%;
+  overflow-x: auto; /* important for small screens */
+  -webkit-overflow-scrolling: touch;
+}
+
+.kerbcycle-qr-scanner-container table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 640px; /* let it scroll instead of squishing */
+  white-space: nowrap; /* keep labels readable */
+}
+
+.kerbcycle-qr-scanner-container th,
+.kerbcycle-qr-scanner-container td {
+  padding: 8px 10px;
+}
+
+/* Larger tap targets for pagination on mobile */
+.kerbcycle-qr-pagination button {
+  min-width: 40px;
+  min-height: 40px;
+  margin: 2px;
+  border-radius: 6px;
+}
+
+/* Mobile text size to avoid iOS zoom on inputs */
+@media (max-width: 480px) {
+  .kc-combobox-input {
+    font-size: 16px;
+  }
+}
+
+/* Compact header: hide full text and show data-short only */
+@media (max-width: 480px) {
+  .kerbcycle-qr-scanner-container.kc-compact th[data-short] {
+    font-size: 0;
+    line-height: 1.2;
+  }
+  .kerbcycle-qr-scanner-container.kc-compact th[data-short]::after {
+    content: attr(data-short);
+    font-size: 12px;
+  }
+}
+
+/* --- Compact 6-col table for phones --- */
+@media (max-width: 480px) {
+  .kerbcycle-qr-scanner-container.kc-compact .kerbcycle-table-wrap {
+    overflow-x: visible;
+  }
+
+  .kerbcycle-qr-scanner-container.kc-compact table {
+    table-layout: fixed;
+    width: 100%;
+    min-width: 0 !important; /* kill old 640px min-width */
+    border-collapse: collapse;
+    border-spacing: 0;
+    font-size: 12px;
+    box-sizing: border-box;
+  }
+
+  .kerbcycle-qr-scanner-container.kc-compact th,
+  .kerbcycle-qr-scanner-container.kc-compact td {
+    padding: 2px 4px !important;
+    vertical-align: middle;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
+  }
+
+  /* Widths tuned to sample data (sum = 100%) */
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(1),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(1) {
+    width: 8% !important;
+  }
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(2),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(2) {
+    width: 17% !important;
+  }
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(3),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(3) {
+    width: 8% !important;
+  }
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(4),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(4) {
+    width: 31% !important;
+  }
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(5),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(5) {
+    width: 12% !important;
+  }
+  .kerbcycle-qr-scanner-container.kc-compact th:nth-child(6),
+  .kerbcycle-qr-scanner-container.kc-compact td:nth-child(6) {
+    width: 24% !important;
+  }
+
+  /* Make digits align nicely */
+  .kerbcycle-qr-scanner-container.kc-compact td,
+  .kerbcycle-qr-scanner-container.kc-compact th {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Buttons inside cells shouldn't force columns wide */
+  .kerbcycle-qr-scanner-container.kc-compact .button,
+  .kerbcycle-qr-scanner-container.kc-compact button,
+  .kerbcycle-qr-scanner-container.kc-compact .components-button {
+    padding: 1px 4px !important;
+    line-height: 1.1 !important;
+    font-size: 12px !important;
+    min-width: 0 !important;
+  }
+
+  /* If a QR thumbnail exists, cap it */
+  .kerbcycle-qr-scanner-container.kc-compact .qr-thumb {
+    max-width: 24px;
+    max-height: 24px;
+    display: inline-block;
+    vertical-align: middle;
+  }
+}
