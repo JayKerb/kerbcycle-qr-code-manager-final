@@ -1,5 +1,38 @@
 /* Styles for the public pages */
 
+/* Resume scan button */
+#resume-scan-btn {
+  display: none;
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #2271b1;
+  background: #f6f7f7;
+  border: 1px solid #2271b1;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+#resume-scan-btn.is-visible {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#resume-scan-btn:hover:not([disabled]),
+#resume-scan-btn:focus-visible:not([disabled]) {
+  background: #2271b1;
+  color: #fff;
+}
+
+#resume-scan-btn[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Combobox styles */
 .kc-combobox {
   position: relative;

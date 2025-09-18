@@ -348,6 +348,13 @@ function setScanResult(element, type, html) {
   element.innerHTML = html;
 }
 
+function clearScanResult(element) {
+  if (!element) return;
+  element.style.display = "none";
+  element.classList.remove("error", "updated");
+  element.innerHTML = "";
+}
+
 function updateQrDatesView(isMobile) {
   document
     .querySelectorAll(".kerbcycle-qr-scanner-container tbody tr")
@@ -391,9 +398,26 @@ function initKerbcycleScanner() {
   const scanResult = document.getElementById("scan-result");
   const assignBtn = document.getElementById("assign-qr-btn");
   const customerIdField = document.getElementById("customer-id");
+  const resumeBtn = document.getElementById("resume-scan-btn");
   let scannedCode = "";
 
   let scanner = null;
+
+  const hideResumeButton = () => {
+    if (!resumeBtn) return;
+    resumeBtn.classList.remove("is-visible");
+    resumeBtn.disabled = false;
+    resumeBtn.removeAttribute("aria-busy");
+  };
+
+  const showResumeButton = () => {
+    if (!resumeBtn) return;
+    resumeBtn.classList.add("is-visible");
+    resumeBtn.disabled = false;
+    resumeBtn.removeAttribute("aria-busy");
+  };
+
+  hideResumeButton();
 
   if (
     scannerAllowed &&
@@ -411,8 +435,9 @@ function initKerbcycleScanner() {
       setScanResult(
         scanResult,
         "success",
-        `<strong>✅ QR Code Scanned Successfully!</strong><br>Content: <code>${safeCode}</code>`,
+        `<strong>✅ QR Code Scanned Successfully!</strong><br>Content: <code>${safeCode}</code><br><em>Use "Scan Again" to capture a different code.</em>`,
       );
+      showResumeButton();
     }
 
     scanner
@@ -495,6 +520,7 @@ function initKerbcycleScanner() {
             messageParts.push("Scan another code to continue.");
 
             setScanResult(scanResult, "success", messageParts.join("<br>"));
+            hideResumeButton();
 
             if (customerIdField) {
               const placeholderIndex = Array.from(
@@ -528,10 +554,12 @@ function initKerbcycleScanner() {
                 if (resumeResult && typeof resumeResult.catch === "function") {
                   resumeResult.catch((resumeError) => {
                     console.warn("Unable to resume scanner", resumeError);
+                    showResumeButton();
                   });
                 }
               } catch (resumeError) {
                 console.warn("Unable to resume scanner", resumeError);
+                showResumeButton();
               }
             }
           } else {
@@ -560,6 +588,73 @@ function initKerbcycleScanner() {
           assignBtn.disabled = false;
           assignBtn.removeAttribute("aria-busy");
         });
+    });
+  }
+
+  if (resumeBtn) {
+    resumeBtn.addEventListener("click", () => {
+      if (resumeBtn.disabled) {
+        return;
+      }
+
+      resumeBtn.disabled = true;
+      resumeBtn.setAttribute("aria-busy", "true");
+
+      const onResumeSuccess = () => {
+        scannedCode = "";
+        clearScanResult(scanResult);
+        hideResumeButton();
+      };
+
+      const onResumeFailure = (resumeError) => {
+        console.warn("Unable to resume scanner", resumeError);
+        const resumeMessage =
+          resumeError && typeof resumeError === "object" && "message" in resumeError
+            ? resumeError.message
+            : String(resumeError);
+        setScanResult(
+          scanResult,
+          "error",
+          `<strong>❌ Unable to resume the scanner.</strong><br>${escapeHtml(
+            resumeMessage,
+          )}`,
+        );
+        showResumeButton();
+      };
+
+      const finalizeResumeAttempt = () => {
+        resumeBtn.disabled = false;
+        resumeBtn.removeAttribute("aria-busy");
+      };
+
+      if (!scanner || typeof scanner.resume !== "function") {
+        onResumeFailure(
+          new Error("Scanner resume method is unavailable. Please refresh the page."),
+        );
+        finalizeResumeAttempt();
+        return;
+      }
+
+      try {
+        const resumeOutcome = scanner.resume();
+        if (resumeOutcome && typeof resumeOutcome.then === "function") {
+          resumeOutcome
+            .then(() => {
+              onResumeSuccess();
+            })
+            .catch((resumeError) => {
+              onResumeFailure(resumeError);
+            })
+            .finally(finalizeResumeAttempt);
+          return;
+        }
+
+        onResumeSuccess();
+      } catch (resumeError) {
+        onResumeFailure(resumeError);
+      }
+
+      finalizeResumeAttempt();
     });
   }
 
