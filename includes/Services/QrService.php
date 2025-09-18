@@ -41,10 +41,40 @@ class QrService
 
     public function assign($qr_code, $user_id, $send_email, $send_sms, $send_reminder)
     {
-        $user      = get_userdata($user_id);
-        $name      = $user ? $user->display_name : '';
+        $existing = $this->repository->find_by_qr_code($qr_code);
+        if ($existing && isset($existing->status) && $existing->status === 'assigned') {
+            if ((int) $existing->user_id === (int) $user_id) {
+                return new \WP_Error(
+                    'qr_code_already_assigned',
+                    __('This QR code is already assigned to the selected customer.', 'kerbcycle')
+                );
+            }
 
-        if ($this->repository->available_exists($qr_code)) {
+            $message = __('This QR code is already assigned. Release it before assigning it to another customer.', 'kerbcycle');
+
+            if (!empty($existing->display_name)) {
+                /* translators: %s is the customer's display name. */
+                $message = sprintf(
+                    __('This QR code is already assigned to %s. Release it before assigning it to another customer.', 'kerbcycle'),
+                    $existing->display_name
+                );
+            } elseif (!empty($existing->user_id)) {
+                /* translators: %d is the customer's ID. */
+                $message = sprintf(
+                    __('This QR code is already assigned to customer #%d. Release it before assigning it to another customer.', 'kerbcycle'),
+                    (int) $existing->user_id
+                );
+            }
+
+            return new \WP_Error('qr_code_already_assigned', $message);
+        }
+
+        $user = get_userdata($user_id);
+        $name = $user ? $user->display_name : '';
+
+        if ($existing && isset($existing->status) && $existing->status === 'available') {
+            $result = $this->repository->update_available_to_assigned($qr_code, $user_id, $name);
+        } elseif ($this->repository->available_exists($qr_code)) {
             $result = $this->repository->update_available_to_assigned($qr_code, $user_id, $name);
         } else {
             $result = $this->repository->insert_assigned($qr_code, $user_id, $name);
