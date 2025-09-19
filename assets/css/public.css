@@ -76,6 +76,14 @@
   white-space: nowrap; /* keep labels readable */
 }
 
+.kerbcycle-scanner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+
 .kerbcycle-qr-scanner-container th,
 .kerbcycle-qr-scanner-container td {
   padding: 8px 10px;

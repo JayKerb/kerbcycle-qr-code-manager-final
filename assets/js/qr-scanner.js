@@ -390,6 +390,7 @@ function initKerbcycleScanner() {
   const scannerAllowed = kerbcycle_ajax.scanner_enabled;
   const scanResult = document.getElementById("scan-result");
   const assignBtn = document.getElementById("assign-qr-btn");
+  const resetBtn = document.getElementById("reset-scan-btn");
   const customerIdField = document.getElementById("customer-id");
   let scannedCode = "";
 
@@ -575,6 +576,31 @@ function initKerbcycleScanner() {
             console.warn("Unable to resume scanner", resumeError);
           }
         });
+    });
+  }
+
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      scannedCode = "";
+
+      if (scanResult) {
+        scanResult.style.display = "none";
+        scanResult.classList.remove("error", "updated");
+        scanResult.innerHTML = "";
+      }
+
+      try {
+        if (scannerAllowed && scanner && typeof scanner.resume === "function") {
+          const resumeResult = scanner.resume();
+          if (resumeResult && typeof resumeResult.catch === "function") {
+            resumeResult.catch((resumeError) => {
+              console.warn("Unable to resume scanner", resumeError);
+            });
+          }
+        }
+      } catch (resumeError) {
+        console.warn("Unable to resume scanner", resumeError);
+      }
     });
   }
 
