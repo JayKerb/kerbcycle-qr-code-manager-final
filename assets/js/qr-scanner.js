@@ -1,3 +1,180 @@
+// === KerbCycle QR Scanner Adapter (BarcodeDetector → ZXing → jsQR) ===
+
+async function createQrScannerAdapter({
+  videoEl,
+  onResult,
+  constraints = { facingMode: "environment" },
+}) {
+  let stream = null;
+  let paused = false;
+  let running = false;
+  let rafId = null;
+  let currentImpl = null; // "native" | "zxing" | "jsqr"
+  let zxingReader = null;
+  let offscreenCanvas = null,
+    offscreenCtx = null;
+
+  function stopStream() {
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+      stream = null;
+    }
+    running = false;
+  }
+
+  async function getCameraStream() {
+    if (stream) return stream;
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: constraints,
+      audio: false,
+    });
+    videoEl.srcObject = stream;
+    await videoEl.play();
+    return stream;
+  }
+
+  // --- Impl #1: Native BarcodeDetector (if supported) ---
+  async function tryNative() {
+    if (!("BarcodeDetector" in window)) return false;
+    const formats =
+      typeof BarcodeDetector.getSupportedFormats === "function"
+        ? await BarcodeDetector.getSupportedFormats()
+        : ["qr_code"]; // older impls
+    if (!formats || !formats.map(String).includes("qr_code")) return false;
+
+    await getCameraStream();
+    const detector = new BarcodeDetector({ formats: ["qr_code"] });
+    currentImpl = "native";
+    running = true;
+    paused = false;
+
+    const loop = async () => {
+      if (!running || paused) {
+        rafId = requestAnimationFrame(loop);
+        return;
+      }
+      try {
+        const barcodes = await detector.detect(videoEl);
+        if (barcodes && barcodes.length) {
+          const text = barcodes[0].rawValue || barcodes[0].rawValueText || "";
+          if (text) {
+            paused = true; // emulate "pause on success" behavior
+            onResult(String(text));
+          }
+        }
+      } catch (e) {
+        // ignore frame-level errors
+      }
+      rafId = requestAnimationFrame(loop);
+    };
+    loop();
+    return true;
+  }
+
+  // --- Impl #2: ZXing (@zxing/browser) ---
+  async function tryZxing() {
+    if (!window.ZXingBrowser && !window.ZXing) return false;
+    const ZXingBrowser = window.ZXingBrowser || window.ZXing?.Browser;
+    if (!ZXingBrowser) return false;
+
+    await getCameraStream();
+    currentImpl = "zxing";
+    running = true;
+    paused = false;
+
+    // Use decodeFromVideoDevice for continuous scanning.
+    zxingReader = new ZXingBrowser.BrowserQRCodeReader();
+    await zxingReader.decodeFromVideoDevice(null, videoEl, (result, err) => {
+      if (paused) return;
+      if (result && result.getText) {
+        paused = true;
+        onResult(String(result.getText()));
+      }
+      // err is normal per frame; ignore
+    });
+
+    return true;
+  }
+
+  // --- Impl #3: jsQR (canvas-based) ---
+  async function tryJsqr() {
+    if (typeof window.jsQR !== "function") return false;
+    await getCameraStream();
+    currentImpl = "jsqr";
+    running = true;
+    paused = false;
+
+    offscreenCanvas = document.createElement("canvas");
+    offscreenCtx = offscreenCanvas.getContext("2d", { willReadFrequently: true });
+
+    const loop = () => {
+      if (!running || paused) {
+        rafId = requestAnimationFrame(loop);
+        return;
+      }
+      const w = videoEl.videoWidth || 640;
+      const h = videoEl.videoHeight || 480;
+      if (w && h) {
+        offscreenCanvas.width = w;
+        offscreenCanvas.height = h;
+        offscreenCtx.drawImage(videoEl, 0, 0, w, h);
+        const img = offscreenCtx.getImageData(0, 0, w, h);
+        const code = window.jsQR(img.data, w, h, {
+          inversionAttempts: "dontInvert",
+        });
+        if (code && code.data) {
+          paused = true;
+          onResult(String(code.data));
+        }
+      }
+      rafId = requestAnimationFrame(loop);
+    };
+    loop();
+    return true;
+  }
+
+  return {
+    async start() {
+      if (running) return;
+      if (await tryNative()) return;
+      if (await tryZxing()) return;
+      if (await tryJsqr()) return;
+      throw new Error("No scanner implementation available (BarcodeDetector/ZXing/jsQR).");
+    },
+    pause() {
+      paused = true;
+    },
+    resume() {
+      if (running) {
+        paused = false;
+      }
+    },
+    stop() {
+      try {
+        if (zxingReader && zxingReader.reset) zxingReader.reset();
+      } catch (e) {
+        // ignore errors when resetting reader
+      }
+      zxingReader = null;
+      stopStream();
+      paused = false;
+      currentImpl = null;
+    },
+    getStateLabel() {
+      if (!running) return "NOT_STARTED";
+      return paused ? "PAUSED" : "SCANNING";
+    },
+    getImplementation() {
+      return currentImpl;
+    },
+  };
+}
+// === End Adapter ===
+
 function makeSearchableSelect(select) {
   if (!select || select._kcEnhanced) return;
 
@@ -395,8 +572,6 @@ function initKerbcycleScanner() {
   let scannedCode = "";
 
   let scanner = null;
-  const scannerCameraConfig = { facingMode: "environment" };
-  const scannerStartConfig = { fps: 10, qrbox: 250 };
   let scannerStateHint = "NOT_STARTED";
   let scannerActivationPromise = null;
 
@@ -501,12 +676,10 @@ function initKerbcycleScanner() {
       return;
     }
 
-    let activation;
-    let attemptedResume = false;
+    let action = null;
     if (currentState === "PAUSED" && typeof scanner.resume === "function") {
-      attemptedResume = true;
       try {
-        activation = scanner.resume();
+        action = scanner.resume();
       } catch (resumeError) {
         console.warn("Unable to resume scanner", resumeError);
         if (showError) {
@@ -514,116 +687,90 @@ function initKerbcycleScanner() {
         }
         return;
       }
-    } else {
+    } else if (typeof scanner.start === "function") {
       try {
-        activation = scanner.start(
-          scannerCameraConfig,
-          scannerStartConfig,
-          onScanSuccess,
-        );
+        action = scanner.start();
       } catch (startError) {
-        console.error("Unable to start scanning", startError);
+        console.error("Unable to start scanner", startError);
+        updateScannerStateHint("STOPPED");
         if (showError) {
           displayScannerStartError(startError);
         }
-        updateScannerStateHint("STOPPED");
         return;
       }
-    }
-
-    if (activation && typeof activation.then === "function") {
-      scannerActivationPromise = activation;
-      activation
-        .then(() => {
-          updateScannerStateHint("SCANNING");
-        })
-        .catch((activationError) => {
-          console.error("Unable to activate scanner", activationError);
-          const message = String(activationError || "");
-
-          if (attemptedResume && typeof scanner.start === "function") {
-            try {
-              const restart = scanner.start(
-                scannerCameraConfig,
-                scannerStartConfig,
-                onScanSuccess,
-              );
-
-              if (restart && typeof restart.then === "function") {
-                scannerActivationPromise = restart;
-                restart
-                  .then(() => {
-                    updateScannerStateHint("SCANNING");
-                  })
-                  .catch((restartError) => {
-                    console.error("Unable to restart scanner", restartError);
-                    updateScannerStateHint("STOPPED");
-                    if (showError) {
-                      displayScannerStartError(restartError);
-                    }
-                  })
-                  .finally(() => {
-                    if (scannerActivationPromise === restart) {
-                      scannerActivationPromise = null;
-                    }
-                  });
-                return restart;
-              }
-
-              updateScannerStateHint("SCANNING");
-              if (scannerActivationPromise === activation) {
-                scannerActivationPromise = null;
-              }
-              return null;
-            } catch (restartError) {
-              console.error("Unable to restart scanner", restartError);
-              updateScannerStateHint("STOPPED");
-              if (showError) {
-                displayScannerStartError(restartError);
-              }
-              return null;
-            }
-          }
-
-          if (message.includes("clear while scan is ongoing")) {
-            updateScannerStateHint("SCANNING");
-            return null;
-          }
-
-          updateScannerStateHint("STOPPED");
-          if (showError) {
-            displayScannerStartError(activationError);
-          }
-          return null;
-        })
-        .finally(() => {
-          if (scannerActivationPromise === activation) {
-            scannerActivationPromise = null;
-          }
-        });
     } else {
-      updateScannerStateHint("SCANNING");
+      return;
     }
+
+    const normalized = (
+      action && typeof action.then === "function"
+        ? action
+        : Promise.resolve(action)
+    );
+
+    const pending = normalized
+      .then(() => {
+        updateScannerStateHint("SCANNING");
+        return null;
+      })
+      .catch((activationError) => {
+        console.error("Unable to activate scanner", activationError);
+        updateScannerStateHint("STOPPED");
+        if (showError) {
+          displayScannerStartError(activationError);
+        }
+        return null;
+      })
+      .finally(() => {
+        if (scannerActivationPromise === pending) {
+          scannerActivationPromise = null;
+        }
+      });
+
+    scannerActivationPromise = pending;
   }
 
-  if (
-    scannerAllowed &&
-    typeof Html5Qrcode !== "undefined" &&
-    document.getElementById("reader")
-  ) {
-    scanner = new Html5Qrcode("reader", true);
+  const readerEl = document.getElementById("reader");
 
-    function onScanSuccess(decodedText) {
+  if (scannerAllowed && readerEl) {
+    const video = document.createElement("video");
+    video.setAttribute("playsinline", "true");
+    video.style.width = "100%";
+    video.style.maxWidth = "400px";
+    readerEl.innerHTML = "";
+    readerEl.appendChild(video);
+
+    const onScanSuccess = (decodedText) => {
       pauseActiveScanner();
       scannedCode = decodedText || "";
       const safeCode = escapeHtml(decodedText || "");
       setScanResult(
         scanResult,
         "success",
-        `<strong>✅ QR Code Scanned Successfully!</strong><br>Content: <code>${safeCode}</code>`,
+        `<strong>✅ QR Code Scanned Successfully!</strong><br>Content: <code>${safeCode}</code>`
       );
-    }
-    activateScanner({ showError: true });
+    };
+
+    createQrScannerAdapter({
+      videoEl: video,
+      onResult: onScanSuccess,
+      constraints: { facingMode: "environment" },
+    })
+      .then((ctrl) => {
+        scanner = {
+          start: () => ctrl.start(),
+          pause: () => ctrl.pause(),
+          resume: () => ctrl.resume(),
+          stop: () => ctrl.stop(),
+          getState: () => ctrl.getStateLabel(),
+        };
+
+        activateScanner({ showError: true });
+      })
+      .catch((error) => {
+        console.error("Unable to initialize scanner", error);
+        displayScannerStartError(error);
+      });
   }
 
   if (assignBtn) {
