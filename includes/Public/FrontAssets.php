@@ -49,6 +49,24 @@ class FrontAssets
         if ($has_scanner) {
             wp_enqueue_script('html5-qrcode', 'https://unpkg.com/html5-qrcode', [], null, true);
             $deps[] = 'html5-qrcode';
+
+            wp_enqueue_script(
+                'zxing-browser',
+                'https://unpkg.com/@zxing/browser@latest',
+                [],
+                null,
+                true
+            );
+            $deps[] = 'zxing-browser';
+
+            wp_enqueue_script(
+                'jsqr',
+                'https://unpkg.com/jsqr/dist/jsQR.js',
+                [],
+                null,
+                true
+            );
+            $deps[] = 'jsqr';
         }
 
         wp_enqueue_style(
