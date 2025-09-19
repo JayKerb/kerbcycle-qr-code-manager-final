@@ -48,9 +48,16 @@ class Shortcodes
         ]);
         ?>
             <script>
-                document
-                    .getElementById('customer-id')
-                    ?.setAttribute('data-placeholder', '<?php echo esc_js(__('Select Customer', 'kerbcycle')); ?>');
+                (function () {
+                    const select = document.getElementById('customer-id');
+                    if (!select) {
+                        return;
+                    }
+
+                    select.setAttribute('data-placeholder', '<?php echo esc_js(__('Select Customer', 'kerbcycle')); ?>');
+                    select.setAttribute('data-resettable', 'true');
+                    select.setAttribute('data-reset-label', '<?php echo esc_js(__('Reset', 'kerbcycle')); ?>');
+                })();
             </script>
             <div class="kerbcycle-scanner-actions">
                 <button id="assign-qr-btn" class="button button-primary">Assign QR Code</button>

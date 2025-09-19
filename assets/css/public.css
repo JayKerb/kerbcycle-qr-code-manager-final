@@ -29,6 +29,25 @@
   cursor: pointer;
 }
 
+.kc-combobox-reset {
+  flex: 0 0 auto;
+  padding: 0 12px;
+  font-size: 14px;
+  line-height: 1;
+  border: 1px solid #c3c4c7;
+  border-radius: 4px;
+  background: #f6f7f7;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+}
+
+.kc-combobox-reset:hover,
+.kc-combobox-reset:focus {
+  background: #e0e0e0;
+}
+
 .kc-combobox-list {
   position: absolute;
   z-index: 10000;
