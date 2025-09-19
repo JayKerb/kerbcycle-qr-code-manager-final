@@ -393,6 +393,7 @@ function initKerbcycleScanner() {
   const resetBtn = document.getElementById("reset-scan-btn");
   const customerIdField = document.getElementById("customer-id");
   let scannedCode = "";
+  let lastDecodedText = null;
 
   let scanner = null;
   const scannerCameraConfig = { facingMode: "environment" };
@@ -412,6 +413,31 @@ function initKerbcycleScanner() {
     return scannerStateHint;
   }
 
+  function getScannerStateLabel() {
+    const rawState = getScannerState();
+
+    if (typeof rawState === "string" && rawState) {
+      return rawState;
+    }
+
+    if (typeof rawState === "number") {
+      switch (rawState) {
+        case 3:
+          return "SCANNING";
+        case 2:
+          return "PAUSED";
+        case 4:
+          return "STOPPED";
+        case 1:
+          return "NOT_STARTED";
+        default:
+          return scannerStateHint;
+      }
+    }
+
+    return scannerStateHint;
+  }
+
   function updateScannerStateHint(state) {
     if (typeof state === "string" && state) {
       scannerStateHint = state;
@@ -423,7 +449,7 @@ function initKerbcycleScanner() {
       return;
     }
 
-    const currentState = getScannerState();
+    const currentState = getScannerStateLabel();
     if (currentState === "PAUSED") {
       updateScannerStateHint("PAUSED");
       return;
@@ -461,6 +487,7 @@ function initKerbcycleScanner() {
 
     if (clearCode) {
       scannedCode = "";
+      lastDecodedText = null;
     }
 
     if (!scannerAllowed || !scanner) {
@@ -471,7 +498,7 @@ function initKerbcycleScanner() {
       return;
     }
 
-    const currentState = getScannerState();
+    const currentState = getScannerStateLabel();
     if (currentState === "SCANNING") {
       updateScannerStateHint("SCANNING");
       return;
@@ -590,9 +617,20 @@ function initKerbcycleScanner() {
     scanner = new Html5Qrcode("reader", true);
 
     function onScanSuccess(decodedText) {
+      const normalizedText =
+        decodedText === null || decodedText === undefined
+          ? ""
+          : String(decodedText);
+
+      if (normalizedText && normalizedText === lastDecodedText) {
+        return;
+      }
+
+      lastDecodedText = normalizedText;
+
       pauseActiveScanner();
-      scannedCode = decodedText || "";
-      const safeCode = escapeHtml(decodedText || "");
+      scannedCode = normalizedText;
+      const safeCode = escapeHtml(normalizedText);
       setScanResult(
         scanResult,
         "success",
@@ -718,6 +756,8 @@ function initKerbcycleScanner() {
           assignBtn.disabled = false;
           assignBtn.removeAttribute("aria-busy");
 
+          lastDecodedText = null;
+
           // Always attempt to reactivate the scanner after handling the
           // assignment request, even when the server returns an error.
           activateScanner({ showError: true });
@@ -728,6 +768,7 @@ function initKerbcycleScanner() {
   if (resetBtn) {
     resetBtn.addEventListener("click", () => {
       scannedCode = "";
+      lastDecodedText = null;
 
       if (scanResult) {
         scanResult.style.display = "none";
