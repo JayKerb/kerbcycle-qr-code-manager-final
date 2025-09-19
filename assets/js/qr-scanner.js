@@ -400,10 +400,34 @@ function initKerbcycleScanner() {
   let scannerStateHint = "NOT_STARTED";
   let scannerActivationPromise = null;
 
+  function getScannerStateLabel(state) {
+    if (typeof state === "string" && state) {
+      return state;
+    }
+
+    if (typeof state === "number") {
+      if (state === 2) {
+        return "SCANNING";
+      }
+      if (state === 3) {
+        return "PAUSED";
+      }
+      return "";
+    }
+
+    if (state && typeof state.name === "string") {
+      return state.name;
+    }
+
+    return "";
+  }
+
   function getScannerState() {
     if (scanner && typeof scanner.getState === "function") {
       try {
-        return scanner.getState();
+        const rawState = scanner.getState();
+        const normalized = getScannerStateLabel(rawState);
+        return normalized || scannerStateHint;
       } catch (stateError) {
         // Fall back to our internal hint when the library cannot report the state.
         return scannerStateHint;
