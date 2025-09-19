@@ -57,6 +57,7 @@ class SettingsPage
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_sms');
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_reminders');
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_scanner');
+        register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_disable_scanner_auto_add');
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_disable_drag_drop');
         register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_codes_per_page');
         register_setting('kerbcycle_qr_settings', 'kerbcycle_history_per_page');
@@ -98,6 +99,14 @@ class SettingsPage
             'kerbcycle_qr_enable_scanner',
             __('Enable Dashboard QR Scanner Camera', 'kerbcycle'),
             [$this, 'render_enable_scanner_field'],
+            'kerbcycle_qr_settings',
+            'kerbcycle_qr_main'
+        );
+
+        add_settings_field(
+            'kerbcycle_qr_disable_scanner_auto_add',
+            __('Disable Scanner Auto-Adding QR Codes', 'kerbcycle'),
+            [$this, 'render_disable_scanner_auto_add_field'],
             'kerbcycle_qr_settings',
             'kerbcycle_qr_main'
         );
@@ -176,6 +185,15 @@ class SettingsPage
         ?>
         <input type="checkbox" name="kerbcycle_qr_enable_scanner" value="1" <?php checked(1, $value); ?> />
         <span class="description"><?php esc_html_e('Allow camera use on the dashboard scanner', 'kerbcycle'); ?></span>
+        <?php
+    }
+
+    public function render_disable_scanner_auto_add_field()
+    {
+        $value = get_option('kerbcycle_qr_disable_scanner_auto_add', 0);
+        ?>
+        <input type="checkbox" name="kerbcycle_qr_disable_scanner_auto_add" value="1" <?php checked(1, $value); ?> />
+        <span class="description"><?php esc_html_e('Require QR codes to exist in the repository before scanner assignments.', 'kerbcycle'); ?></span>
         <?php
     }
 
