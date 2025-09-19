@@ -395,6 +395,192 @@ function initKerbcycleScanner() {
   let scannedCode = "";
 
   let scanner = null;
+  const scannerCameraConfig = { facingMode: "environment" };
+  const scannerStartConfig = { fps: 10, qrbox: 250 };
+  let scannerStateHint = "NOT_STARTED";
+  let scannerActivationPromise = null;
+
+  function getScannerState() {
+    if (scanner && typeof scanner.getState === "function") {
+      try {
+        return scanner.getState();
+      } catch (stateError) {
+        // Fall back to our internal hint when the library cannot report the state.
+        return scannerStateHint;
+      }
+    }
+    return scannerStateHint;
+  }
+
+  function updateScannerStateHint(state) {
+    if (typeof state === "string" && state) {
+      scannerStateHint = state;
+    }
+  }
+
+  function pauseActiveScanner() {
+    if (!scannerAllowed || !scanner || typeof scanner.pause !== "function") {
+      return;
+    }
+
+    const currentState = getScannerState();
+    if (currentState === "PAUSED") {
+      updateScannerStateHint("PAUSED");
+      return;
+    }
+
+    try {
+      const pauseResult = scanner.pause();
+      updateScannerStateHint("PAUSED");
+      if (pauseResult && typeof pauseResult.catch === "function") {
+        pauseResult.catch((pauseError) => {
+          console.warn("Unable to pause scanner", pauseError);
+          updateScannerStateHint("SCANNING");
+        });
+      }
+    } catch (pauseError) {
+      console.warn("Unable to pause scanner", pauseError);
+      updateScannerStateHint("SCANNING");
+    }
+  }
+
+  function displayScannerStartError(error) {
+    if (!scanResult) {
+      return;
+    }
+    const safeErr = escapeHtml(String(error));
+    setScanResult(
+      scanResult,
+      "error",
+      `<strong>❌ Unable to start scanner.</strong> Please ensure you have a camera and have granted permission.<br>${safeErr}`,
+    );
+  }
+
+  function activateScanner(options = {}) {
+    const { clearCode = false, showError = false } = options;
+
+    if (clearCode) {
+      scannedCode = "";
+    }
+
+    if (!scannerAllowed || !scanner) {
+      return;
+    }
+
+    if (scannerActivationPromise) {
+      return;
+    }
+
+    const currentState = getScannerState();
+    if (currentState === "SCANNING") {
+      updateScannerStateHint("SCANNING");
+      return;
+    }
+
+    let activation;
+    let attemptedResume = false;
+    if (currentState === "PAUSED" && typeof scanner.resume === "function") {
+      attemptedResume = true;
+      try {
+        activation = scanner.resume();
+      } catch (resumeError) {
+        console.warn("Unable to resume scanner", resumeError);
+        if (showError) {
+          displayScannerStartError(resumeError);
+        }
+        return;
+      }
+    } else {
+      try {
+        activation = scanner.start(
+          scannerCameraConfig,
+          scannerStartConfig,
+          onScanSuccess,
+        );
+      } catch (startError) {
+        console.error("Unable to start scanning", startError);
+        if (showError) {
+          displayScannerStartError(startError);
+        }
+        updateScannerStateHint("STOPPED");
+        return;
+      }
+    }
+
+    if (activation && typeof activation.then === "function") {
+      scannerActivationPromise = activation;
+      activation
+        .then(() => {
+          updateScannerStateHint("SCANNING");
+        })
+        .catch((activationError) => {
+          console.error("Unable to activate scanner", activationError);
+          const message = String(activationError || "");
+
+          if (attemptedResume && typeof scanner.start === "function") {
+            try {
+              const restart = scanner.start(
+                scannerCameraConfig,
+                scannerStartConfig,
+                onScanSuccess,
+              );
+
+              if (restart && typeof restart.then === "function") {
+                scannerActivationPromise = restart;
+                restart
+                  .then(() => {
+                    updateScannerStateHint("SCANNING");
+                  })
+                  .catch((restartError) => {
+                    console.error("Unable to restart scanner", restartError);
+                    updateScannerStateHint("STOPPED");
+                    if (showError) {
+                      displayScannerStartError(restartError);
+                    }
+                  })
+                  .finally(() => {
+                    if (scannerActivationPromise === restart) {
+                      scannerActivationPromise = null;
+                    }
+                  });
+                return restart;
+              }
+
+              updateScannerStateHint("SCANNING");
+              if (scannerActivationPromise === activation) {
+                scannerActivationPromise = null;
+              }
+              return null;
+            } catch (restartError) {
+              console.error("Unable to restart scanner", restartError);
+              updateScannerStateHint("STOPPED");
+              if (showError) {
+                displayScannerStartError(restartError);
+              }
+              return null;
+            }
+          }
+
+          if (message.includes("clear while scan is ongoing")) {
+            updateScannerStateHint("SCANNING");
+            return null;
+          }
+
+          updateScannerStateHint("STOPPED");
+          if (showError) {
+            displayScannerStartError(activationError);
+          }
+          return null;
+        })
+        .finally(() => {
+          if (scannerActivationPromise === activation) {
+            scannerActivationPromise = null;
+          }
+        });
+    } else {
+      updateScannerStateHint("SCANNING");
+    }
+  }
 
   if (
     scannerAllowed &&
@@ -404,9 +590,7 @@ function initKerbcycleScanner() {
     scanner = new Html5Qrcode("reader", true);
 
     function onScanSuccess(decodedText) {
-      if (scanner && typeof scanner.pause === "function") {
-        scanner.pause();
-      }
+      pauseActiveScanner();
       scannedCode = decodedText || "";
       const safeCode = escapeHtml(decodedText || "");
       setScanResult(
@@ -415,22 +599,7 @@ function initKerbcycleScanner() {
         `<strong>✅ QR Code Scanned Successfully!</strong><br>Content: <code>${safeCode}</code>`,
       );
     }
-
-    scanner
-      .start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        onScanSuccess,
-      )
-      .catch((err) => {
-        console.error(`Unable to start scanning, error: ${err}`);
-        const safeErr = escapeHtml(String(err));
-        setScanResult(
-          scanResult,
-          "error",
-          `<strong>❌ Unable to start scanner.</strong> Please ensure you have a camera and have granted permission.<br>${safeErr}`,
-        );
-      });
+    activateScanner({ showError: true });
   }
 
   if (assignBtn) {
@@ -523,18 +692,6 @@ function initKerbcycleScanner() {
             }
 
             scannedCode = "";
-            if (scanner && typeof scanner.resume === "function") {
-              try {
-                const resumeResult = scanner.resume();
-                if (resumeResult && typeof resumeResult.catch === "function") {
-                  resumeResult.catch((resumeError) => {
-                    console.warn("Unable to resume scanner", resumeError);
-                  });
-                }
-              } catch (resumeError) {
-                console.warn("Unable to resume scanner", resumeError);
-              }
-            }
           } else {
             const err =
               data.data && data.data.message
@@ -561,20 +718,9 @@ function initKerbcycleScanner() {
           assignBtn.disabled = false;
           assignBtn.removeAttribute("aria-busy");
 
-          // Always attempt to resume the scanner after handling the
+          // Always attempt to reactivate the scanner after handling the
           // assignment request, even when the server returns an error.
-          try {
-            if (scannerAllowed && scanner && typeof scanner.resume === "function") {
-              const resumeResult = scanner.resume();
-              if (resumeResult && typeof resumeResult.catch === "function") {
-                resumeResult.catch((resumeError) => {
-                  console.warn("Unable to resume scanner", resumeError);
-                });
-              }
-            }
-          } catch (resumeError) {
-            console.warn("Unable to resume scanner", resumeError);
-          }
+          activateScanner({ showError: true });
         });
     });
   }
@@ -589,18 +735,7 @@ function initKerbcycleScanner() {
         scanResult.innerHTML = "";
       }
 
-      try {
-        if (scannerAllowed && scanner && typeof scanner.resume === "function") {
-          const resumeResult = scanner.resume();
-          if (resumeResult && typeof resumeResult.catch === "function") {
-            resumeResult.catch((resumeError) => {
-              console.warn("Unable to resume scanner", resumeError);
-            });
-          }
-        }
-      } catch (resumeError) {
-        console.warn("Unable to resume scanner", resumeError);
-      }
+      activateScanner({ clearCode: true, showError: true });
     });
   }
 
