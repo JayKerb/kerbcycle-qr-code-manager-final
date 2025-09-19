@@ -69,12 +69,24 @@ class QrService
             return new \WP_Error('qr_code_already_assigned', $message);
         }
 
+        $available_exists = false;
+        if (!$existing || !isset($existing->status) || $existing->status !== 'available') {
+            $available_exists = $this->repository->available_exists($qr_code);
+        }
+
+        if (!$existing && !$available_exists && get_option('kerbcycle_qr_disable_scanner_auto_add', 0)) {
+            return new \WP_Error(
+                'qr_scanner_auto_add_disabled',
+                __('Adding new QR codes via the scanner is disabled. Please add the QR code to the repository before assigning it.', 'kerbcycle')
+            );
+        }
+
         $user = get_userdata($user_id);
         $name = $user ? $user->display_name : '';
 
         if ($existing && isset($existing->status) && $existing->status === 'available') {
             $result = $this->repository->update_available_to_assigned($qr_code, $user_id, $name);
-        } elseif ($this->repository->available_exists($qr_code)) {
+        } elseif ($available_exists) {
             $result = $this->repository->update_available_to_assigned($qr_code, $user_id, $name);
         } else {
             $result = $this->repository->insert_assigned($qr_code, $user_id, $name);
