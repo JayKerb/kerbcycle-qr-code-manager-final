@@ -187,7 +187,7 @@ function makeSearchableSelect(select) {
   select.parentNode.insertBefore(wrapper, select);
   wrapper.appendChild(select);
 
-  // Visible input + caret button
+  // Visible input + caret button (+ optional reset button)
   const input = document.createElement("input");
   input.type = "text";
   input.className = "kc-combobox-input";
@@ -209,8 +209,23 @@ function makeSearchableSelect(select) {
   list.setAttribute("role", "listbox");
   list.hidden = true;
 
+  let resetBtn = null;
+  const enableReset = select.hasAttribute("data-resettable");
+  if (enableReset) {
+    resetBtn = document.createElement("button");
+    resetBtn.type = "button";
+    resetBtn.className = "kc-combobox-reset";
+    const resetLabel =
+      select.getAttribute("data-reset-label") || "Reset";
+    resetBtn.textContent = resetLabel;
+    resetBtn.setAttribute("aria-label", resetLabel);
+  }
+
   wrapper.appendChild(input);
   wrapper.appendChild(btn);
+  if (resetBtn) {
+    wrapper.appendChild(resetBtn);
+  }
   wrapper.appendChild(list);
 
   // Build items from <select> options
@@ -334,14 +349,34 @@ function makeSearchableSelect(select) {
     if (!wrapper.contains(e.target)) closeList();
   });
 
+  function clearSelection({ triggerChange = true } = {}) {
+    const hadValue = select.value;
+    select.value = "";
+    input.value = "";
+    closeList();
+    buildList();
+    if (triggerChange && hadValue !== select.value) {
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }
+
+  if (resetBtn) {
+    resetBtn.addEventListener("click", () => {
+      clearSelection({ triggerChange: true });
+      input.focus();
+    });
+  }
+
   // Mark enhanced to avoid double init
   select._kcEnhanced = {
     input,
     btn,
+    resetBtn,
     list,
     openList,
     closeList,
     refresh: buildList,
+    reset: clearSelection,
   };
 }
 
@@ -854,11 +889,15 @@ function initKerbcycleScanner() {
               );
 
               const enhanced = customerIdField._kcEnhanced;
-              if (enhanced && enhanced.input) {
-                enhanced.input.value = "";
-              }
-              if (enhanced && typeof enhanced.closeList === "function") {
-                enhanced.closeList();
+              if (enhanced && typeof enhanced.reset === "function") {
+                enhanced.reset({ triggerChange: false });
+              } else {
+                if (enhanced && enhanced.input) {
+                  enhanced.input.value = "";
+                }
+                if (enhanced && typeof enhanced.closeList === "function") {
+                  enhanced.closeList();
+                }
               }
             }
 
