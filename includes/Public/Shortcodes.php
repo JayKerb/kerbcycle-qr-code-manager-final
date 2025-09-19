@@ -52,7 +52,10 @@ class Shortcodes
                     .getElementById('customer-id')
                     ?.setAttribute('data-placeholder', '<?php echo esc_js(__('Select Customer', 'kerbcycle')); ?>');
             </script>
-            <button id="assign-qr-btn" class="button button-primary">Assign QR Code</button>
+            <div class="kerbcycle-scanner-actions">
+                <button id="assign-qr-btn" class="button button-primary">Assign QR Code</button>
+                <button id="reset-scan-btn" class="button"><?php esc_html_e('Scan Reset', 'kerbcycle'); ?></button>
+            </div>
             <div id="reader" style="width: 100%; max-width: 400px; margin-top: 20px;"></div>
             <div id="scan-result" class="updated" style="display: none;"></div>
         </div>
