@@ -91,12 +91,27 @@ class AdminAssets
         ]);
 
         if ($scanner_enabled) {
-            wp_enqueue_script('html5-qrcode', 'https://unpkg.com/html5-qrcode', [], null, true);
+            wp_enqueue_script(
+                'zxing-browser',
+                'https://unpkg.com/@zxing/browser@latest',
+                [],
+                null,
+                true
+            );
+
+            wp_enqueue_script(
+                'jsqr',
+                'https://unpkg.com/jsqr/dist/jsQR.js',
+                [],
+                null,
+                true
+            );
+
             wp_enqueue_script(
                 'kerbcycle-qr-scanner-js',
                 KERBCYCLE_QR_URL . 'assets/js/qr-scanner.js',
-                ['html5-qrcode', 'kerbcycle-qr-admin-js'],
-                '1.0',
+                ['zxing-browser', 'jsqr', 'kerbcycle-qr-admin-js'],
+                filemtime(KERBCYCLE_QR_PATH . 'assets/js/qr-scanner.js'),
                 true
             );
         }
