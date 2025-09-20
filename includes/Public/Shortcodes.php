@@ -79,7 +79,10 @@ class Shortcodes
     {
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
-        $codes = $wpdb->get_results("SELECT id, qr_code, user_id, display_name, status, assigned_at FROM $table ORDER BY id DESC");
+        $codes = $wpdb->get_results(
+            "SELECT id, qr_code, user_id, display_name, status, assigned_at FROM $table"
+            . " ORDER BY assigned_at DESC, id DESC"
+        );
 
         ob_start();
         ?>
