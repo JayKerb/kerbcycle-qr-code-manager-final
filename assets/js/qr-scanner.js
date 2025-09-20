@@ -505,33 +505,17 @@ function updateFrontendQrTable(record) {
       emptyRow.remove();
     }
     row = document.createElement("tr");
-    buildQrTableRow(row, record);
-
-    const recordId = record.id ? Number(record.id) : NaN;
-    const rows = Array.from(tbody.querySelectorAll("tr"));
-    let inserted = false;
-    if (!Number.isNaN(recordId)) {
-      for (const existingRow of rows) {
-        const idCell = existingRow.querySelector("td");
-        if (!idCell || idCell.classList.contains("description")) {
-          continue;
-        }
-        const existingId = Number(idCell.textContent || 0);
-        if (Number.isNaN(existingId)) {
-          continue;
-        }
-        if (existingId < recordId) {
-          tbody.insertBefore(row, existingRow);
-          inserted = true;
-          break;
-        }
-      }
-    }
-    if (!inserted) {
-      tbody.appendChild(row);
-    }
   } else {
-    buildQrTableRow(row, record);
+    row.remove();
+  }
+
+  buildQrTableRow(row, record);
+
+  const firstRow = tbody.querySelector("tr");
+  if (firstRow) {
+    tbody.insertBefore(row, firstRow);
+  } else {
+    tbody.appendChild(row);
   }
 
   const mm = window.matchMedia("(max-width: 480px)");
@@ -540,9 +524,7 @@ function updateFrontendQrTable(record) {
   const pagination = document.querySelector(".kerbcycle-qr-pagination");
   if (pagination) {
     const rowsPerPage = parseInt(pagination.dataset.rows || "10", 10);
-    const currentPage =
-      existed && table._kcPagination ? table._kcPagination.currentPage || 1 : 1;
-    paginateQrTable(table, pagination, rowsPerPage, currentPage);
+    paginateQrTable(table, pagination, rowsPerPage, 1);
   }
 
   return { updated: true, existed };
