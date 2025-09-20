@@ -108,10 +108,10 @@ class AdminAssets
             );
 
             wp_enqueue_script(
-                'kerbcycle-qr-scanner-js',
-                KERBCYCLE_QR_URL . 'assets/js/qr-scanner.js',
+                'kerbcycle-dashboard-scanner-js',
+                KERBCYCLE_QR_URL . 'assets/js/dashboard-scanner.js',
                 ['zxing-browser', 'jsqr', 'kerbcycle-qr-admin-js'],
-                filemtime(KERBCYCLE_QR_PATH . 'assets/js/qr-scanner.js'),
+                filemtime(KERBCYCLE_QR_PATH . 'assets/js/dashboard-scanner.js'),
                 true
             );
         }
