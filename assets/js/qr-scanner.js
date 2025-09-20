@@ -175,6 +175,13 @@ async function createQrScannerAdapter({
 }
 // === End Adapter ===
 
+// Context helper: 'front' (shortcode page) vs 'admin' (dashboard)
+const KC_CONTEXT =
+  (typeof kerbcycle_ajax === "object" &&
+    kerbcycle_ajax &&
+    kerbcycle_ajax.context) ||
+  "front";
+
 function makeSearchableSelect(select) {
   if (!select || select._kcEnhanced || select._searchable) return;
 
@@ -596,17 +603,17 @@ function initResponsiveDates() {
 }
 
 function initKerbcycleScanner() {
-  document
-    .querySelectorAll("select.kc-searchable")
-    .forEach((select) => {
-      if (select._searchable) {
-        return;
-      }
-      if (!select.closest(".kerbcycle-qr-scanner-container")) {
+  const isFront = KC_CONTEXT === "front";
+  const container = document.querySelector(".kerbcycle-qr-scanner-container");
+
+  if (isFront && container) {
+    container.querySelectorAll("select.kc-searchable").forEach((select) => {
+      if (select._searchable || select._kcEnhanced) {
         return;
       }
       makeSearchableSelect(select);
     });
+  }
   const scannerAllowed = kerbcycle_ajax.scanner_enabled;
   const scanResult = document.getElementById("scan-result");
   const assignBtn = document.getElementById("assign-qr-btn");

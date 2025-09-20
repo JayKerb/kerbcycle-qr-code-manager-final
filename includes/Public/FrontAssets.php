@@ -88,6 +88,7 @@ class FrontAssets
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('kerbcycle_qr_nonce'),
             'scanner_enabled' => $has_scanner,
+            'context' => 'front',
         ]);
     }
 }
