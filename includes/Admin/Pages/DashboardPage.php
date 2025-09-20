@@ -90,10 +90,10 @@ class DashboardPage
             <div id="qr-scanner-container">
                 <?php
                 $email_enabled    = (bool) get_option('kerbcycle_qr_enable_email', 1);
-                $sms_enabled      = (bool) get_option('kerbcycle_qr_enable_sms', 0);
-                $reminder_enabled = (bool) get_option('kerbcycle_qr_enable_reminders', 0);
-                $scanner_enabled  = (bool) get_option('kerbcycle_qr_enable_scanner', 1);
-                ?>
+        $sms_enabled      = (bool) get_option('kerbcycle_qr_enable_sms', 0);
+        $reminder_enabled = (bool) get_option('kerbcycle_qr_enable_reminders', 0);
+        $scanner_enabled  = (bool) get_option('kerbcycle_qr_enable_scanner', 1);
+        ?>
                 <?php if ($scanner_enabled) : ?>
                     <div id="reader" class="qr-reader"></div>
                 <?php else : ?>
@@ -112,12 +112,12 @@ class DashboardPage
                     <div class="qr-select-group">
                         <div>
                             <?php
-                    wp_dropdown_users(array(
-                        'name'             => 'customer_id',
-                        'id'               => 'customer-id',
-                        'class'            => 'kc-searchable',
-                        'show_option_none' => __('Select Customer', 'kerbcycle')
-                    ));
+            wp_dropdown_users(array(
+                'name'             => 'customer_id',
+                'id'               => 'customer-id',
+                'class'            => 'kc-searchable',
+                'show_option_none' => __('Select Customer', 'kerbcycle')
+            ));
         ?>
                             <p class="description"><?php esc_html_e('Customer Search', 'kerbcycle'); ?></p>
                         </div>
