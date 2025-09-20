@@ -176,7 +176,7 @@ async function createQrScannerAdapter({
 // === End Adapter ===
 
 function makeSearchableSelect(select) {
-  if (!select || select._kcEnhanced) return;
+  if (!select || select._kcEnhanced || select._searchable) return;
 
   // Wrapper
   const wrapper = document.createElement("div");
@@ -598,7 +598,15 @@ function initResponsiveDates() {
 function initKerbcycleScanner() {
   document
     .querySelectorAll("select.kc-searchable")
-    .forEach(makeSearchableSelect);
+    .forEach((select) => {
+      if (select._searchable) {
+        return;
+      }
+      if (!select.closest(".kerbcycle-qr-scanner-container")) {
+        return;
+      }
+      makeSearchableSelect(select);
+    });
   const scannerAllowed = kerbcycle_ajax.scanner_enabled;
   const scanResult = document.getElementById("scan-result");
   const assignBtn = document.getElementById("assign-qr-btn");
