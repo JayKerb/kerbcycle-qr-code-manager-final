@@ -95,6 +95,10 @@ class DashboardPage
         $scanner_enabled  = (bool) get_option('kerbcycle_qr_enable_scanner', 1);
         ?>
                 <?php if ($scanner_enabled) : ?>
+                    <div class="qr-scanner-actions">
+                        <button id="dashboard-add-qr-btn" class="button button-primary"><?php esc_html_e('Add QR Code', 'kerbcycle'); ?></button>
+                        <button id="dashboard-reset-scan-btn" class="button"><?php esc_html_e('Scan Reset', 'kerbcycle'); ?></button>
+                    </div>
                     <div id="reader" class="qr-reader"></div>
                 <?php else : ?>
                     <div class="notice notice-warning qr-warning">

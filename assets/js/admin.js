@@ -301,52 +301,66 @@ function initKerbcycleAdmin() {
     });
   }
 
-  if (addBtn) {
-    addBtn.addEventListener("click", function () {
-      const qrCode = newCodeInput ? newCodeInput.value.trim() : "";
-      if (!qrCode) {
-        alert("Please enter a QR code.");
-        return;
-      }
+  function addQrCodeToRepository(rawQrCode, options = {}) {
+    const {
+      showAlertOnEmpty = false,
+      clearInput = false,
+      source = "manual",
+    } = options;
 
-      fetch(kerbcycle_ajax.ajax_url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        },
-        body: `action=add_qr_code&qr_code=${encodeURIComponent(qrCode)}&security=${kerbcycle_ajax.nonce}`,
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.success) {
-            const msg =
-              data.data && data.data.message
-                ? data.data.message
-                : "QR code added successfully.";
-            showToast(msg);
-            if (
-              qrSelect &&
-              !qrSelect.querySelector(`option[value="${qrCode}"]`)
-            ) {
-              const opt = document.createElement("option");
-              opt.value = qrCode;
-              opt.textContent = qrCode;
-              qrSelect.appendChild(opt);
-              if (qrSelect._searchable) {
-                qrSelect._searchable.updateOptions();
-              }
+    const qrCode = rawQrCode ? rawQrCode.trim() : "";
+
+    if (!qrCode) {
+      if (showAlertOnEmpty) {
+        alert("Please enter a QR code.");
+      }
+      document.dispatchEvent(
+        new CustomEvent("kerbcycle-qr-code-add-failed", {
+          detail: { code: qrCode, source, reason: "empty" },
+        }),
+      );
+      return Promise.resolve({ success: false, reason: "empty" });
+    }
+
+    const payload = `action=add_qr_code&qr_code=${encodeURIComponent(qrCode)}&security=${kerbcycle_ajax.nonce}`;
+
+    return fetch(kerbcycle_ajax.ajax_url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      },
+      body: payload,
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          const msg =
+            data.data && data.data.message
+              ? data.data.message
+              : "QR code added successfully.";
+          showToast(msg);
+          if (qrSelect && !qrSelect.querySelector(`option[value="${qrCode}"]`)) {
+            const opt = document.createElement("option");
+            opt.value = qrCode;
+            opt.textContent = qrCode;
+            qrSelect.appendChild(opt);
+            if (qrSelect._searchable) {
+              qrSelect._searchable.updateOptions();
             }
+          }
+          if (clearInput && newCodeInput) {
             newCodeInput.value = "";
-            adjustCounts(1, 0);
-            if (data.data && data.data.row) {
-              const row = data.data.row;
-              const list = document.getElementById("qr-code-list");
-              if (list) {
-                const li = document.createElement("li");
-                li.className = "qr-item";
-                li.dataset.code = row.qr_code;
-                li.dataset.id = row.id;
-                li.innerHTML = `
+          }
+          adjustCounts(1, 0);
+          if (data.data && data.data.row) {
+            const row = data.data.row;
+            const list = document.getElementById("qr-code-list");
+            if (list) {
+              const li = document.createElement("li");
+              li.className = "qr-item";
+              li.dataset.code = row.qr_code;
+              li.dataset.id = row.id;
+              li.innerHTML = `
 <input type="checkbox" class="qr-select" />
 <span class="qr-id">${row.id}</span>
 <span class="qr-text" contenteditable="true">${row.qr_code}</span>
@@ -354,83 +368,108 @@ function initKerbcycleAdmin() {
 <span class="qr-name">—</span>
 <span class="qr-status">Available</span>
 <span class="qr-assigned">—</span>`;
-                const header = list.querySelector(".qr-header");
-                if (header && header.nextSibling) {
-                  list.insertBefore(li, header.nextSibling);
-                } else {
-                  list.appendChild(li);
-                }
-                const checkbox = li.querySelector(".qr-select");
-                if (checkbox) {
-                  checkbox.addEventListener("change", function () {
-                    const items = document.querySelectorAll(
-                      "#qr-code-list .qr-item .qr-select",
-                    );
-                    const allChecked = Array.from(items).every(
-                      (cb) => cb.checked,
-                    );
-                    const anyChecked = Array.from(items).some(
-                      (cb) => cb.checked,
-                    );
-                    const selectAll = document.getElementById("qr-select-all");
-                    if (selectAll) {
-                      selectAll.checked = allChecked;
-                      selectAll.indeterminate = !allChecked && anyChecked;
-                    }
-                  });
-                }
-                const span = li.querySelector(".qr-text");
-                if (span) {
-                  span.addEventListener("blur", function () {
-                    const liElem = span.closest("li");
-                    const oldCode = liElem.dataset.code;
-                    const newCode = span.textContent.trim();
-                    if (oldCode === newCode) {
-                      return;
-                    }
-                    fetch(kerbcycle_ajax.ajax_url, {
-                      method: "POST",
-                      headers: {
-                        "Content-Type":
-                          "application/x-www-form-urlencoded; charset=UTF-8",
-                      },
-                      body: `action=update_qr_code&old_code=${encodeURIComponent(oldCode)}&new_code=${encodeURIComponent(newCode)}&security=${kerbcycle_ajax.nonce}`,
-                    })
-                      .then((res) => res.json())
-                      .then((data) => {
-                        if (data.success) {
-                          liElem.dataset.code = newCode;
-                          const msg =
-                            data.data && data.data.message
-                              ? data.data.message
-                              : "QR code updated";
-                          showToast(msg);
-                          refreshDropdowns(oldCode, newCode);
-                        } else {
-                          const err =
-                            data.data && data.data.message
-                              ? data.data.message
-                              : "Failed to update QR code";
-                          showToast(err, true);
-                          span.textContent = oldCode;
-                        }
-                      });
-                  });
-                }
+              const header = list.querySelector(".qr-header");
+              if (header && header.nextSibling) {
+                list.insertBefore(li, header.nextSibling);
+              } else {
+                list.appendChild(li);
+              }
+              const checkbox = li.querySelector(".qr-select");
+              if (checkbox) {
+                checkbox.addEventListener("change", function () {
+                  const items = document.querySelectorAll(
+                    "#qr-code-list .qr-item .qr-select",
+                  );
+                  const allChecked = Array.from(items).every((cb) => cb.checked);
+                  const anyChecked = Array.from(items).some((cb) => cb.checked);
+                  const selectAll = document.getElementById("qr-select-all");
+                  if (selectAll) {
+                    selectAll.checked = allChecked;
+                    selectAll.indeterminate = !allChecked && anyChecked;
+                  }
+                });
+              }
+              const span = li.querySelector(".qr-text");
+              if (span) {
+                span.addEventListener("blur", function () {
+                  const liElem = span.closest("li");
+                  const oldCode = liElem.dataset.code;
+                  const newCode = span.textContent.trim();
+                  if (oldCode === newCode) {
+                    return;
+                  }
+                  fetch(kerbcycle_ajax.ajax_url, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type":
+                        "application/x-www-form-urlencoded; charset=UTF-8",
+                    },
+                    body: `action=update_qr_code&old_code=${encodeURIComponent(oldCode)}&new_code=${encodeURIComponent(newCode)}&security=${kerbcycle_ajax.nonce}`,
+                  })
+                    .then((res) => res.json())
+                    .then((updateData) => {
+                      if (updateData.success) {
+                        liElem.dataset.code = newCode;
+                        const msg =
+                          updateData.data && updateData.data.message
+                            ? updateData.data.message
+                            : "QR code updated";
+                        showToast(msg);
+                        refreshDropdowns(oldCode, newCode);
+                      } else {
+                        const err =
+                          updateData.data && updateData.data.message
+                            ? updateData.data.message
+                            : "Failed to update QR code";
+                        showToast(err, true);
+                        span.textContent = oldCode;
+                      }
+                    });
+                });
               }
             }
-          } else {
-            const err =
-              data.data && data.data.message
-                ? data.data.message
-                : "Failed to add QR code.";
-            showToast(err, true);
           }
-        })
-        .catch((error) => {
-          console.error("Error:", error);
-          showToast("An error occurred while adding the QR code.", true);
-        });
+          document.dispatchEvent(
+            new CustomEvent("kerbcycle-qr-code-added", {
+              detail: { code: qrCode, data, source },
+            }),
+          );
+          return { success: true, data };
+        }
+
+        const err =
+          data.data && data.data.message
+            ? data.data.message
+            : "Failed to add QR code.";
+        showToast(err, true);
+        document.dispatchEvent(
+          new CustomEvent("kerbcycle-qr-code-add-failed", {
+            detail: { code: qrCode, data, source },
+          }),
+        );
+        return { success: false, data };
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        showToast("An error occurred while adding the QR code.", true);
+        document.dispatchEvent(
+          new CustomEvent("kerbcycle-qr-code-add-error", {
+            detail: { code: qrCode, error, source },
+          }),
+        );
+        return { success: false, error };
+      });
+  }
+
+  window.kerbcycleAddQrCodeToRepository = addQrCodeToRepository;
+
+  if (addBtn) {
+    addBtn.addEventListener("click", function () {
+      addQrCodeToRepository(newCodeInput ? newCodeInput.value : "", {
+        showAlertOnEmpty: true,
+        clearInput: true,
+        source: "manual",
+      });
     });
   }
 
