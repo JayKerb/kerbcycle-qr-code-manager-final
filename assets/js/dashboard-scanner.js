@@ -108,9 +108,7 @@ async function createQrScannerAdapter({
     paused = false;
 
     offscreenCanvas = document.createElement("canvas");
-    offscreenCtx = offscreenCanvas.getContext("2d", {
-      willReadFrequently: true,
-    });
+    offscreenCtx = offscreenCanvas.getContext("2d", { willReadFrequently: true });
 
     const loop = () => {
       if (!running || paused) {
@@ -144,9 +142,7 @@ async function createQrScannerAdapter({
       if (await tryNative()) return;
       if (await tryZxing()) return;
       if (await tryJsqr()) return;
-      throw new Error(
-        "No scanner implementation available (BarcodeDetector/ZXing/jsQR).",
-      );
+      throw new Error("No scanner implementation available (BarcodeDetector/ZXing/jsQR).");
     },
     pause() {
       paused = true;
@@ -177,54 +173,98 @@ async function createQrScannerAdapter({
   };
 }
 
-function initDashboardScanner() {
-  const readerEl = document.getElementById("reader");
-  const scannerEnabled = kerbcycle_ajax.scanner_enabled;
-
-  if (scannerEnabled && readerEl) {
-    const video = document.createElement("video");
-    video.setAttribute("playsinline", "true");
-    video.style.width = "100%";
-    video.style.maxWidth = "400px";
-    readerEl.innerHTML = "";
-    readerEl.appendChild(video);
-
-    const onScanSuccess = (decodedText) => {
-      // The logic for handling the scanned code on the dashboard is not yet developed.
-      // For now, we can dispatch an event so other scripts could hook into it if needed.
-      const event = new CustomEvent("dashboard-qr-scanned", {
-        detail: { code: decodedText },
-      });
-      document.dispatchEvent(event);
-      console.log(`Scanned QR Code on dashboard: ${decodedText}`);
-    };
-
-    createQrScannerAdapter({
-      videoEl: video,
-      onResult: onScanSuccess,
-      constraints: { facingMode: "environment" },
-    })
-      .then((scanner) => {
-        scanner.start().catch((err) => {
-          console.error("Failed to start dashboard scanner", err);
-          if (readerEl) {
-            readerEl.innerHTML =
-              "<strong>❌ Unable to start scanner.</strong> Please ensure you have a camera and have granted permission.";
-          }
-        });
-      })
-      .catch((err) => {
-        console.error("Failed to create dashboard scanner adapter", err);
-        if (readerEl) {
-          readerEl.innerHTML =
-            "<strong>❌ Unable to initialize scanner.</strong> A suitable camera may not be available.";
-        }
-      });
+function escapeHtml(value) {
+  if (value === null || value === undefined) {
+    return "";
   }
+  return String(value).replace(/[&<>"']/g, (char) => {
+    switch (char) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      case "'":
+        return "&#039;";
+      default:
+        return char;
+    }
+  });
+}
+
+function setScanResult(element, type, html) {
+  if (!element) return;
+  element.style.display = "block";
+  element.classList.remove("error", "updated");
+  if (type === "error") {
+    element.classList.add("error");
+  } else {
+    element.classList.add("updated");
+  }
+  element.innerHTML = html;
+}
+
+function initDashboardScanner() {
+    const readerEl = document.getElementById("reader");
+    const scanResult = document.getElementById("scan-result");
+    const scannerEnabled = kerbcycle_ajax.scanner_enabled;
+    let scanner = null;
+
+    function pauseActiveScanner() {
+        if (scanner && typeof scanner.pause === "function") {
+            try {
+                scanner.pause();
+            } catch (e) {
+                console.warn("Unable to pause dashboard scanner", e);
+            }
+        }
+    }
+
+    if (scannerEnabled && readerEl) {
+        const video = document.createElement("video");
+        video.setAttribute("playsinline", "true");
+        video.style.width = "100%";
+        video.style.maxWidth = "400px";
+        readerEl.innerHTML = "";
+        readerEl.appendChild(video);
+
+        const onScanSuccess = (decodedText) => {
+            pauseActiveScanner();
+            const safeCode = escapeHtml(decodedText || "");
+            setScanResult(
+                scanResult,
+                "success",
+                `<strong>✅ QR Code Scanned!</strong><br>Code: <code>${safeCode}</code>`
+            );
+
+            const event = new CustomEvent('dashboard-qr-scanned', { detail: { code: decodedText } });
+            document.dispatchEvent(event);
+        };
+
+        createQrScannerAdapter({
+            videoEl: video,
+            onResult: onScanSuccess,
+            constraints: { facingMode: "environment" },
+        })
+        .then(scannerCtrl => {
+            scanner = scannerCtrl;
+            scanner.start().catch(err => {
+                console.error("Failed to start dashboard scanner", err);
+                setScanResult(scanResult, "error", `<strong>❌ Unable to start scanner.</strong> Please ensure you have a camera and have granted permission.`);
+            });
+        })
+        .catch(err => {
+            console.error("Failed to create dashboard scanner adapter", err);
+            setScanResult(scanResult, "error", `<strong>❌ Unable to initialize scanner.</strong> A suitable camera may not be available.`);
+        });
+    }
 }
 
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initDashboardScanner);
+    document.addEventListener("DOMContentLoaded", initDashboardScanner);
 } else {
-  initDashboardScanner();
+    initDashboardScanner();
 }
