@@ -597,16 +597,8 @@ function initResponsiveDates() {
 
 function initKerbcycleScanner() {
   document
-    .querySelectorAll("select.kc-searchable")
-    .forEach((select) => {
-      if (select._searchable) {
-        return;
-      }
-      if (!select.closest(".kerbcycle-qr-scanner-container")) {
-        return;
-      }
-      makeSearchableSelect(select);
-    });
+    .querySelectorAll(".kerbcycle-qr-scanner-container select.kc-searchable")
+    .forEach(makeSearchableSelect);
   const scannerAllowed = kerbcycle_ajax.scanner_enabled;
   const scanResult = document.getElementById("scan-result");
   const assignBtn = document.getElementById("assign-qr-btn");
