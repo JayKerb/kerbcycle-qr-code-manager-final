@@ -242,7 +242,10 @@ class QrCodeRepository
     public function list_all()
     {
         global $wpdb;
-        return $wpdb->get_results("SELECT id, qr_code, user_id, display_name, status, assigned_at FROM $this->table ORDER BY id DESC");
+        return $wpdb->get_results(
+            "SELECT id, qr_code, user_id, display_name, status, assigned_at FROM $this->table"
+            . " ORDER BY assigned_at DESC, id DESC"
+        );
     }
 
     public function recent_history($limit)
