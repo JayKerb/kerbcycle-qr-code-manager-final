@@ -88,13 +88,21 @@ class DashboardPage
                 <p><?php esc_html_e('Select a customer and scan or choose a QR code to assign.', 'kerbcycle'); ?></p>
             </div>
             <div id="qr-scanner-container">
-                <h2><?php esc_html_e('Manual QR Code Tasks', 'kerbcycle'); ?></h2>
                 <?php
                 $email_enabled    = (bool) get_option('kerbcycle_qr_enable_email', 1);
-        $sms_enabled      = (bool) get_option('kerbcycle_qr_enable_sms', 0);
-        $reminder_enabled = (bool) get_option('kerbcycle_qr_enable_reminders', 0);
-        $scanner_enabled  = (bool) get_option('kerbcycle_qr_enable_scanner', 1);
-        ?>
+                $sms_enabled      = (bool) get_option('kerbcycle_qr_enable_sms', 0);
+                $reminder_enabled = (bool) get_option('kerbcycle_qr_enable_reminders', 0);
+                $scanner_enabled  = (bool) get_option('kerbcycle_qr_enable_scanner', 1);
+                ?>
+                <?php if ($scanner_enabled) : ?>
+                    <div id="reader" class="qr-reader"></div>
+                <?php else : ?>
+                    <div class="notice notice-warning qr-warning">
+                        <p><?php esc_html_e('QR code scanner camera is disabled in settings.', 'kerbcycle'); ?></p>
+                    </div>
+                <?php endif; ?>
+                <div id="scan-result" class="updated"></div>
+                <h2><?php esc_html_e('Manual QR Code Tasks', 'kerbcycle'); ?></h2>
                 <div id="qr-task-options">
                     <label><input type="checkbox" id="send-email" <?php checked($email_enabled); ?> <?php disabled(!$email_enabled); ?>> <?php esc_html_e('Send notification email', 'kerbcycle'); ?></label>
                     <label><input type="checkbox" id="send-sms" <?php checked($sms_enabled); ?> <?php disabled(!$sms_enabled); ?>> <?php esc_html_e('Send SMS', 'kerbcycle'); ?></label>
@@ -150,14 +158,6 @@ class DashboardPage
                 <div class="qr-select-group">
                     <button id="import-qr-btn" class="button"><?php esc_html_e('Import QR Codes', 'kerbcycle'); ?></button>
                 </div>
-                <?php if ($scanner_enabled) : ?>
-                    <div id="reader" class="qr-reader"></div>
-                <?php else : ?>
-                    <div class="notice notice-warning qr-warning">
-                        <p><?php esc_html_e('QR code scanner camera is disabled in settings.', 'kerbcycle'); ?></p>
-                    </div>
-                <?php endif; ?>
-                <div id="scan-result" class="updated"></div>
             </div>
 
             <h2><?php esc_html_e('Manage QR Codes', 'kerbcycle'); ?></h2>
