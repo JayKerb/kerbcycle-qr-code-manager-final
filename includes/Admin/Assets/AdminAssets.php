@@ -88,6 +88,7 @@ class AdminAssets
             'nonce'             => wp_create_nonce('kerbcycle_qr_nonce'),
             'scanner_enabled'   => $scanner_enabled,
             'drag_drop_disabled' => $drag_drop_disabled,
+            'context'           => 'admin',
         ]);
 
         if ($scanner_enabled) {
