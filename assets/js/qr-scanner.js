@@ -109,7 +109,9 @@ async function createQrScannerAdapter({
     paused = false;
 
     offscreenCanvas = document.createElement("canvas");
-    offscreenCtx = offscreenCanvas.getContext("2d", { willReadFrequently: true });
+    offscreenCtx = offscreenCanvas.getContext("2d", {
+      willReadFrequently: true,
+    });
 
     const loop = () => {
       if (!running || paused) {
@@ -143,7 +145,9 @@ async function createQrScannerAdapter({
       if (await tryNative()) return;
       if (await tryZxing()) return;
       if (await tryJsqr()) return;
-      throw new Error("No scanner implementation available (BarcodeDetector/ZXing/jsQR).");
+      throw new Error(
+        "No scanner implementation available (BarcodeDetector/ZXing/jsQR).",
+      );
     },
     pause() {
       paused = true;
@@ -215,8 +219,7 @@ function makeSearchableSelect(select) {
     resetBtn = document.createElement("button");
     resetBtn.type = "button";
     resetBtn.className = "kc-combobox-reset";
-    const resetLabel =
-      select.getAttribute("data-reset-label") || "Reset";
+    const resetLabel = select.getAttribute("data-reset-label") || "Reset";
     resetBtn.textContent = resetLabel;
     resetBtn.setAttribute("aria-label", resetLabel);
   }
@@ -403,7 +406,8 @@ function escapeHtml(value) {
 }
 
 function cssEscape(value) {
-  const stringValue = value === null || value === undefined ? "" : String(value);
+  const stringValue =
+    value === null || value === undefined ? "" : String(value);
   if (window.CSS && typeof window.CSS.escape === "function") {
     return window.CSS.escape(stringValue);
   }
@@ -491,9 +495,7 @@ function updateFrontendQrTable(record) {
   }
 
   const code = record.qr_code ? String(record.qr_code) : "";
-  const selector = code
-    ? `tr[data-qr-code="${cssEscape(code)}"]`
-    : null;
+  const selector = code ? `tr[data-qr-code="${cssEscape(code)}"]` : null;
   let row = selector ? tbody.querySelector(selector) : null;
   const existed = !!row;
 
@@ -539,9 +541,7 @@ function updateFrontendQrTable(record) {
   if (pagination) {
     const rowsPerPage = parseInt(pagination.dataset.rows || "10", 10);
     const currentPage =
-      existed && table._kcPagination
-        ? table._kcPagination.currentPage || 1
-        : 1;
+      existed && table._kcPagination ? table._kcPagination.currentPage || 1 : 1;
     paginateQrTable(table, pagination, rowsPerPage, currentPage);
   }
 
@@ -742,11 +742,10 @@ function initKerbcycleScanner() {
       return;
     }
 
-    const normalized = (
+    const normalized =
       action && typeof action.then === "function"
         ? action
-        : Promise.resolve(action)
-    );
+        : Promise.resolve(action);
 
     const pending = normalized
       .then(() => {
@@ -787,7 +786,7 @@ function initKerbcycleScanner() {
       setScanResult(
         scanResult,
         "success",
-        `<strong>✅ QR Code Scanned Successfully!</strong><br>Content: <code>${safeCode}</code>`
+        `<strong>✅ QR Code Scanned Successfully!</strong><br>Content: <code>${safeCode}</code>`,
       );
     };
 
@@ -869,9 +868,7 @@ function initKerbcycleScanner() {
               );
             }
             if (customerLabel) {
-              messageParts.push(
-                `Customer: ${escapeHtml(customerLabel)}`,
-              );
+              messageParts.push(`Customer: ${escapeHtml(customerLabel)}`);
             }
             messageParts.push("Scan another code to continue.");
 
