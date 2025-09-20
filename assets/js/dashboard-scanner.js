@@ -215,7 +215,85 @@ function initDashboardScanner() {
   const readerEl = document.getElementById("reader");
   const scanResult = document.getElementById("scan-result");
   const scannerEnabled = kerbcycle_ajax.scanner_enabled;
+  const addFromScannerBtn = document.getElementById("dashboard-add-qr-btn");
+  const resetScannerBtn = document.getElementById("dashboard-reset-scan-btn");
+  const dashboardCustomerField = document.getElementById(
+    "dashboard-customer-id",
+  );
+  const assignToCustomerBtn = document.getElementById(
+    "dashboard-assign-qr-btn",
+  );
+  const sendEmailCheckbox = document.getElementById("send-email");
+  const sendSmsCheckbox = document.getElementById("send-sms");
+  const sendReminderCheckbox = document.getElementById("send-reminder");
   let scanner = null;
+  let lastScannedCode = "";
+  let addInProgress = false;
+  let assignInProgress = false;
+
+  function updateAddButtonState() {
+    if (!addFromScannerBtn) {
+      return;
+    }
+    const shouldDisable =
+      addInProgress || !scannerEnabled || !lastScannedCode;
+    addFromScannerBtn.disabled = shouldDisable;
+  }
+
+  function getDashboardCustomerName() {
+    if (!dashboardCustomerField) {
+      return "";
+    }
+    const option =
+      dashboardCustomerField.options[dashboardCustomerField.selectedIndex];
+    if (option) {
+      return option.textContent || option.text || "";
+    }
+    if (
+      dashboardCustomerField._searchable &&
+      dashboardCustomerField._searchable.input
+    ) {
+      return dashboardCustomerField._searchable.input.value || "";
+    }
+    return "";
+  }
+
+  function updateAssignButtonState() {
+    if (!assignToCustomerBtn) {
+      return;
+    }
+    const hasCustomer =
+      dashboardCustomerField && dashboardCustomerField.value;
+    const shouldDisable =
+      assignInProgress || !scannerEnabled || !lastScannedCode || !hasCustomer;
+    assignToCustomerBtn.disabled = shouldDisable;
+  }
+
+  updateAddButtonState();
+  updateAssignButtonState();
+
+  if (resetScannerBtn && !scannerEnabled) {
+    resetScannerBtn.disabled = true;
+  }
+
+  if (assignToCustomerBtn && !scannerEnabled) {
+    assignToCustomerBtn.disabled = true;
+  }
+
+  if (dashboardCustomerField) {
+    dashboardCustomerField.addEventListener("change", () => {
+      updateAssignButtonState();
+    });
+    if (
+      dashboardCustomerField._searchable &&
+      dashboardCustomerField._searchable.input
+    ) {
+      dashboardCustomerField._searchable.input.addEventListener(
+        "input",
+        updateAssignButtonState,
+      );
+    }
+  }
 
   function pauseActiveScanner() {
     if (scanner && typeof scanner.pause === "function") {
@@ -225,6 +303,354 @@ function initDashboardScanner() {
         console.warn("Unable to pause dashboard scanner", e);
       }
     }
+  }
+
+  if (addFromScannerBtn) {
+    addFromScannerBtn.addEventListener("click", () => {
+      if (!scannerEnabled) {
+        setScanResult(
+          scanResult,
+          "error",
+          "<strong>❌ QR code scanner is disabled in settings.</strong>",
+        );
+        return;
+      }
+
+      if (addInProgress) {
+        return;
+      }
+
+      if (!lastScannedCode) {
+        setScanResult(
+          scanResult,
+          "error",
+          "<strong>❌ Please scan a QR code before adding.</strong>",
+        );
+        return;
+      }
+
+      const addHandler = window.kerbcycleAddQrCodeToRepository;
+      if (typeof addHandler !== "function") {
+        setScanResult(
+          scanResult,
+          "error",
+          "<strong>❌ Unable to add QR code.</strong> Please use the manual form below.",
+        );
+        return;
+      }
+
+      const safeCode = escapeHtml(lastScannedCode);
+      addInProgress = true;
+      addFromScannerBtn.setAttribute("aria-busy", "true");
+      updateAddButtonState();
+      updateAssignButtonState();
+
+      setScanResult(
+        scanResult,
+        "success",
+        `<strong>⏳ Adding QR Code...</strong><br>Code: <code>${safeCode}</code>`,
+      );
+
+      let addPromise;
+      try {
+        addPromise = addHandler(lastScannedCode, {
+          source: "dashboard-scanner",
+          showAlertOnEmpty: false,
+          clearInput: false,
+        });
+      } catch (error) {
+        addInProgress = false;
+        addFromScannerBtn.removeAttribute("aria-busy");
+        updateAddButtonState();
+        console.error("Unable to add QR code from dashboard scanner", error);
+        setScanResult(
+          scanResult,
+          "error",
+          `<strong>❌ Unable to add QR code.</strong> ${escapeHtml(
+            error && error.message ? error.message : String(error),
+          )}`,
+        );
+        return;
+      }
+
+      Promise.resolve(addPromise)
+        .then((result) => {
+          if (result && result.success) {
+            lastScannedCode = "";
+            updateAssignButtonState();
+            setScanResult(
+              scanResult,
+              "success",
+              `<strong>✅ QR Code added to repository.</strong><br>Code: <code>${safeCode}</code><br>Use "Scan Reset" to scan another code.`,
+            );
+            return;
+          }
+
+          if (result && result.reason === "empty") {
+            setScanResult(
+              scanResult,
+              "error",
+              "<strong>❌ Please scan a QR code before adding.</strong>",
+            );
+            return;
+          }
+
+          const errMessage =
+            (result &&
+              result.data &&
+              result.data.data &&
+              result.data.data.message) ||
+            (result && result.data && result.data.message) ||
+            (result && result.error && result.error.message) ||
+            (result &&
+              typeof result.error === "string" &&
+              result.error) ||
+            "Failed to add QR code.";
+
+          setScanResult(
+            scanResult,
+            "error",
+            `<strong>❌ ${escapeHtml(errMessage)}</strong>`,
+          );
+        })
+        .catch((error) => {
+          console.error("Unable to add QR code from dashboard scanner", error);
+          setScanResult(
+            scanResult,
+            "error",
+            `<strong>❌ Unable to add QR code.</strong> ${escapeHtml(
+              error && error.message ? error.message : String(error),
+            )}`,
+          );
+        })
+        .finally(() => {
+          addInProgress = false;
+          addFromScannerBtn.removeAttribute("aria-busy");
+          updateAddButtonState();
+          updateAssignButtonState();
+        });
+    });
+  }
+
+  if (assignToCustomerBtn) {
+    assignToCustomerBtn.addEventListener("click", () => {
+      if (!scannerEnabled) {
+        setScanResult(
+          scanResult,
+          "error",
+          "<strong>❌ QR code scanner is disabled in settings.</strong>",
+        );
+        return;
+      }
+
+      if (assignInProgress) {
+        return;
+      }
+
+      const userId = dashboardCustomerField ? dashboardCustomerField.value : "";
+      if (!userId) {
+        setScanResult(
+          scanResult,
+          "error",
+          "<strong>❌ Please select a customer before assigning.</strong>",
+        );
+        return;
+      }
+
+      if (!lastScannedCode) {
+        setScanResult(
+          scanResult,
+          "error",
+          "<strong>❌ Please scan a QR code before assigning.</strong>",
+        );
+        return;
+      }
+
+      const assignHandler = window.kerbcycleAssignQrCodeToCustomer;
+      if (typeof assignHandler !== "function") {
+        setScanResult(
+          scanResult,
+          "error",
+          "<strong>❌ Unable to assign QR code.</strong> Please use the manual form below.",
+        );
+        return;
+      }
+
+      assignInProgress = true;
+      assignToCustomerBtn.setAttribute("aria-busy", "true");
+      updateAssignButtonState();
+
+      const customerName = getDashboardCustomerName();
+      const safeCode = escapeHtml(lastScannedCode);
+      const safeName = escapeHtml(customerName || "");
+      const pendingCustomerLine = customerName
+        ? `<br>Customer: <strong>${safeName}</strong>`
+        : "";
+
+      setScanResult(
+        scanResult,
+        "success",
+        `<strong>⏳ Assigning QR Code...</strong><br>Code: <code>${safeCode}</code>${pendingCustomerLine}`,
+      );
+
+      let assignPromise;
+      try {
+        assignPromise = assignHandler(lastScannedCode, userId, {
+          sendEmail: sendEmailCheckbox ? sendEmailCheckbox.checked : false,
+          sendSms: sendSmsCheckbox ? sendSmsCheckbox.checked : false,
+          sendReminder: sendReminderCheckbox
+            ? sendReminderCheckbox.checked
+            : false,
+          showAlertOnMissing: false,
+          source: "dashboard-scanner",
+          customerName,
+        });
+      } catch (error) {
+        assignInProgress = false;
+        assignToCustomerBtn.removeAttribute("aria-busy");
+        updateAssignButtonState();
+        console.error("Unable to assign QR code from dashboard scanner", error);
+        setScanResult(
+          scanResult,
+          "error",
+          `<strong>❌ Unable to assign QR code.</strong> ${escapeHtml(
+            error && error.message ? error.message : String(error),
+          )}`,
+        );
+        return;
+      }
+
+      Promise.resolve(assignPromise)
+        .then((result) => {
+          if (result && result.success) {
+            lastScannedCode = "";
+            updateAddButtonState();
+            updateAssignButtonState();
+            const successCustomerLine = customerName
+              ? `<br>Customer: <strong>${safeName}</strong>`
+              : "";
+            setScanResult(
+              scanResult,
+              "success",
+              `<strong>✅ QR Code assigned to customer.</strong><br>Code: <code>${safeCode}</code>${successCustomerLine}`,
+            );
+            return;
+          }
+
+          if (result && result.reason === "missing-user") {
+            setScanResult(
+              scanResult,
+              "error",
+              "<strong>❌ Please select a customer before assigning.</strong>",
+            );
+            return;
+          }
+
+          if (result && result.reason === "missing-code") {
+            setScanResult(
+              scanResult,
+              "error",
+              "<strong>❌ Please scan a QR code before assigning.</strong>",
+            );
+            return;
+          }
+
+          const errMessage =
+            (result && result.message) ||
+            (result && result.error && result.error.message) ||
+            "Unable to assign QR code.";
+
+          setScanResult(
+            scanResult,
+            "error",
+            `<strong>❌ ${escapeHtml(errMessage)}</strong>`,
+          );
+        })
+        .catch((error) => {
+          console.error("Unable to assign QR code from dashboard scanner", error);
+          setScanResult(
+            scanResult,
+            "error",
+            `<strong>❌ Unable to assign QR code.</strong> ${escapeHtml(
+              error && error.message ? error.message : String(error),
+            )}`,
+          );
+        })
+        .finally(() => {
+          assignInProgress = false;
+          assignToCustomerBtn.removeAttribute("aria-busy");
+          updateAssignButtonState();
+        });
+    });
+  }
+
+  if (resetScannerBtn) {
+    resetScannerBtn.addEventListener("click", () => {
+      if (!scannerEnabled) {
+        setScanResult(
+          scanResult,
+          "error",
+          "<strong>❌ QR code scanner is disabled in settings.</strong>",
+        );
+        return;
+      }
+
+      lastScannedCode = "";
+      updateAddButtonState();
+      updateAssignButtonState();
+
+      if (!scanner) {
+        setScanResult(
+          scanResult,
+          "error",
+          "<strong>❌ Scanner is not ready yet.</strong>",
+        );
+        return;
+      }
+
+      const successMessage =
+        "<strong>🔄 Scanner reset.</strong> Ready to scan a new QR code.";
+
+      try {
+        const resumeResult =
+          typeof scanner.resume === "function"
+            ? scanner.resume()
+            : typeof scanner.start === "function"
+            ? scanner.start()
+            : null;
+
+        if (resumeResult && typeof resumeResult.then === "function") {
+          resumeResult
+            .then(() => {
+              setScanResult(scanResult, "success", successMessage);
+            })
+            .catch((error) => {
+              console.error(
+                "Unable to reset dashboard scanner",
+                error,
+              );
+              setScanResult(
+                scanResult,
+                "error",
+                `<strong>❌ Unable to reset scanner.</strong> ${escapeHtml(
+                  error && error.message ? error.message : String(error),
+                )}`,
+              );
+            });
+        } else {
+          setScanResult(scanResult, "success", successMessage);
+        }
+      } catch (error) {
+        console.error("Unable to reset dashboard scanner", error);
+        setScanResult(
+          scanResult,
+          "error",
+          `<strong>❌ Unable to reset scanner.</strong> ${escapeHtml(
+            error && error.message ? error.message : String(error),
+          )}`,
+        );
+      }
+    });
   }
 
   if (scannerEnabled && readerEl) {
@@ -237,6 +663,9 @@ function initDashboardScanner() {
 
     const onScanSuccess = (decodedText) => {
       pauseActiveScanner();
+      lastScannedCode = decodedText || "";
+      updateAddButtonState();
+      updateAssignButtonState();
       const safeCode = escapeHtml(decodedText || "");
       setScanResult(
         scanResult,

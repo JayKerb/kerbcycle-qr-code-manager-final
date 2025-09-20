@@ -95,6 +95,25 @@ class DashboardPage
         $scanner_enabled  = (bool) get_option('kerbcycle_qr_enable_scanner', 1);
         ?>
                 <?php if ($scanner_enabled) : ?>
+                    <div class="qr-scanner-actions">
+                        <button id="dashboard-add-qr-btn" class="button button-primary"><?php esc_html_e('Add QR Code', 'kerbcycle'); ?></button>
+                        <button id="dashboard-reset-scan-btn" class="button"><?php esc_html_e('Scan Reset', 'kerbcycle'); ?></button>
+                    </div>
+                    <div class="qr-scanner-customer">
+                        <div class="qr-scanner-customer-select">
+                            <?php
+                            wp_dropdown_users(array(
+                                'name'              => 'dashboard_customer_id',
+                                'id'                => 'dashboard-customer-id',
+                                'class'             => 'kc-searchable',
+                                'show_option_none'  => __('Select Customer', 'kerbcycle'),
+                                'option_none_value' => ''
+                            ));
+                            ?>
+                            <p class="description"><?php esc_html_e('Customer Search', 'kerbcycle'); ?></p>
+                        </div>
+                        <button id="dashboard-assign-qr-btn" class="button button-primary"><?php esc_html_e('Assign QR Code', 'kerbcycle'); ?></button>
+                    </div>
                     <div id="reader" class="qr-reader"></div>
                 <?php else : ?>
                     <div class="notice notice-warning qr-warning">
