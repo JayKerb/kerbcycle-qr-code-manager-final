@@ -209,24 +209,43 @@ function initKerbcycleAdmin() {
           } catch (e) {
             console.warn("LocalStorage unavailable", e);
           }
+          const record = data.data && data.data.record ? data.data.record : null;
+          const resolvedUserId =
+            record && record.user_id ? String(record.user_id) : userId;
+          const resolvedName =
+            (record && record.display_name) ||
+            customerName ||
+            (userField &&
+              userField.options[userField.selectedIndex] &&
+              userField.options[userField.selectedIndex].text) ||
+            "—";
+          const assignedText =
+            record && record.assigned_at
+              ? record.assigned_at
+              : new Date().toISOString().slice(0, 19).replace("T", " ");
+          const resolvedStatus =
+            record && record.status
+              ? record.status.charAt(0).toUpperCase() + record.status.slice(1)
+              : "Assigned";
           const escapedCode = cssEscape(qrCode);
           const li = document.querySelector(
             `#qr-code-list .qr-item[data-code="${escapedCode}"]`,
           );
           if (li) {
-            li.querySelector(".qr-user").textContent = userId;
-            const displayName =
-              customerName ||
-              (userField &&
-                userField.options[userField.selectedIndex] &&
-                userField.options[userField.selectedIndex].text) ||
-              "—";
-            li.querySelector(".qr-name").textContent = displayName;
-            li.querySelector(".qr-status").textContent = "Assigned";
-            li.querySelector(".qr-assigned").textContent = new Date()
-              .toISOString()
-              .slice(0, 19)
-              .replace("T", " ");
+            li.querySelector(".qr-user").textContent = resolvedUserId;
+            li.querySelector(".qr-name").textContent = resolvedName;
+            li.querySelector(".qr-status").textContent = resolvedStatus;
+            li.querySelector(".qr-assigned").textContent = assignedText;
+            li.dataset.code = qrCode;
+            const list = document.getElementById("qr-code-list");
+            if (list) {
+              const firstItem = list.querySelector(".qr-item");
+              if (!firstItem) {
+                list.appendChild(li);
+              } else if (firstItem !== li) {
+                list.insertBefore(li, firstItem);
+              }
+            }
           }
           if (qrSelect) {
             const opt = qrSelect.querySelector(
@@ -241,7 +260,11 @@ function initKerbcycleAdmin() {
               qrSelect._searchable.input.value = "";
             }
           }
-          if (assignedSelect && userField && userField.value === userId) {
+          if (
+            assignedSelect &&
+            userField &&
+            userField.value === resolvedUserId
+          ) {
             const exists = assignedSelect.querySelector(
               `option[value="${cssEscape(qrCode)}"]`,
             );
@@ -258,7 +281,13 @@ function initKerbcycleAdmin() {
           adjustCounts(-1, 1);
           document.dispatchEvent(
             new CustomEvent("kerbcycle-qr-code-assigned", {
-              detail: { code: qrCode, userId, data, source, customerName },
+              detail: {
+                code: qrCode,
+                userId: resolvedUserId,
+                data,
+                source,
+                customerName: resolvedName,
+              },
             }),
           );
           return { success: true, data };

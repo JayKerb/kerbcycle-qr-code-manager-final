@@ -78,7 +78,7 @@ class DashboardPage
         $available_count = count($available_codes);
         $assigned_count  = (int) $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE status = 'assigned'");
 
-        $select_sql = "SELECT id, qr_code, user_id, display_name, status, assigned_at FROM $table WHERE $where ORDER BY id DESC LIMIT %d OFFSET %d";
+        $select_sql = "SELECT id, qr_code, user_id, display_name, status, assigned_at FROM $table WHERE $where ORDER BY (assigned_at IS NULL), assigned_at DESC, id DESC LIMIT %d OFFSET %d";
         $query_args = array_merge($params, [$per_page, $offset]);
         $all_codes  = $wpdb->get_results($wpdb->prepare($select_sql, $query_args));
         ?>
