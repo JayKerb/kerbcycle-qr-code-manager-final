@@ -84,9 +84,10 @@ class QrService
             return new \WP_Error('db_error', 'Failed to assign QR code in database.');
         }
 
-        $sms_result = null;
+        $sms_result   = null;
+        $email_result = null;
         if ($send_email) {
-            (new EmailService())->send_notification($user_id, $qr_code, 'assigned');
+            $email_result = (new EmailService())->send_notification($user_id, $qr_code, 'assigned');
         }
         if ($send_sms) {
             $sms_result = (new SmsService())->send_notification($user_id, $qr_code, 'assigned');
@@ -95,8 +96,9 @@ class QrService
         // if ($send_reminder) { ... }
 
         return [
-            'sms_result' => $sms_result,
-            'record'     => $this->repository->find_by_qr_code($qr_code),
+            'sms_result'   => $sms_result,
+            'email_result' => $email_result,
+            'record'       => $this->repository->find_by_qr_code($qr_code),
         ];
     }
 
@@ -113,17 +115,21 @@ class QrService
             return new \WP_Error('db_error', 'Failed to release QR code in database.');
         }
 
-        $sms_result = null;
+        $sms_result   = null;
+        $email_result = null;
         if ($row->user_id) {
             if ($send_email) {
-                (new EmailService())->send_notification($row->user_id, $qr_code, 'released');
+                $email_result = (new EmailService())->send_notification($row->user_id, $qr_code, 'released');
             }
             if ($send_sms) {
                 $sms_result = (new SmsService())->send_notification($row->user_id, $qr_code, 'released');
             }
         }
 
-        return ['sms_result' => $sms_result];
+        return [
+            'sms_result'   => $sms_result,
+            'email_result' => $email_result,
+        ];
     }
 
     public function bulk_release(array $codes)

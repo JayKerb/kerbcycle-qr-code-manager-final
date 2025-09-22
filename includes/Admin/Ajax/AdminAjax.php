@@ -66,6 +66,12 @@ class AdminAjax
                 'qr_code' => $qr_code,
                 'user_id' => $user_id,
             ];
+            if ($send_email) {
+                $response['email_sent'] = ($result['email_result'] === true);
+                if ($result['email_result'] !== true) {
+                    $response['email_error'] = is_wp_error($result['email_result']) ? $result['email_result']->get_error_message() : __('Unknown error', 'kerbcycle');
+                }
+            }
             if ($send_sms) {
                 $response['sms_sent'] = ($result['sms_result'] === true);
                 if ($result['sms_result'] !== true) {
@@ -115,6 +121,12 @@ class AdminAjax
             wp_send_json_error(['message' => $result->get_error_message()]);
         } else {
             $response = ['message' => 'QR code released successfully'];
+            if ($send_email) {
+                $response['email_sent'] = ($result['email_result'] === true);
+                if ($result['email_result'] !== true) {
+                    $response['email_error'] = is_wp_error($result['email_result']) ? $result['email_result']->get_error_message() : __('Unknown error', 'kerbcycle');
+                }
+            }
             if ($send_sms) {
                 $response['sms_sent'] = ($result['sms_result'] === true);
                 if ($result['sms_result'] !== true) {
