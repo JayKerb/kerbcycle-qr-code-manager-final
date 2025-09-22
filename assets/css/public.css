@@ -27,6 +27,7 @@
   border-radius: 4px;
   background: #f6f7f7;
   cursor: pointer;
+  color: var(--wp-admin-theme-color-darker-10, #1d2327);
 }
 
 .kc-combobox-reset {
@@ -41,11 +42,18 @@
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
+  color: var(--wp-admin-theme-color-darker-10, #1d2327);
 }
 
 .kc-combobox-reset:hover,
 .kc-combobox-reset:focus {
   background: #e0e0e0;
+  color: var(--wp-admin-theme-color-darker-10, #1d2327);
+}
+
+.kc-combobox-toggle:hover,
+.kc-combobox-toggle:focus {
+  color: var(--wp-admin-theme-color-darker-10, #1d2327);
 }
 
 .kc-combobox-list {
