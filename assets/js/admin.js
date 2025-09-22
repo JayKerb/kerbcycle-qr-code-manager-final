@@ -274,6 +274,16 @@ function initKerbcycleAdmin() {
       .then((data) => {
         if (data.success) {
           let msg = "QR code assigned successfully.";
+          if (data.data && typeof data.data.email_sent !== "undefined") {
+            if (data.data.email_sent) {
+              msg += " Email notification sent.";
+            } else {
+              msg +=
+                " Email failed: " +
+                (data.data.email_error || "Unknown error") +
+                ".";
+            }
+          }
           if (data.data && typeof data.data.sms_sent !== "undefined") {
             if (data.data.sms_sent) {
               msg += " SMS notification sent.";
@@ -498,6 +508,16 @@ function initKerbcycleAdmin() {
         .then((data) => {
           if (data.success) {
             let msg = "QR code released successfully.";
+            if (data.data && typeof data.data.email_sent !== "undefined") {
+              if (data.data.email_sent) {
+                msg += " Email notification sent.";
+              } else {
+                msg +=
+                  " Email failed: " +
+                  (data.data.email_error || "Unknown error") +
+                  ".";
+              }
+            }
             if (data.data && typeof data.data.sms_sent !== "undefined") {
               if (data.data.sms_sent) {
                 msg += " SMS notification sent.";
