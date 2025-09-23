@@ -61,7 +61,7 @@ class Shortcodes
             </script>
             <div class="kerbcycle-scanner-actions">
                 <button id="assign-qr-btn" class="button button-primary">Assign QR Code</button>
-                <button id="reset-scan-btn" class="button"><?php esc_html_e('Scan Reset', 'kerbcycle'); ?></button>
+                <button id="reset-scan-btn" class="button button-primary"><?php esc_html_e('Scan Reset', 'kerbcycle'); ?></button>
             </div>
             <div id="reader" style="width: 100%; max-width: 400px; margin-top: 20px;"></div>
             <div id="scan-result" class="updated" style="display: none;"></div>

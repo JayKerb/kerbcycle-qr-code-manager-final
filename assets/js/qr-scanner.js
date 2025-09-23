@@ -218,7 +218,7 @@ function makeSearchableSelect(select) {
   if (enableReset) {
     resetBtn = document.createElement("button");
     resetBtn.type = "button";
-    resetBtn.className = "kc-combobox-reset";
+    resetBtn.className = "kc-combobox-reset button button-primary";
     const resetLabel = select.getAttribute("data-reset-label") || "Reset";
     resetBtn.textContent = resetLabel;
     resetBtn.setAttribute("aria-label", resetLabel);
