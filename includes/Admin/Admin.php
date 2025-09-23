@@ -170,12 +170,43 @@ class Admin
         }
 
         foreach ($errors as $err) {
+            $notice_type = $err['type'] ?? '';
+
             ErrorLogRepository::log([
                 'type'   => $err['code'] ?? '',
                 'message' => $err['message'] ?? '',
                 'page'   => $page,
-                'status' => ($err['type'] ?? '') === 'updated' ? 'success' : 'failure',
+                'status' => $this->determine_status_from_notice_type($notice_type),
             ]);
         }
+    }
+
+    /**
+     * Map a WordPress notice type to a Kerbcycle log status value.
+     *
+     * WordPress historically uses both "updated" and "success" to represent
+     * successful outcomes, so treat either (and any variant that contains the
+     * keyword) as a success in the log. All other types are treated as
+     * failures by default so they remain prominent in the Errors view.
+     *
+     * @param string $notice_type WordPress notice type (e.g. success, updated, error).
+     * @return string
+     */
+    private function determine_status_from_notice_type($notice_type)
+    {
+        if (!is_string($notice_type)) {
+            return 'failure';
+        }
+
+        $normalized = strtolower(trim($notice_type));
+        $success_keywords = ['success', 'updated'];
+
+        foreach ($success_keywords as $keyword) {
+            if ($normalized === $keyword || strpos($normalized, $keyword) !== false) {
+                return 'success';
+            }
+        }
+
+        return 'failure';
     }
 }
