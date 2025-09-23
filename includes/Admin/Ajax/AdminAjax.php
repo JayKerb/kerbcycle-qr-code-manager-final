@@ -10,6 +10,7 @@ use Kerbcycle\QrCode\Services\ReportService;
 use Kerbcycle\QrCode\Services\QrService;
 use Kerbcycle\QrCode\Helpers\Nonces;
 use Kerbcycle\QrCode\Data\Repositories\MessageLogRepository;
+use Kerbcycle\QrCode\Admin\Pages\DashboardPage;
 
 /**
  * The admin ajax.
@@ -39,6 +40,7 @@ class AdminAjax
         add_action('wp_ajax_add_qr_code', [$this, 'add_qr_code']);
         add_action('wp_ajax_get_assigned_qr_codes', [$this, 'get_assigned_qr_codes']);
         add_action('wp_ajax_import_qr_codes', [$this, 'import_qr_codes']);
+        add_action('wp_ajax_kerbcycle_paginate_qr_codes', [$this, 'paginate_qr_codes']);
         add_action('wp_ajax_kerbcycle_qr_report_data', [$this, 'ajax_report_data']);
         add_action('wp_ajax_kerbcycle_delete_logs', [$this, 'delete_logs']);
     }
@@ -323,6 +325,48 @@ class AdminAjax
         } else {
             wp_send_json_error(['message' => __('No QR codes were imported.', 'kerbcycle')]);
         }
+    }
+
+    public function paginate_qr_codes()
+    {
+        Nonces::verify('kerbcycle_qr_nonce', 'security');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
+        }
+
+        $args = [
+            'status_filter' => isset($_POST['status_filter']) ? wp_unslash($_POST['status_filter']) : '',
+            'start_date'    => isset($_POST['start_date']) ? wp_unslash($_POST['start_date']) : '',
+            'end_date'      => isset($_POST['end_date']) ? wp_unslash($_POST['end_date']) : '',
+            'search'        => isset($_POST['search']) ? wp_unslash($_POST['search']) : '',
+            's'             => isset($_POST['s']) ? wp_unslash($_POST['s']) : '',
+            'per_page'      => isset($_POST['per_page']) ? wp_unslash($_POST['per_page']) : '',
+            'paged'         => isset($_POST['paged']) ? wp_unslash($_POST['paged']) : 1,
+        ];
+
+        $listing = DashboardPage::get_listing_data($args);
+
+        $pagination_links = DashboardPage::build_pagination_links(
+            $listing['current_page'],
+            $listing['total_pages'],
+            $listing['filters']
+        );
+
+        wp_send_json_success([
+            'items_html' => DashboardPage::render_qr_items($listing['codes']),
+            'pagination' => [
+                'links'        => $pagination_links,
+                'current_page' => $listing['current_page'],
+                'total_pages'  => $listing['total_pages'],
+                'total_items'  => $listing['total_items'],
+                'per_page'     => $listing['per_page'],
+                'filters'      => $listing['filters'],
+            ],
+            'counts'      => [
+                'available' => $listing['available_count'],
+                'assigned'  => $listing['assigned_count'],
+            ],
+        ]);
     }
 
     public function ajax_report_data()
