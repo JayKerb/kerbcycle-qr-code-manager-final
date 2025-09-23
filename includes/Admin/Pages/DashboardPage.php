@@ -212,15 +212,78 @@ class DashboardPage
                 <ul id="qr-code-list">
                     <li class="qr-header">
                         <input type="checkbox" class="qr-select" id="qr-select-all" title="<?php esc_attr_e('Select all', 'kerbcycle'); ?>" />
-                        <span class="qr-id"><?php esc_html_e('ID', 'kerbcycle'); ?></span>
-                        <span class="qr-text"><?php esc_html_e('QR Code', 'kerbcycle'); ?></span>
-                        <span class="qr-user"><?php esc_html_e('User ID', 'kerbcycle'); ?></span>
-                        <span class="qr-name"><?php esc_html_e('Customer', 'kerbcycle'); ?></span>
-                        <span class="qr-status"><?php esc_html_e('Status', 'kerbcycle'); ?></span>
-                        <span class="qr-assigned"><?php esc_html_e('Assigned At', 'kerbcycle'); ?></span>
+                        <?php
+                        $id_label        = __('ID', 'kerbcycle');
+                        $code_label      = __('QR Code', 'kerbcycle');
+                        $user_label      = __('User ID', 'kerbcycle');
+                        $customer_label  = __('Customer', 'kerbcycle');
+                        $status_label    = __('Status', 'kerbcycle');
+                        $assigned_label  = __('Assigned At', 'kerbcycle');
+                        $sort_label_text = __('Sort by %s', 'kerbcycle');
+                        ?>
+                        <span class="qr-id">
+                            <button type="button" class="qr-sort-control" data-sort-key="id" data-sort-type="number" data-sort-label="<?= esc_attr($id_label); ?>" aria-pressed="false" title="<?= esc_attr(sprintf($sort_label_text, $id_label)); ?>">
+                                <span class="qr-sort-label"><?= esc_html($id_label); ?></span>
+                                <span class="sort-indicator" aria-hidden="true">
+                                    <span class="sort-arrow sort-arrow-asc"></span>
+                                    <span class="sort-arrow sort-arrow-desc"></span>
+                                </span>
+                            </button>
+                        </span>
+                        <span class="qr-text">
+                            <button type="button" class="qr-sort-control" data-sort-key="code" data-sort-type="text" data-sort-label="<?= esc_attr($code_label); ?>" aria-pressed="false" title="<?= esc_attr(sprintf($sort_label_text, $code_label)); ?>">
+                                <span class="qr-sort-label"><?= esc_html($code_label); ?></span>
+                                <span class="sort-indicator" aria-hidden="true">
+                                    <span class="sort-arrow sort-arrow-asc"></span>
+                                    <span class="sort-arrow sort-arrow-desc"></span>
+                                </span>
+                            </button>
+                        </span>
+                        <span class="qr-user">
+                            <button type="button" class="qr-sort-control" data-sort-key="userId" data-sort-type="number" data-sort-label="<?= esc_attr($user_label); ?>" aria-pressed="false" title="<?= esc_attr(sprintf($sort_label_text, $user_label)); ?>">
+                                <span class="qr-sort-label"><?= esc_html($user_label); ?></span>
+                                <span class="sort-indicator" aria-hidden="true">
+                                    <span class="sort-arrow sort-arrow-asc"></span>
+                                    <span class="sort-arrow sort-arrow-desc"></span>
+                                </span>
+                            </button>
+                        </span>
+                        <span class="qr-name">
+                            <button type="button" class="qr-sort-control" data-sort-key="displayName" data-sort-type="text" data-sort-label="<?= esc_attr($customer_label); ?>" aria-pressed="false" title="<?= esc_attr(sprintf($sort_label_text, $customer_label)); ?>">
+                                <span class="qr-sort-label"><?= esc_html($customer_label); ?></span>
+                                <span class="sort-indicator" aria-hidden="true">
+                                    <span class="sort-arrow sort-arrow-asc"></span>
+                                    <span class="sort-arrow sort-arrow-desc"></span>
+                                </span>
+                            </button>
+                        </span>
+                        <span class="qr-status">
+                            <button type="button" class="qr-sort-control" data-sort-key="status" data-sort-type="text" data-sort-label="<?= esc_attr($status_label); ?>" aria-pressed="false" title="<?= esc_attr(sprintf($sort_label_text, $status_label)); ?>">
+                                <span class="qr-sort-label"><?= esc_html($status_label); ?></span>
+                                <span class="sort-indicator" aria-hidden="true">
+                                    <span class="sort-arrow sort-arrow-asc"></span>
+                                    <span class="sort-arrow sort-arrow-desc"></span>
+                                </span>
+                            </button>
+                        </span>
+                        <span class="qr-assigned">
+                            <button type="button" class="qr-sort-control" data-sort-key="assignedAt" data-sort-type="date" data-sort-label="<?= esc_attr($assigned_label); ?>" aria-pressed="false" title="<?= esc_attr(sprintf($sort_label_text, $assigned_label)); ?>">
+                                <span class="qr-sort-label"><?= esc_html($assigned_label); ?></span>
+                                <span class="sort-indicator" aria-hidden="true">
+                                    <span class="sort-arrow sort-arrow-asc"></span>
+                                    <span class="sort-arrow sort-arrow-desc"></span>
+                                </span>
+                            </button>
+                        </span>
                     </li>
                     <?php foreach ($all_codes as $code) : ?>
-                        <li class="qr-item" data-code="<?= esc_attr($code->qr_code); ?>" data-id="<?= esc_attr($code->id); ?>">
+                        <li class="qr-item"
+                            data-code="<?= esc_attr($code->qr_code); ?>"
+                            data-id="<?= esc_attr($code->id); ?>"
+                            data-user-id="<?= esc_attr($code->user_id ? $code->user_id : ''); ?>"
+                            data-display-name="<?= esc_attr($code->display_name ? $code->display_name : ''); ?>"
+                            data-status="<?= esc_attr($code->status ? strtolower($code->status) : ''); ?>"
+                            data-assigned-at="<?= esc_attr($code->assigned_at ? $code->assigned_at : ''); ?>">
                             <input type="checkbox" class="qr-select" />
                             <span class="qr-id"><?= esc_html($code->id); ?></span>
                             <span class="qr-text" contenteditable="true"><?= esc_html($code->qr_code); ?></span>

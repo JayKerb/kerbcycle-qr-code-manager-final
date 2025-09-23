@@ -54,6 +54,14 @@ function initKerbcycleAdmin() {
   const newCodeInput = document.getElementById("new-qr-code");
   const importBtn = document.getElementById("import-qr-btn");
   const importFile = document.getElementById("import-qr-file");
+  const listContainer = document.getElementById("qr-code-list");
+  const sortButtons = listContainer
+    ? Array.from(
+        listContainer.querySelectorAll(".qr-header .qr-sort-control"),
+      )
+    : [];
+  let currentSortKey = null;
+  let currentSortDirection = "asc";
 
   function adjustCounts(availChange, assignChange) {
     document.querySelectorAll(".qr-code-counts").forEach((el) => {
@@ -108,6 +116,120 @@ function initKerbcycleAdmin() {
     selectAll.indeterminate = !allChecked && anyChecked;
   }
 
+  const normalizeDateValue = (value) => {
+    if (!value) {
+      return Number.NaN;
+    }
+    const normalized = value.includes("T") ? value : value.replace(" ", "T");
+    const parsed = Date.parse(normalized);
+    if (!Number.isNaN(parsed)) {
+      return parsed;
+    }
+    const fallback = Date.parse(value);
+    return Number.isNaN(fallback) ? Number.NaN : fallback;
+  };
+
+  function updateSortIndicators() {
+    sortButtons.forEach((btn) => {
+      const isActive = btn.dataset.sortKey === currentSortKey;
+      const isAscending = isActive && currentSortDirection === "asc";
+      const isDescending = isActive && currentSortDirection === "desc";
+      btn.classList.toggle("is-active", isActive);
+      btn.classList.toggle("is-ascending", isAscending);
+      btn.classList.toggle("is-descending", isDescending);
+      btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+      if (isActive) {
+        btn.dataset.direction = currentSortDirection;
+      } else {
+        delete btn.dataset.direction;
+      }
+    });
+  }
+
+  function sortQrItems(sortKey, direction, type) {
+    if (!listContainer) {
+      return;
+    }
+    const items = Array.from(listContainer.querySelectorAll(".qr-item"));
+    if (!items.length) {
+      return;
+    }
+    const multiplier = direction === "desc" ? -1 : 1;
+    const collator = new Intl.Collator(undefined, {
+      sensitivity: "base",
+      numeric: type === "number",
+    });
+
+    items.sort((a, b) => {
+      const aVal = (a.dataset[sortKey] || "").trim();
+      const bVal = (b.dataset[sortKey] || "").trim();
+      let result = 0;
+
+      if (type === "number") {
+        const aNum = parseFloat(aVal);
+        const bNum = parseFloat(bVal);
+        const aValid = !Number.isNaN(aNum);
+        const bValid = !Number.isNaN(bNum);
+        if (aValid && bValid) {
+          result = aNum - bNum;
+        } else if (aValid) {
+          result = -1;
+        } else if (bValid) {
+          result = 1;
+        } else {
+          result = collator.compare(aVal, bVal);
+        }
+      } else if (type === "date") {
+        const aTime = normalizeDateValue(aVal);
+        const bTime = normalizeDateValue(bVal);
+        const aValid = !Number.isNaN(aTime);
+        const bValid = !Number.isNaN(bTime);
+        if (aValid && bValid) {
+          result = aTime - bTime;
+        } else if (aValid) {
+          result = -1;
+        } else if (bValid) {
+          result = 1;
+        } else {
+          result = collator.compare(aVal, bVal);
+        }
+      } else {
+        result = collator.compare(aVal, bVal);
+      }
+
+      if (result === 0) {
+        const aId = parseFloat(a.dataset.id || "0");
+        const bId = parseFloat(b.dataset.id || "0");
+        if (!Number.isNaN(aId) && !Number.isNaN(bId)) {
+          result = aId - bId;
+        }
+      }
+
+      if (result === 0) {
+        result = collator.compare(a.dataset.code || "", b.dataset.code || "");
+      }
+
+      return result * multiplier;
+    });
+
+    const fragment = document.createDocumentFragment();
+    items.forEach((item) => fragment.appendChild(item));
+    listContainer.appendChild(fragment);
+    updateSelectAllState();
+  }
+
+  function applyCurrentSort() {
+    if (!currentSortKey) {
+      return;
+    }
+    const activeButton = sortButtons.find(
+      (btn) => btn.dataset.sortKey === currentSortKey,
+    );
+    const sortType = activeButton ? activeButton.dataset.sortType || "text" : "text";
+    sortQrItems(currentSortKey, currentSortDirection, sortType);
+    updateSortIndicators();
+  }
+
   function handleInlineEditBlur(event) {
     const span = event.currentTarget;
     const li = span.closest("li");
@@ -134,6 +256,7 @@ function initKerbcycleAdmin() {
       .then((data) => {
         if (data.success) {
           li.dataset.code = newCode;
+          applyCurrentSort();
           const msg =
             data.data && data.data.message
               ? data.data.message
@@ -175,6 +298,25 @@ function initKerbcycleAdmin() {
   document
     .querySelectorAll("select.kc-searchable")
     .forEach(makeSearchableSelect);
+
+  sortButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const sortKey = button.dataset.sortKey;
+      if (!sortKey) {
+        return;
+      }
+      const sortType = button.dataset.sortType || "text";
+      let direction = "asc";
+      if (currentSortKey === sortKey) {
+        direction = currentSortDirection === "asc" ? "desc" : "asc";
+      }
+      currentSortKey = sortKey;
+      currentSortDirection = direction;
+      sortQrItems(sortKey, direction, sortType);
+      updateSortIndicators();
+    });
+  });
+  updateSortIndicators();
 
   if (userField && assignedSelect) {
     userField.addEventListener("change", function () {
@@ -312,6 +454,31 @@ function initKerbcycleAdmin() {
             if (record.id !== undefined && record.id !== null) {
               li.dataset.id = record.id;
             }
+            const userValue =
+              record.user_id !== undefined && record.user_id !== null
+                ? String(record.user_id)
+                : "";
+            const nameValue =
+              record.display_name !== undefined && record.display_name !== null
+                ? String(record.display_name)
+                : "";
+            const statusValueRaw =
+              record.status !== undefined && record.status !== null
+                ? String(record.status)
+                : "assigned";
+            const statusValue = statusValueRaw.toLowerCase();
+            const statusText =
+              statusValue && statusValue.length
+                ? statusValue.charAt(0).toUpperCase() + statusValue.slice(1)
+                : "Assigned";
+            const assignedValue =
+              record.assigned_at !== undefined && record.assigned_at !== null
+                ? String(record.assigned_at)
+                : "";
+            li.dataset.userId = userValue;
+            li.dataset.displayName = nameValue;
+            li.dataset.status = statusValue;
+            li.dataset.assignedAt = assignedValue;
 
             const checkbox = document.createElement("input");
             checkbox.type = "checkbox";
@@ -332,31 +499,22 @@ function initKerbcycleAdmin() {
 
             const userSpan = document.createElement("span");
             userSpan.className = "qr-user";
-            userSpan.textContent =
-              record.user_id !== undefined && record.user_id !== null
-                ? record.user_id
-                : "—";
+            userSpan.textContent = userValue || "—";
             li.appendChild(userSpan);
 
             const nameSpan = document.createElement("span");
             nameSpan.className = "qr-name";
-            nameSpan.textContent =
-              record.display_name !== undefined && record.display_name !== null
-                ? record.display_name
-                : "—";
+            nameSpan.textContent = nameValue || "—";
             li.appendChild(nameSpan);
 
             const statusSpan = document.createElement("span");
             statusSpan.className = "qr-status";
-            statusSpan.textContent = record.status || "Assigned";
+            statusSpan.textContent = statusText;
             li.appendChild(statusSpan);
 
             const assignedSpan = document.createElement("span");
             assignedSpan.className = "qr-assigned";
-            assignedSpan.textContent =
-              record.assigned_at !== undefined && record.assigned_at !== null
-                ? record.assigned_at
-                : "—";
+            assignedSpan.textContent = assignedValue || "—";
             li.appendChild(assignedSpan);
 
             const header = list.querySelector(".qr-header");
@@ -371,19 +529,37 @@ function initKerbcycleAdmin() {
           if (li) {
             wireQrItem(li);
             li.dataset.code = qrCode;
-            li.querySelector(".qr-user").textContent = userId;
             const displayName =
               customerName ||
               (userField &&
                 userField.options[userField.selectedIndex] &&
                 userField.options[userField.selectedIndex].text) ||
               "—";
-            li.querySelector(".qr-name").textContent = displayName;
-            li.querySelector(".qr-status").textContent = "Assigned";
-            li.querySelector(".qr-assigned").textContent = new Date()
-              .toISOString()
-              .slice(0, 19)
-              .replace("T", " ");
+            const displayNameValue =
+              displayName && displayName !== "—" ? displayName.trim() : "";
+            const statusValue =
+              record && record.status
+                ? String(record.status).toLowerCase()
+                : "assigned";
+            const statusText =
+              statusValue && statusValue.length
+                ? statusValue.charAt(0).toUpperCase() + statusValue.slice(1)
+                : "Assigned";
+            const assignedAt =
+              record && record.assigned_at
+                ? String(record.assigned_at)
+                : new Date()
+                    .toISOString()
+                    .slice(0, 19)
+                    .replace("T", " ");
+            li.dataset.userId = userId || "";
+            li.dataset.displayName = displayNameValue;
+            li.dataset.status = statusValue;
+            li.dataset.assignedAt = assignedAt;
+            li.querySelector(".qr-user").textContent = userId || "—";
+            li.querySelector(".qr-name").textContent = displayNameValue || "—";
+            li.querySelector(".qr-status").textContent = statusText;
+            li.querySelector(".qr-assigned").textContent = assignedAt || "—";
           }
           if (qrSelect) {
             const opt = qrSelect.querySelector(
@@ -413,6 +589,7 @@ function initKerbcycleAdmin() {
             }
           }
           adjustCounts(-1, 1);
+          applyCurrentSort();
           document.dispatchEvent(
             new CustomEvent("kerbcycle-qr-code-assigned", {
               detail: { code: qrCode, userId, data, source, customerName },
@@ -527,6 +704,10 @@ function initKerbcycleAdmin() {
               `#qr-code-list .qr-item[data-code="${qrCode}"]`,
             );
             if (li) {
+              li.dataset.userId = "";
+              li.dataset.displayName = "";
+              li.dataset.status = "available";
+              li.dataset.assignedAt = "";
               li.querySelector(".qr-user").textContent = "—";
               li.querySelector(".qr-name").textContent = "—";
               li.querySelector(".qr-status").textContent = "Available";
@@ -556,6 +737,7 @@ function initKerbcycleAdmin() {
               }
             }
             adjustCounts(1, -1);
+            applyCurrentSort();
           } else {
             showToast("Failed to release QR code.", true);
           }
@@ -629,6 +811,10 @@ function initKerbcycleAdmin() {
               li.className = "qr-item";
               li.dataset.code = row.qr_code;
               li.dataset.id = row.id;
+              li.dataset.userId = "";
+              li.dataset.displayName = "";
+              li.dataset.status = "available";
+              li.dataset.assignedAt = "";
               li.innerHTML = `
 <input type="checkbox" class="qr-select" />
 <span class="qr-id">${row.id}</span>
@@ -645,6 +831,7 @@ function initKerbcycleAdmin() {
               }
               wireQrItem(li);
               updateSelectAllState();
+              applyCurrentSort();
             }
           }
           document.dispatchEvent(
