@@ -54,12 +54,17 @@ function initKerbcycleAdmin() {
   const newCodeInput = document.getElementById("new-qr-code");
   const importBtn = document.getElementById("import-qr-btn");
   const importFile = document.getElementById("import-qr-file");
+  const listingWrapper = document.getElementById("qr-listing");
+  const paginationWrappers = listingWrapper
+    ? Array.from(listingWrapper.querySelectorAll(".qr-pagination"))
+    : [];
   const listContainer = document.getElementById("qr-code-list");
   const sortButtons = listContainer
     ? Array.from(
         listContainer.querySelectorAll(".qr-header .qr-sort-control"),
       )
     : [];
+  let isPaginating = false;
   let currentSortKey = null;
   let currentSortDirection = "asc";
 
@@ -114,6 +119,308 @@ function initKerbcycleAdmin() {
     const anyChecked = Array.from(checkboxes).some((cb) => cb.checked);
     selectAll.checked = allChecked;
     selectAll.indeterminate = !allChecked && anyChecked;
+  }
+
+  function getListingState() {
+    if (!listingWrapper) {
+      return null;
+    }
+    const parseNumber = (value, fallback) => {
+      const parsed = parseInt(value, 10);
+      return Number.isNaN(parsed) ? fallback : parsed;
+    };
+    const currentPage = parseNumber(listingWrapper.dataset.currentPage, 1);
+    const totalPages = parseNumber(listingWrapper.dataset.totalPages, 0);
+    const totalItems = parseNumber(listingWrapper.dataset.totalItems, 0);
+    let perPage = parseNumber(listingWrapper.dataset.perPage, 20);
+    if (perPage < 1) {
+      perPage = 20;
+    }
+    return {
+      currentPage,
+      totalPages,
+      totalItems,
+      perPage,
+      filters: {
+        status_filter: listingWrapper.dataset.statusFilter || "",
+        start_date: listingWrapper.dataset.startDate || "",
+        end_date: listingWrapper.dataset.endDate || "",
+        search: listingWrapper.dataset.search || "",
+      },
+    };
+  }
+
+  function updatePaginationUI(pagination) {
+    if (!listingWrapper || !pagination) {
+      return;
+    }
+
+    const filters = pagination.filters || {};
+
+    if (
+      typeof pagination.current_page !== "undefined" &&
+      pagination.current_page !== null
+    ) {
+      listingWrapper.dataset.currentPage = String(pagination.current_page);
+    }
+
+    if (
+      typeof pagination.total_pages !== "undefined" &&
+      pagination.total_pages !== null
+    ) {
+      listingWrapper.dataset.totalPages = String(pagination.total_pages);
+    }
+
+    if (
+      typeof pagination.total_items !== "undefined" &&
+      pagination.total_items !== null
+    ) {
+      listingWrapper.dataset.totalItems = String(pagination.total_items);
+    }
+
+    if (
+      typeof pagination.per_page !== "undefined" &&
+      pagination.per_page !== null
+    ) {
+      listingWrapper.dataset.perPage = String(pagination.per_page);
+    }
+
+    if (
+      typeof filters.status_filter !== "undefined" &&
+      filters.status_filter !== null
+    ) {
+      listingWrapper.dataset.statusFilter = filters.status_filter;
+    }
+
+    if (
+      typeof filters.start_date !== "undefined" &&
+      filters.start_date !== null
+    ) {
+      listingWrapper.dataset.startDate = filters.start_date;
+    }
+
+    if (
+      typeof filters.end_date !== "undefined" &&
+      filters.end_date !== null
+    ) {
+      listingWrapper.dataset.endDate = filters.end_date;
+    }
+
+    if (
+      typeof filters.search !== "undefined" &&
+      filters.search !== null
+    ) {
+      listingWrapper.dataset.search = filters.search;
+    }
+
+    paginationWrappers.forEach((wrapper) => {
+      const controls = wrapper.querySelector(".qr-pagination-controls");
+      if (controls) {
+        controls.innerHTML = pagination.links || "";
+      }
+
+      const fallback = wrapper.querySelector(".qr-pagination-fallback");
+      if (fallback) {
+        const pages = fallback.querySelector(".tablenav-pages");
+        if (pages) {
+          pages.innerHTML = pagination.links || "";
+        }
+        if (
+          listingWrapper.classList.contains("qr-pagination-enhanced") ||
+          pagination.links
+        ) {
+          fallback.style.display = "none";
+        } else {
+          fallback.style.display = "";
+        }
+      }
+    });
+  }
+
+  function updateCountsFromServer(counts) {
+    if (!counts) {
+      return;
+    }
+    if (typeof counts.available !== "undefined") {
+      document.querySelectorAll(".qr-available-count").forEach((el) => {
+        el.textContent = counts.available;
+      });
+    }
+    if (typeof counts.assigned !== "undefined") {
+      document.querySelectorAll(".qr-assigned-count").forEach((el) => {
+        el.textContent = counts.assigned;
+      });
+    }
+  }
+
+  function replaceQrItems(html) {
+    if (!listContainer) {
+      return;
+    }
+    listContainer
+      .querySelectorAll(".qr-item")
+      .forEach((item) => item.remove());
+    if (html) {
+      listContainer.insertAdjacentHTML("beforeend", html);
+    }
+    listContainer
+      .querySelectorAll(".qr-item")
+      .forEach((item) => wireQrItem(item));
+  }
+
+  function getPageFromLink(link) {
+    if (!link) {
+      return null;
+    }
+    const pageAttr = link.getAttribute("data-page");
+    if (pageAttr) {
+      const parsedPage = parseInt(pageAttr, 10);
+      if (!Number.isNaN(parsedPage)) {
+        return parsedPage;
+      }
+    }
+    const href = link.getAttribute("href");
+    if (href) {
+      try {
+        const url = new URL(href, window.location.href);
+        const pagedParam = url.searchParams.get("paged");
+        if (pagedParam) {
+          const parsed = parseInt(pagedParam, 10);
+          if (!Number.isNaN(parsed)) {
+            return parsed;
+          }
+        }
+      } catch (error) {
+        // ignore malformed URLs
+      }
+    }
+    const state = getListingState();
+    if (!state) {
+      return null;
+    }
+    if (link.classList.contains("prev")) {
+      return Math.max(1, state.currentPage - 1);
+    }
+    if (link.classList.contains("next")) {
+      const total = state.totalPages || state.currentPage;
+      return Math.min(total, state.currentPage + 1);
+    }
+    return null;
+  }
+
+  function requestPage(targetPage) {
+    if (!listingWrapper || !listContainer) {
+      return Promise.resolve();
+    }
+    const state = getListingState();
+    if (!state) {
+      return Promise.resolve();
+    }
+    isPaginating = true;
+    listingWrapper.classList.add("is-loading");
+
+    const params = new URLSearchParams();
+    params.append("action", "kerbcycle_paginate_qr_codes");
+    params.append("security", kerbcycle_ajax.nonce);
+    params.append("paged", targetPage);
+    if (state.perPage > 0) {
+      params.append("per_page", state.perPage);
+    }
+    if (state.filters.status_filter) {
+      params.append("status_filter", state.filters.status_filter);
+    }
+    if (state.filters.start_date) {
+      params.append("start_date", state.filters.start_date);
+    }
+    if (state.filters.end_date) {
+      params.append("end_date", state.filters.end_date);
+    }
+    if (state.filters.search) {
+      params.append("search", state.filters.search);
+    }
+
+    return fetch(kerbcycle_ajax.ajax_url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      },
+      body: params.toString(),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (!data || !data.success) {
+          const message =
+            data && data.data && data.data.message
+              ? data.data.message
+              : "Unable to load QR codes.";
+          showToast(message, true);
+          return;
+        }
+        const payload = data.data || {};
+        replaceQrItems(payload.items_html || "");
+        updatePaginationUI(payload.pagination || {});
+        updateCountsFromServer(payload.counts || null);
+        applyCurrentSort();
+        updateSelectAllState();
+      })
+      .catch((error) => {
+        console.error("Error loading paginated QR codes:", error);
+        showToast("Failed to load QR codes. Please try again.", true);
+      })
+      .finally(() => {
+        isPaginating = false;
+        listingWrapper.classList.remove("is-loading");
+      });
+  }
+
+  function handlePaginationClick(event) {
+    const link = event.target.closest("a.page-numbers");
+    if (!link) {
+      return;
+    }
+    const state = getListingState();
+    if (!state) {
+      return;
+    }
+    const targetPage = getPageFromLink(link);
+    if (targetPage === null || targetPage === state.currentPage) {
+      return;
+    }
+    event.preventDefault();
+    if (isPaginating) {
+      return;
+    }
+    requestPage(targetPage);
+  }
+
+  function enhancePagination() {
+    if (!listingWrapper) {
+      return;
+    }
+    const state = getListingState();
+    let initialLinks = "";
+    paginationWrappers.forEach((wrapper) => {
+      const fallbackPages = wrapper.querySelector(
+        ".qr-pagination-fallback .tablenav-pages",
+      );
+      if (fallbackPages && !initialLinks) {
+        initialLinks = fallbackPages.innerHTML;
+      }
+    });
+    updatePaginationUI({
+      links: initialLinks,
+      current_page: state ? state.currentPage : undefined,
+      total_pages: state ? state.totalPages : undefined,
+      total_items: state ? state.totalItems : undefined,
+      per_page: state ? state.perPage : undefined,
+      filters: state ? state.filters : undefined,
+    });
+    listingWrapper.classList.add("qr-pagination-enhanced");
   }
 
   const normalizeDateValue = (value) => {
@@ -298,6 +605,13 @@ function initKerbcycleAdmin() {
   document
     .querySelectorAll("select.kc-searchable")
     .forEach(makeSearchableSelect);
+
+  if (listingWrapper) {
+    enhancePagination();
+    paginationWrappers.forEach((wrapper) => {
+      wrapper.addEventListener("click", handlePaginationClick);
+    });
+  }
 
   sortButtons.forEach((button) => {
     button.addEventListener("click", () => {
