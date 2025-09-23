@@ -22,6 +22,79 @@
   background: #f0f0f1;
 }
 
+.qr-header .qr-sort-control {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.qr-header .qr-sort-control:hover {
+  background-color: #e2e4e7;
+}
+
+.qr-header .qr-sort-control:focus-visible {
+  outline: 2px solid #2271b1;
+  outline-offset: 1px;
+}
+
+.qr-header .qr-sort-control .qr-sort-label {
+  flex: 1;
+  text-align: left;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.qr-header .qr-sort-control .sort-indicator {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-left: auto;
+  line-height: 1;
+}
+
+.qr-header .qr-sort-control .sort-arrow {
+  font-size: 10px;
+  color: #8c8f94;
+  opacity: 0.5;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.qr-header .qr-sort-control .sort-arrow-asc::before {
+  content: "▲";
+}
+
+.qr-header .qr-sort-control .sort-arrow-desc::before {
+  content: "▼";
+}
+
+.qr-header .qr-sort-control.is-active {
+  background-color: #dbe9f6;
+  color: #1d4f91;
+}
+
+.qr-header .qr-sort-control.is-ascending .sort-arrow-asc,
+.qr-header .qr-sort-control.is-descending .sort-arrow-desc {
+  color: #2271b1;
+  opacity: 1;
+}
+
+.qr-header .qr-sort-control.is-ascending .sort-arrow-desc,
+.qr-header .qr-sort-control.is-descending .sort-arrow-asc {
+  opacity: 0.2;
+}
+
 .qr-item:last-child {
   border-bottom: none;
 }
