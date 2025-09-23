@@ -235,8 +235,7 @@ function initDashboardScanner() {
     if (!addFromScannerBtn) {
       return;
     }
-    const shouldDisable =
-      addInProgress || !scannerEnabled || !lastScannedCode;
+    const shouldDisable = addInProgress || !scannerEnabled || !lastScannedCode;
     addFromScannerBtn.disabled = shouldDisable;
   }
 
@@ -262,8 +261,7 @@ function initDashboardScanner() {
     if (!assignToCustomerBtn) {
       return;
     }
-    const hasCustomer =
-      dashboardCustomerField && dashboardCustomerField.value;
+    const hasCustomer = dashboardCustomerField && dashboardCustomerField.value;
     const shouldDisable =
       assignInProgress || !scannerEnabled || !lastScannedCode || !hasCustomer;
     assignToCustomerBtn.disabled = shouldDisable;
@@ -402,9 +400,7 @@ function initDashboardScanner() {
               result.data.data.message) ||
             (result && result.data && result.data.message) ||
             (result && result.error && result.error.message) ||
-            (result &&
-              typeof result.error === "string" &&
-              result.error) ||
+            (result && typeof result.error === "string" && result.error) ||
             "Failed to add QR code.";
 
           setScanResult(
@@ -567,7 +563,10 @@ function initDashboardScanner() {
           );
         })
         .catch((error) => {
-          console.error("Unable to assign QR code from dashboard scanner", error);
+          console.error(
+            "Unable to assign QR code from dashboard scanner",
+            error,
+          );
           setScanResult(
             scanResult,
             "error",
@@ -616,8 +615,8 @@ function initDashboardScanner() {
           typeof scanner.resume === "function"
             ? scanner.resume()
             : typeof scanner.start === "function"
-            ? scanner.start()
-            : null;
+              ? scanner.start()
+              : null;
 
         if (resumeResult && typeof resumeResult.then === "function") {
           resumeResult
@@ -625,10 +624,7 @@ function initDashboardScanner() {
               setScanResult(scanResult, "success", successMessage);
             })
             .catch((error) => {
-              console.error(
-                "Unable to reset dashboard scanner",
-                error,
-              );
+              console.error("Unable to reset dashboard scanner", error);
               setScanResult(
                 scanResult,
                 "error",
