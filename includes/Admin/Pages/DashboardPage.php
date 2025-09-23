@@ -6,6 +6,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+use Kerbcycle\QrCode\Admin\Notices;
+
 /**
  * The dashboard page.
  *
@@ -53,9 +55,17 @@ class DashboardPage
         ?>
         <div class="wrap">
             <h1>KerbCycle QR Code Manager</h1>
-            <div class="notice notice-info">
-                <p><?php esc_html_e('Select a customer and scan or choose a QR code to assign.', 'kerbcycle'); ?></p>
-            </div>
+            <?php
+            Notices::add(
+                'info',
+                esc_html__('Select a customer and scan or choose a QR code to assign.', 'kerbcycle'),
+                [
+                    'log_type' => 'dashboard_instruction',
+                    'page'     => 'kerbcycle-qr-manager',
+                    'status'   => 'success',
+                ]
+            );
+            ?>
             <div id="qr-scanner-container">
                 <?php
                 $email_enabled    = (bool) get_option('kerbcycle_qr_enable_email', 1);
@@ -85,9 +95,18 @@ class DashboardPage
                     </div>
                     <div id="reader" class="qr-reader"></div>
                 <?php else : ?>
-                    <div class="notice notice-warning qr-warning">
-                        <p><?php esc_html_e('QR code scanner camera is disabled in settings.', 'kerbcycle'); ?></p>
-                    </div>
+                    <?php
+                    Notices::add(
+                        'warning',
+                        esc_html__('QR code scanner camera is disabled in settings.', 'kerbcycle'),
+                        [
+                            'extra_classes' => 'qr-warning',
+                            'log_type'      => 'dashboard_scanner_disabled',
+                            'page'          => 'kerbcycle-qr-manager',
+                            'status'        => 'failure',
+                        ]
+                    );
+                    ?>
                 <?php endif; ?>
                 <div id="scan-result" class="updated"></div>
                 <h2><?php esc_html_e('Manual QR Code Tasks', 'kerbcycle'); ?></h2>
