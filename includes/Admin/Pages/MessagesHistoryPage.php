@@ -6,6 +6,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+use Kerbcycle\QrCode\Admin\Notices;
 use Kerbcycle\QrCode\Data\Repositories\MessageLogRepository;
 use Kerbcycle\QrCode\Helpers\Nonces;
 
@@ -233,14 +234,21 @@ class MessagesHistoryPage
                 <h1><?php esc_html_e('Messages History', 'kerbcycle'); ?></h1>
 
                 <?php if (!$table_ok) : ?>
-                    <div class="notice notice-error">
-                        <p>
-                            <?php esc_html_e('The message logs table is missing or incomplete. Click “Repair Table” to (re)create the correct structure.', 'kerbcycle'); ?>
-                            <?php if (!empty($this->last_error)) : ?>
-                                <br><strong><?php esc_html_e('Last DB error:', 'kerbcycle'); ?></strong> <?php echo esc_html($this->last_error); ?>
-                            <?php endif; ?>
-                        </p>
-                    </div>
+                    <?php
+                    $missing_message = esc_html__('The message logs table is missing or incomplete. Click “Repair Table” to (re)create the correct structure.', 'kerbcycle');
+                    if (!empty($this->last_error)) {
+                        $missing_message .= '<br><strong>' . esc_html__('Last DB error:', 'kerbcycle') . '</strong> ' . esc_html($this->last_error);
+                    }
+                    Notices::add(
+                        'error',
+                        $missing_message,
+                        [
+                            'log_type' => 'messages_history_table',
+                            'page'     => $this->page_slug,
+                            'status'   => 'failure',
+                        ]
+                    );
+                    ?>
                     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin:8px 0;">
                         <?php wp_nonce_field('kerbcycle_repair_logs'); ?>
                         <input type="hidden" name="action" value="kerbcycle_repair_logs" />
@@ -249,31 +257,64 @@ class MessagesHistoryPage
                 <?php endif; ?>
 
                 <?php if (!empty($_GET['repaired'])) : ?>
-                    <div class="notice notice-success is-dismissible">
-                        <p><?php esc_html_e('Logs table repaired.', 'kerbcycle'); ?></p>
-                    </div>
+                    <?php
+                    Notices::add(
+                        'success',
+                        esc_html__('Logs table repaired.', 'kerbcycle'),
+                        [
+                            'dismissible' => true,
+                            'log_type'    => 'messages_history_repair',
+                            'page'        => $this->page_slug,
+                            'status'      => 'success',
+                        ]
+                    );
+                    ?>
                 <?php endif; ?>
 
                 <?php if (!empty($_GET['repair_failed'])) : ?>
-                    <div class="notice notice-error is-dismissible">
-                        <p><?php esc_html_e('Repair failed. Check server error logs or DB permissions.', 'kerbcycle'); ?></p>
-                    </div>
+                    <?php
+                    Notices::add(
+                        'error',
+                        esc_html__('Repair failed. Check server error logs or DB permissions.', 'kerbcycle'),
+                        [
+                            'dismissible' => true,
+                            'log_type'    => 'messages_history_repair',
+                            'page'        => $this->page_slug,
+                            'status'      => 'failure',
+                        ]
+                    );
+                    ?>
                 <?php endif; ?>
 
                 <?php if (!empty($_GET['deleted'])) : ?>
-                    <div class="notice notice-success is-dismissible">
-                        <p>
-                            <?php printf(esc_html__('%d log(s) deleted.', 'kerbcycle'), absint($_GET['deleted'])); ?>
-                        </p>
-                    </div>
+                    <?php
+                    $deleted = absint($_GET['deleted']);
+                    Notices::add(
+                        'success',
+                        sprintf(esc_html__('%d log(s) deleted.', 'kerbcycle'), $deleted),
+                        [
+                            'dismissible' => true,
+                            'log_type'    => 'messages_history_deleted',
+                            'page'        => $this->page_slug,
+                            'status'      => 'success',
+                        ]
+                    );
+                    ?>
                 <?php endif; ?>
 
                 <?php if (!empty($_GET['cleared'])) : ?>
-                    <div class="notice notice-success is-dismissible">
-                        <p>
-                            <?php esc_html_e('All logs cleared.', 'kerbcycle'); ?>
-                        </p>
-                    </div>
+                    <?php
+                    Notices::add(
+                        'success',
+                        esc_html__('All logs cleared.', 'kerbcycle'),
+                        [
+                            'dismissible' => true,
+                            'log_type'    => 'messages_history_cleared',
+                            'page'        => $this->page_slug,
+                            'status'      => 'success',
+                        ]
+                    );
+                    ?>
                 <?php endif; ?>
 
                 <h2 class="nav-tab-wrapper" style="margin-top:12px;">

@@ -2,6 +2,7 @@
 
 namespace Kerbcycle\QrCode\Services;
 
+use Kerbcycle\QrCode\Admin\Notices;
 use Kerbcycle\QrCode\Helpers\Nonces;
 
 if (!defined('ABSPATH')) {
@@ -99,7 +100,16 @@ class MessagesService
             $messages[$sel]['email'] = wp_strip_all_tags($email, true);
 
             update_option(self::OPT, $messages, false);
-            echo '<div class="notice notice-success is-dismissible"><p>Messages saved for <strong>'.esc_html(self::label_for($sel)).'</strong>.</p></div>';
+            Notices::add(
+                'success',
+                'Messages saved for <strong>' . esc_html(self::label_for($sel)) . '</strong>.',
+                [
+                    'dismissible' => true,
+                    'log_type'    => 'messages_save',
+                    'page'        => 'kerbcycle-messages',
+                    'status'      => 'success',
+                ]
+            );
             $tab = 'edit';
         }
 
@@ -143,21 +153,55 @@ class MessagesService
                 $r = \Kerbcycle\QrCode\Services\SmsService::send($t_to_sms, $test_preview_sms);
                 if (is_wp_error($r)) {
                     $d = $r->get_error_data();
-                    $http = (is_array($d) && isset($d['http'])) ? ' HTTP='.$d['http'] : '';
-                    $body = (is_array($d) && isset($d['body'])) ? ' Body='.substr(is_string($d['body']) ? $d['body'] : json_encode($d['body']), 0, 300) : '';
-                    echo '<div class="notice notice-error"><p><strong>Test SMS failed:</strong> '.esc_html($r->get_error_message().$http.$body).'</p></div>';
+                    $http = (is_array($d) && isset($d['http'])) ? ' HTTP=' . $d['http'] : '';
+                    $body = (is_array($d) && isset($d['body'])) ? ' Body=' . substr(is_string($d['body']) ? $d['body'] : json_encode($d['body']), 0, 300) : '';
+                    Notices::add(
+                        'error',
+                        '<strong>Test SMS failed:</strong> ' . esc_html($r->get_error_message() . $http . $body),
+                        [
+                            'log_type' => 'test_sms',
+                            'page'     => 'kerbcycle-messages',
+                            'status'   => 'failure',
+                        ]
+                    );
                 } else {
-                    echo '<div class="notice notice-success is-dismissible"><p><strong>Test SMS sent.</strong> '.esc_html(json_encode($r)).'</p></div>';
+                    Notices::add(
+                        'success',
+                        '<strong>Test SMS sent.</strong> ' . esc_html(json_encode($r)),
+                        [
+                            'dismissible' => true,
+                            'log_type'    => 'test_sms',
+                            'page'        => 'kerbcycle-messages',
+                            'status'      => 'success',
+                        ]
+                    );
                 }
             }
 
             // Email send (optional)
             if ($do_send_email && $t_to_email) {
-                $sent = wp_mail($t_to_email, 'KerbCycle Test: '.self::label_for($t_type), $test_preview_email);
+                $sent = wp_mail($t_to_email, 'KerbCycle Test: ' . self::label_for($t_type), $test_preview_email);
                 if ($sent) {
-                    echo '<div class="notice notice-success is-dismissible"><p><strong>Test Email sent</strong> to '.esc_html($t_to_email).'.</p></div>';
+                    Notices::add(
+                        'success',
+                        '<strong>Test Email sent</strong> to ' . esc_html($t_to_email) . '.',
+                        [
+                            'dismissible' => true,
+                            'log_type'    => 'test_email',
+                            'page'        => 'kerbcycle-messages',
+                            'status'      => 'success',
+                        ]
+                    );
                 } else {
-                    echo '<div class="notice notice-error"><p><strong>Test Email failed</strong> (check site mail configuration).</p></div>';
+                    Notices::add(
+                        'error',
+                        '<strong>Test Email failed</strong> (check site mail configuration).',
+                        [
+                            'log_type' => 'test_email',
+                            'page'     => 'kerbcycle-messages',
+                            'status'   => 'failure',
+                        ]
+                    );
                 }
             }
             $tab = 'test';
