@@ -122,7 +122,8 @@ function initKerbcycleAdmin() {
     fetch(kerbcycle_ajax.ajax_url, {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "Content-Type":
+          "application/x-www-form-urlencoded; charset=UTF-8",
       },
       body: `action=update_qr_code&old_code=${encodeURIComponent(
         oldCode,
@@ -264,7 +265,8 @@ function initKerbcycleAdmin() {
     return fetch(kerbcycle_ajax.ajax_url, {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "Content-Type":
+          "application/x-www-form-urlencoded; charset=UTF-8",
       },
       body,
     })
@@ -294,17 +296,21 @@ function initKerbcycleAdmin() {
           }
           showToast(msg);
           try {
-            localStorage.setItem("kerbcycleAssignment", Date.now().toString());
+            localStorage.setItem(
+              "kerbcycleAssignment",
+              Date.now().toString(),
+            );
           } catch (e) {
             console.warn("LocalStorage unavailable", e);
           }
           const list = document.getElementById("qr-code-list");
           const escapedCode = cssEscape(qrCode);
           let li = list
-            ? list.querySelector(`.qr-item[data-code="${escapedCode}"]`)
+            ? list.querySelector(
+                `.qr-item[data-code="${escapedCode}"]`,
+              )
             : null;
-          const record =
-            data.data && data.data.record ? data.data.record : null;
+          const record = data.data && data.data.record ? data.data.record : null;
           if (!li && record && list) {
             li = document.createElement("li");
             li.className = "qr-item";
@@ -421,7 +427,7 @@ function initKerbcycleAdmin() {
           return { success: true, data };
         }
         const err =
-          data.data && data.data.message
+          (data.data && data.data.message)
             ? data.data.message
             : "Failed to assign QR code.";
         showToast(err, true);
@@ -605,10 +611,7 @@ function initKerbcycleAdmin() {
               ? data.data.message
               : "QR code added successfully.";
           showToast(msg);
-          if (
-            qrSelect &&
-            !qrSelect.querySelector(`option[value="${qrCode}"]`)
-          ) {
+          if (qrSelect && !qrSelect.querySelector(`option[value="${qrCode}"]`)) {
             const opt = document.createElement("option");
             opt.value = qrCode;
             opt.textContent = qrCode;

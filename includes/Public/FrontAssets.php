@@ -73,7 +73,7 @@ class FrontAssets
             'kerbcycle-qr-frontend-css',
             KERBCYCLE_QR_URL . 'assets/css/public.css',
             [],
-            KERBCYCLE_QR_VERSION
+            filemtime(KERBCYCLE_QR_PATH . 'assets/css/public.css')
         );
 
         wp_enqueue_script(

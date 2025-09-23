@@ -109,7 +109,7 @@ class DashboardPage
                                 'show_option_none'  => __('Select Customer', 'kerbcycle'),
                                 'option_none_value' => ''
                             ));
-                    ?>
+                            ?>
                             <p class="description"><?php esc_html_e('Customer Search', 'kerbcycle'); ?></p>
                         </div>
                         <button id="dashboard-assign-qr-btn" class="button button-primary"><?php esc_html_e('Assign QR Code', 'kerbcycle'); ?></button>
