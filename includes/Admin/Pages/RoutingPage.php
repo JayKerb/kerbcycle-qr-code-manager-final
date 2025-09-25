@@ -432,10 +432,7 @@ class RoutingPage
         ?>
         <div id="<?php echo esc_attr($element_id); ?>" style="height:<?php echo esc_attr($atts['height']); ?>;"></div>
         <script>
-        (function(){
-            if (!window.L || !window.L.Routing || !window.KC_OSRM) {
-                return;
-            }
+        KC_OSRM.ready(function(){
             var map = L.map('<?php echo esc_js($element_id); ?>').setView([
                 <?php echo esc_js($atts['start']); ?>
             ].reverse(), <?php echo (int) $atts['zoom']; ?>);
@@ -446,7 +443,7 @@ class RoutingPage
                 waypoints: [wp1, wp2],
                 router: L.Routing.osrmv1({ serviceUrl: KC_OSRM.endpoint.replace(/\/route\/v1\/.*$/, '/route/v1') })
             }).addTo(map);
-        })();
+        });
         </script>
         <?php
         return ob_get_clean();
