@@ -44,6 +44,8 @@ class Plugin
      */
     public function init()
     {
+        \Kerbcycle\QrCode\Admin\Pages\RoutingPage::instance();
+
         // Load admin components
         if (is_admin()) {
             new \Kerbcycle\QrCode\Admin\Admin();

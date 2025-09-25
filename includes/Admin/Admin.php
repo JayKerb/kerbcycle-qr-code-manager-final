@@ -143,6 +143,15 @@ class Admin
             'kerbcycle-sms',
             ['\Kerbcycle\QrCode\Services\SmsService', 'render_settings_page']
         );
+        $routing = Pages\RoutingPage::instance();
+        add_submenu_page(
+            'kerbcycle-qr-manager',
+            'OSRM Settings',
+            'Routing',
+            'manage_options',
+            'kerbcycle-routing',
+            [$routing, 'render']
+        );
 
         add_submenu_page(
             'kerbcycle-qr-manager',
