@@ -35,6 +35,7 @@ class SettingsPage
         ?>
         <div class="wrap">
             <h1><?php esc_html_e('KerbCycle QR Settings', 'kerbcycle'); ?></h1>
+            <?php settings_errors('kerbcycle_qr_settings'); ?>
             <form method="post" action="options.php">
                 <?php
                 settings_fields('kerbcycle_qr_settings');
