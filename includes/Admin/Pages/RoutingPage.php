@@ -398,10 +398,17 @@ class RoutingPage
         );
 
         $options = self::get_options();
+        $resolved_endpoint = self::current_endpoint($options);
+        $base_endpoint = $resolved_endpoint ? trailingslashit($resolved_endpoint) : '';
+        $service_url = $base_endpoint ? $base_endpoint . 'route/v1' : '';
+        $profile = (string) $options['profile'];
+
         wp_localize_script('kc-osrm', 'KC_OSRM', [
-            'endpoint'   => trailingslashit(self::current_endpoint($options)) . 'route/v1/' . $options['profile'],
-            'tileUrl'    => $options['tile_url'],
-            'tileAttrib' => $options['tile_attrib'],
+            'endpoint'    => $service_url ? $service_url . '/' . $profile : $service_url,
+            'serviceUrl'  => $service_url,
+            'profile'     => $profile,
+            'tileUrl'     => $options['tile_url'],
+            'tileAttrib'  => $options['tile_attrib'],
         ]);
     }
 
@@ -428,28 +435,131 @@ class RoutingPage
         wp_enqueue_script('kc-osrm');
 
         $element_id = 'kc-osrm-' . wp_generate_uuid4();
+        $start = self::parse_coordinate_pair($atts['start']);
+        $end = self::parse_coordinate_pair($atts['end']);
+
         ob_start();
         ?>
         <div id="<?php echo esc_attr($element_id); ?>" style="height:<?php echo esc_attr($atts['height']); ?>;"></div>
         <script>
-        (function(){
-            if (!window.L || !window.L.Routing || !window.KC_OSRM) {
-                return;
-            }
-            var map = L.map('<?php echo esc_js($element_id); ?>').setView([
-                <?php echo esc_js($atts['start']); ?>
-            ].reverse(), <?php echo (int) $atts['zoom']; ?>);
-            L.tileLayer(KC_OSRM.tileUrl, { attribution: KC_OSRM.tileAttrib }).addTo(map);
-            var wp1 = L.latLng.apply(null, [<?php echo esc_js($atts['start']); ?>]);
-            var wp2 = L.latLng.apply(null, [<?php echo esc_js($atts['end']); ?>]);
-            L.Routing.control({
-                waypoints: [wp1, wp2],
-                router: L.Routing.osrmv1({ serviceUrl: KC_OSRM.endpoint.replace(/\/route\/v1\/.*$/, '/route/v1') })
-            }).addTo(map);
-        })();
+        KC_OSRM.ready(function(KC_OSRM){
+            (function(){
+                var el = document.getElementById('<?php echo esc_js($element_id); ?>');
+
+                function showMsg(target, msg){
+                    if (!target) {
+                        return;
+                    }
+
+                    var wrapper = document.createElement('div');
+                    wrapper.style.padding = '.5rem';
+                    wrapper.style.border = '1px solid #e33';
+                    wrapper.style.background = '#fee';
+                    wrapper.textContent = msg;
+
+                    target.innerHTML = '';
+                    target.appendChild(wrapper);
+                }
+
+                if (!el) {
+                    console.error('OSRM map container missing');
+                    return;
+                }
+
+                if (!window.L) {
+                    console.error('Leaflet missing');
+                    showMsg(el, <?php echo wp_json_encode(__('Leaflet failed to load.', 'kerbcycle')); ?>);
+                    return;
+                }
+
+                if (!window.L.Routing) {
+                    console.error('Leaflet Routing Machine missing');
+                    showMsg(el, <?php echo wp_json_encode(__('Leaflet Routing Machine failed to load.', 'kerbcycle')); ?>);
+                    return;
+                }
+
+                var start = <?php echo wp_json_encode($start); ?>;
+                if (!start || start.length !== 2 || !isFinite(start[0]) || !isFinite(start[1])) {
+                    console.error('Invalid start coordinates', start);
+                    showMsg(el, <?php echo wp_json_encode(__('Invalid start coordinates.', 'kerbcycle')); ?>);
+                    return;
+                }
+
+                var end = <?php echo wp_json_encode($end); ?>;
+                if (!end || end.length !== 2 || !isFinite(end[0]) || !isFinite(end[1])) {
+                    console.error('Invalid end coordinates', end);
+                    showMsg(el, <?php echo wp_json_encode(__('Invalid end coordinates.', 'kerbcycle')); ?>);
+                    return;
+                }
+
+                var serviceUrl = KC_OSRM.serviceUrl || (KC_OSRM.endpoint ? KC_OSRM.endpoint.replace(/\/route\/v1\/.*$/, '/route/v1') : '');
+                if (!serviceUrl) {
+                    console.error('OSRM endpoint missing');
+                    showMsg(el, <?php echo wp_json_encode(__('OSRM endpoint is not configured.', 'kerbcycle')); ?>);
+                    return;
+                }
+
+                try {
+                    var map = L.map(el).setView(start, <?php echo (int) $atts['zoom']; ?>);
+                    window._kcMap = map;
+
+                    if (KC_OSRM.tileUrl) {
+                        L.tileLayer(KC_OSRM.tileUrl, { attribution: KC_OSRM.tileAttrib }).addTo(map);
+                    }
+
+                    var routerOptions = { serviceUrl: serviceUrl };
+                    if (KC_OSRM.profile) {
+                        routerOptions.profile = KC_OSRM.profile;
+                    }
+
+                    L.Routing.control({
+                        waypoints: [
+                            L.latLng(start[0], start[1]),
+                            L.latLng(end[0], end[1])
+                        ],
+                        router: L.Routing.osrmv1(routerOptions)
+                    }).on('routingerror', function(e){
+                        var details = (e && e.error && e.error.message) ? e.error.message : 'unknown';
+                        var message = 'Routing failed: ' + details;
+                        showMsg(el, message);
+                    }).addTo(map);
+                } catch (error) {
+                    console.error(error);
+                    showMsg(el, 'Map init error: ' + error.message);
+                }
+            })();
+        });
         </script>
         <?php
         return ob_get_clean();
+    }
+
+    /**
+     * Parse a latitude/longitude pair string into numeric coordinates.
+     *
+     * @param mixed $value Coordinate pair string.
+     *
+     * @return array{0: float, 1: float}|null
+     */
+    private static function parse_coordinate_pair($value)
+    {
+        if (is_array($value)) {
+            $value = implode(',', $value);
+        }
+
+        $parts = array_map('trim', explode(',', (string) $value));
+        if (count($parts) !== 2) {
+            return null;
+        }
+
+        if (!is_numeric($parts[0]) || !is_numeric($parts[1])) {
+            return null;
+        }
+
+        return [
+            (float) $parts[0],
+            (float) $parts[1],
+        ];
     }
 
     /**
