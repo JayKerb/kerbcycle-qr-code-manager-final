@@ -34,6 +34,26 @@ class FrontAssets
      */
     public function enqueue_scripts()
     {
+        // Always register OSRM assets so they are available to the shortcode via wp_enqueue_script.
+        wp_register_style('leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', [], null);
+        wp_register_style('lrm', 'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css', [], null);
+        wp_register_script('leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', [], null, true);
+        wp_register_script('lrm', 'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js', ['leaflet'], null, true);
+        wp_register_script(
+            'kc-osrm',
+            KERBCYCLE_QR_URL . 'assets/js/kc-osrm.js',
+            ['leaflet', 'lrm'],
+            KERBCYCLE_QR_VERSION,
+            true
+        );
+
+        $options = OsrmService::get_options();
+        wp_localize_script('kc-osrm', 'KC_OSRM', [
+            'endpoint'   => trailingslashit(OsrmService::current_endpoint($options)) . 'route/v1/' . $options['profile'],
+            'tileUrl'    => $options['tile_url'],
+            'tileAttrib' => $options['tile_attrib'],
+        ]);
+
         global $post;
 
         if (!is_a($post, 'WP_Post')) {
@@ -42,9 +62,9 @@ class FrontAssets
 
         $has_scanner = has_shortcode($post->post_content, 'kerbcycle_scanner');
         $has_table = has_shortcode($post->post_content, 'kerbcycle_qr_table');
-        $has_map = has_shortcode($post->post_content, 'kerbcycle_osrm_map');
 
-        if (!$has_scanner && !$has_table && !$has_map) {
+        // The other shortcodes are conditional.
+        if (!$has_scanner && !$has_table) {
             return;
         }
 
@@ -70,27 +90,6 @@ class FrontAssets
                 true
             );
             $deps[] = 'jsqr';
-        }
-
-        if ($has_map) {
-            wp_register_style('leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', [], null);
-            wp_register_style('lrm', 'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css', [], null);
-            wp_register_script('leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', [], null, true);
-            wp_register_script('lrm', 'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js', ['leaflet'], null, true);
-            wp_register_script(
-                'kc-osrm',
-                KERBCYCLE_QR_URL . 'assets/js/kc-osrm.js',
-                ['leaflet', 'lrm'],
-                KERBCYCLE_QR_VERSION,
-                true
-            );
-
-            $options = OsrmService::get_options();
-            wp_localize_script('kc-osrm', 'KC_OSRM', [
-                'endpoint'   => trailingslashit(OsrmService::current_endpoint($options)) . 'route/v1/' . $options['profile'],
-                'tileUrl'    => $options['tile_url'],
-                'tileAttrib' => $options['tile_attrib'],
-            ]);
         }
 
         wp_enqueue_style(
