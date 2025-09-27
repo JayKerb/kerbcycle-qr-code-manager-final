@@ -477,6 +477,7 @@
         draggableWaypoints: true,
         routeWhileDragging: true,
         showAlternatives: false,
+        collapsible: true,
       })
         .on("routingstart", function () {
           setStatus("Routing…", "");
@@ -485,6 +486,12 @@
           setStatus("", "");
         })
         .addTo(map);
+
+      setTimeout(function () {
+        if (routingControl && routingControl._container) {
+          routingControl._container.classList.add("leaflet-routing-collapsed");
+        }
+      }, 0);
 
       registerEvents();
 
