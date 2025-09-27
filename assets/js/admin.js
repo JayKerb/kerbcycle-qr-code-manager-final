@@ -60,9 +60,7 @@ function initKerbcycleAdmin() {
     : [];
   const listContainer = document.getElementById("qr-code-list");
   const sortButtons = listContainer
-    ? Array.from(
-        listContainer.querySelectorAll(".qr-header .qr-sort-control"),
-      )
+    ? Array.from(listContainer.querySelectorAll(".qr-header .qr-sort-control"))
     : [];
   let isPaginating = false;
   let currentSortKey = null;
@@ -199,17 +197,11 @@ function initKerbcycleAdmin() {
       listingWrapper.dataset.startDate = filters.start_date;
     }
 
-    if (
-      typeof filters.end_date !== "undefined" &&
-      filters.end_date !== null
-    ) {
+    if (typeof filters.end_date !== "undefined" && filters.end_date !== null) {
       listingWrapper.dataset.endDate = filters.end_date;
     }
 
-    if (
-      typeof filters.search !== "undefined" &&
-      filters.search !== null
-    ) {
+    if (typeof filters.search !== "undefined" && filters.search !== null) {
       listingWrapper.dataset.search = filters.search;
     }
 
@@ -257,9 +249,7 @@ function initKerbcycleAdmin() {
     if (!listContainer) {
       return;
     }
-    listContainer
-      .querySelectorAll(".qr-item")
-      .forEach((item) => item.remove());
+    listContainer.querySelectorAll(".qr-item").forEach((item) => item.remove());
     if (html) {
       listContainer.insertAdjacentHTML("beforeend", html);
     }
@@ -532,7 +522,9 @@ function initKerbcycleAdmin() {
     const activeButton = sortButtons.find(
       (btn) => btn.dataset.sortKey === currentSortKey,
     );
-    const sortType = activeButton ? activeButton.dataset.sortType || "text" : "text";
+    const sortType = activeButton
+      ? activeButton.dataset.sortType || "text"
+      : "text";
     sortQrItems(currentSortKey, currentSortDirection, sortType);
     updateSortIndicators();
   }
@@ -862,10 +854,7 @@ function initKerbcycleAdmin() {
             const assignedAt =
               record && record.assigned_at
                 ? String(record.assigned_at)
-                : new Date()
-                    .toISOString()
-                    .slice(0, 19)
-                    .replace("T", " ");
+                : new Date().toISOString().slice(0, 19).replace("T", " ");
             li.dataset.userId = userId || "";
             li.dataset.displayName = displayNameValue;
             li.dataset.status = statusValue;
