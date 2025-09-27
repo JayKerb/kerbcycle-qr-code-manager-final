@@ -194,19 +194,10 @@ class Shortcodes
         ?>
         <div id="<?php echo esc_attr($element_id); ?>" style="height:<?php echo esc_attr($atts['height']); ?>;position:relative;"></div>
         <script>
-        (function(){
+        KC_OSRM.ready(function(KC_OSRM) {
             var el = document.getElementById('<?php echo esc_js($element_id); ?>');
             function showMsg(el, msg) {
                 el.innerHTML = '<div style="padding:.5rem;border:1px solid #e33;background:#fee;position:absolute;top:0;left:0;right:0;z-index:999;">' + msg + '</div>';
-            }
-
-            if (!window.L) {
-                showMsg(el, '<strong>Error:</strong> Leaflet library (L) is not available.');
-                return;
-            }
-            if (!window.L.Routing) {
-                showMsg(el, '<strong>Error:</strong> Leaflet Routing Machine is not available.');
-                return;
             }
 
             try {
@@ -236,7 +227,7 @@ class Shortcodes
             } catch (e) {
                 showMsg(el, '<strong>Map Init Error:</strong> ' + e.message);
             }
-        })();
+        });
         </script>
         <?php
         return ob_get_clean();

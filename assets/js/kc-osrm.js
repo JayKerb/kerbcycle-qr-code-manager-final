@@ -1,7 +1,72 @@
-/**
- * This file is intentionally left blank.
- *
- * The `KC_OSRM` JavaScript object is created by `wp_localize_script` in PHP
- * and does not depend on this file's contents. This file serves as a handle
- * for WordPress to attach the localized script.
- */
+(function (window) {
+    if (!window.KC_OSRM) {
+        window.KC_OSRM = {};
+    }
+
+    var callbacks = [];
+    var isReady = false;
+    var pollTimer = null;
+
+    function flushCallbacks() {
+        var callback;
+
+        while ((callback = callbacks.shift())) {
+            try {
+                callback(window.KC_OSRM);
+            } catch (error) {
+                if (window.console && typeof window.console.error === 'function') {
+                    window.console.error('KC_OSRM.ready callback failed', error);
+                }
+            }
+        }
+    }
+
+    function checkReady() {
+        if (isReady) {
+            return;
+        }
+
+        // Check that Leaflet and the Routing Machine are loaded
+        if (window.L && window.L.Routing) {
+            isReady = true;
+
+            if (pollTimer) {
+                window.clearInterval(pollTimer);
+                pollTimer = null;
+            }
+
+            flushCallbacks();
+        }
+    }
+
+    function ensurePolling() {
+        if (isReady || pollTimer) {
+            checkReady();
+            return;
+        }
+
+        pollTimer = window.setInterval(checkReady, 50);
+        checkReady();
+    }
+
+    window.KC_OSRM.ready = function (callback) {
+        if (typeof callback !== 'function') {
+            return;
+        }
+
+        callbacks.push(callback);
+
+        if (isReady) {
+            flushCallbacks();
+        } else {
+            ensurePolling();
+        }
+    };
+
+    // Start checking immediately if the page is already loaded
+    if (document.readyState === 'complete') {
+        ensurePolling();
+    } else {
+        window.addEventListener('load', ensurePolling);
+    }
+})(window);

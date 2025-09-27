@@ -2,6 +2,8 @@
 
 namespace Kerbcycle\QrCode\Admin\Pages;
 
+use Kerbcycle\QrCode\Services\OsrmService;
+
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -46,8 +48,8 @@ class RoutingPage
      */
     public function render()
     {
-        $options = self::get_options();
-        $endpoint = self::current_endpoint($options);
+        $options = OsrmService::get_options();
+        $endpoint = OsrmService::current_endpoint($options);
         $demo_in_prod = ($options['env'] === 'prod'
             && $options['deny_demo_in_prod']
             && false !== strpos($endpoint, 'router.project-osrm.org'));
@@ -62,9 +64,9 @@ class RoutingPage
             <form method="post" action="options.php">
                 <?php
                 settings_fields(self::OPTION_KEY);
-        do_settings_sections(self::OPTION_KEY);
-        submit_button(__('Save OSRM Settings', 'kerbcycle'));
-        ?>
+                do_settings_sections(self::OPTION_KEY);
+                submit_button(__('Save OSRM Settings', 'kerbcycle'));
+                ?>
             </form>
 
             <h2><?php esc_html_e('Quick Test', 'kerbcycle'); ?></h2>
@@ -211,7 +213,7 @@ class RoutingPage
     public function sanitize_options($input)
     {
         $input = is_array($input) ? $input : [];
-        $defaults = self::defaults();
+        $defaults = OsrmService::defaults();
 
         $output = [];
         $env = isset($input['env']) ? $input['env'] : 'dev';
@@ -240,7 +242,7 @@ class RoutingPage
      */
     public function render_environment_field()
     {
-        $options = self::get_options();
+        $options = OsrmService::get_options();
         ?>
         <select name="<?php echo esc_attr(self::OPTION_KEY); ?>[env]">
             <option value="dev" <?php selected($options['env'], 'dev'); ?>><?php esc_html_e('Development', 'kerbcycle'); ?></option>
@@ -255,7 +257,7 @@ class RoutingPage
      */
     private function render_endpoint_field($key)
     {
-        $options = self::get_options();
+        $options = OsrmService::get_options();
         printf(
             '<input type="url" size="60" name="%1$s[%2$s]" value="%3$s" placeholder="https://your-osrm.example.com" />',
             esc_attr(self::OPTION_KEY),
@@ -273,7 +275,7 @@ class RoutingPage
      */
     public function render_profile_field()
     {
-        $options = self::get_options();
+        $options = OsrmService::get_options();
         ?>
         <select name="<?php echo esc_attr(self::OPTION_KEY); ?>[profile]">
             <option value="driving" <?php selected($options['profile'], 'driving'); ?>><?php esc_html_e('driving', 'kerbcycle'); ?></option>
@@ -288,7 +290,7 @@ class RoutingPage
      */
     public function render_tile_url_field()
     {
-        $options = self::get_options();
+        $options = OsrmService::get_options();
         printf(
             '<input type="text" size="60" name="%1$s[tile_url]" value="%2$s" />',
             esc_attr(self::OPTION_KEY),
@@ -301,7 +303,7 @@ class RoutingPage
      */
     public function render_tile_attribution_field()
     {
-        $options = self::get_options();
+        $options = OsrmService::get_options();
         printf(
             '<input type="text" size="60" name="%1$s[tile_attrib]" value="%2$s" />',
             esc_attr(self::OPTION_KEY),
@@ -314,7 +316,7 @@ class RoutingPage
      */
     public function render_timeout_field()
     {
-        $options = self::get_options();
+        $options = OsrmService::get_options();
         printf(
             '<input type="number" min="1" max="60" name="%1$s[timeout]" value="%2$s" />',
             esc_attr(self::OPTION_KEY),
@@ -327,7 +329,7 @@ class RoutingPage
      */
     public function render_deny_demo_field()
     {
-        $options = self::get_options();
+        $options = OsrmService::get_options();
         printf(
             '<label><input type="checkbox" name="%1$s[deny_demo_in_prod]" value="1" %2$s /> %3$s</label>',
             esc_attr(self::OPTION_KEY),
@@ -343,8 +345,8 @@ class RoutingPage
     {
         check_ajax_referer('kc_osrm_test');
 
-        $options = self::get_options();
-        $endpoint = self::current_endpoint($options);
+        $options = OsrmService::get_options();
+        $endpoint = OsrmService::current_endpoint($options);
 
         if (empty($endpoint)) {
             wp_send_json(['ok' => false, 'error' => __('No endpoint configured', 'kerbcycle')]);

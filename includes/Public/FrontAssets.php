@@ -2,6 +2,8 @@
 
 namespace Kerbcycle\QrCode\Public;
 
+use Kerbcycle\QrCode\Services\OsrmService;
+
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -83,9 +85,9 @@ class FrontAssets
                 true
             );
 
-            $options = self::get_options();
+            $options = OsrmService::get_options();
             wp_localize_script('kc-osrm', 'KC_OSRM', [
-                'endpoint'   => trailingslashit(self::current_endpoint($options)) . 'route/v1/' . $options['profile'],
+                'endpoint'   => trailingslashit(OsrmService::current_endpoint($options)) . 'route/v1/' . $options['profile'],
                 'tileUrl'    => $options['tile_url'],
                 'tileAttrib' => $options['tile_attrib'],
             ]);
@@ -113,49 +115,4 @@ class FrontAssets
         ]);
     }
 
-    /**
-     * Retrieve stored options merged with defaults.
-     */
-    private static function get_options()
-    {
-        return wp_parse_args(get_option('kerbcycle_osrm_options', []), self::defaults());
-    }
-
-    /**
-     * Provide default option values.
-     */
-    private static function defaults()
-    {
-        return [
-            'env'              => 'dev',
-            'endpoint_dev'     => 'https://router.project-osrm.org',
-            'endpoint_stage'   => '',
-            'endpoint_prod'    => '',
-            'profile'          => 'driving',
-            'tile_url'         => 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            'tile_attrib'      => '© OpenStreetMap',
-            'deny_demo_in_prod' => 1,
-            'timeout'          => 10,
-        ];
-    }
-
-    /**
-     * Determine the current endpoint based on selected environment.
-     */
-    private static function current_endpoint($options = null)
-    {
-        $options = $options ?: self::get_options();
-        $environment = $options['env'];
-        $map = [
-            'dev'   => $options['endpoint_dev'],
-            'stage' => $options['endpoint_stage'],
-            'prod'  => $options['endpoint_prod'],
-        ];
-        $url = isset($map[$environment]) ? rtrim((string) $map[$environment], '/') : '';
-
-        /**
-         * Filter the resolved endpoint URL.
-         */
-        return apply_filters('kerbcycle/osrm/endpoint', $url, $options);
-    }
 }
