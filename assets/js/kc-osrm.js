@@ -5,15 +5,23 @@
     });
     return [p[0], p[1]]; // [lat, lon]
   }
+
   function showMsg(el, msg) {
     el.innerHTML =
       '<div style="padding:.5rem;border:1px solid #e33;background:#fee;color:#900;font:14px/1.4 system-ui,Arial">' +
       msg +
       "</div>";
   }
+
+  function getTripBase(url) {
+    if (!url) return "";
+    return url.replace(/\/route\/v1\/?$/, "/trip/v1");
+  }
+
   function initOne(cfg) {
     var el = document.getElementById(cfg.id);
     if (!el) return;
+
     if (!window.L) {
       showMsg(el, "Leaflet not loaded");
       return;
@@ -27,26 +35,338 @@
       return;
     }
 
-    var start = parseLatLon(cfg.start),
-      end = parseLatLon(cfg.end);
+    var start = parseLatLon(cfg.start);
+    var end = parseLatLon(cfg.end);
+
+    var parent = el.parentNode;
+    if (!parent) return;
+
+    var wrapper = document.createElement("div");
+    wrapper.className = "kc-osrm-wrapper";
+    wrapper.style.display = "flex";
+    wrapper.style.flexDirection = "column";
+
+    var toolbar = document.createElement("div");
+    toolbar.className = "kc-osrm-toolbar";
+    toolbar.style.display = "flex";
+    toolbar.style.flexWrap = "wrap";
+    toolbar.style.gap = "0.5rem";
+    toolbar.style.alignItems = "center";
+    toolbar.style.marginBottom = "0.5rem";
+
+    var buttonStyle = {
+      padding: "0.35rem 0.75rem",
+      border: "1px solid #ccc",
+      background: "#f8f8f8",
+      borderRadius: "4px",
+      cursor: "pointer",
+      font: "14px/1.2 system-ui, Arial, sans-serif",
+    };
+
+    function makeButton(label) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = label;
+      Object.assign(btn.style, buttonStyle);
+      btn.addEventListener("focus", function () {
+        btn.style.outline = "2px solid #2684ff";
+      });
+      btn.addEventListener("blur", function () {
+        btn.style.outline = "";
+      });
+      return btn;
+    }
+
+    function makeToggle(label, checked) {
+      var wrapperEl = document.createElement("label");
+      wrapperEl.style.display = "inline-flex";
+      wrapperEl.style.alignItems = "center";
+      wrapperEl.style.gap = "0.35rem";
+      wrapperEl.style.font = "14px/1.2 system-ui, Arial, sans-serif";
+      var input = document.createElement("input");
+      input.type = "checkbox";
+      input.checked = !!checked;
+      var span = document.createElement("span");
+      span.textContent = label;
+      wrapperEl.appendChild(input);
+      wrapperEl.appendChild(span);
+      return { label: wrapperEl, input: input };
+    }
+
+    var addStopBtn = makeButton("Add stop");
+    var optimizeBtn = makeButton("Optimize");
+    var roundtripToggle = makeToggle("Roundtrip", true);
+    var fixStartToggle = makeToggle("Fix start", true);
+    var fixEndToggle = makeToggle("Fix finish", true);
+    var clearBtn = makeButton("Clear");
+    var exportBtn = makeButton("Export");
+
+    toolbar.appendChild(addStopBtn);
+    toolbar.appendChild(optimizeBtn);
+    toolbar.appendChild(roundtripToggle.label);
+    toolbar.appendChild(fixStartToggle.label);
+    toolbar.appendChild(fixEndToggle.label);
+    toolbar.appendChild(clearBtn);
+    toolbar.appendChild(exportBtn);
+
+    var statusEl = document.createElement("div");
+    statusEl.className = "kc-osrm-status";
+    statusEl.style.flex = "1";
+    statusEl.style.minWidth = "200px";
+    statusEl.style.font = "13px/1.3 system-ui, Arial, sans-serif";
+    statusEl.style.color = "#555";
+
+    toolbar.appendChild(statusEl);
+
+    var mapHolder = document.createElement("div");
+    mapHolder.className = "kc-osrm-map";
+    mapHolder.style.position = "relative";
+    mapHolder.style.flex = "1";
+
+    parent.insertBefore(wrapper, el);
+    wrapper.appendChild(toolbar);
+    wrapper.appendChild(mapHolder);
+    mapHolder.appendChild(el);
+
+    var addStopMode = false;
+    var map;
+    var routingControl;
+    var tripBase = getTripBase(KC_OSRM.base);
+
+    function setStatus(message, type) {
+      statusEl.textContent = message || "";
+      statusEl.style.color =
+        type === "error" ? "#c00" : type === "success" ? "#256029" : "#555";
+    }
+
+    function setLoading(isLoading) {
+      optimizeBtn.disabled = isLoading;
+      optimizeBtn.textContent = isLoading ? "Optimizing…" : "Optimize";
+      optimizeBtn.style.opacity = isLoading ? "0.6" : "1";
+      if (isLoading) {
+        setStatus("Optimizing route…", "");
+      }
+    }
+
+    function getWaypoints() {
+      if (!routingControl) return [];
+      return routingControl
+        .getWaypoints()
+        .filter(function (wp) {
+          return wp && wp.latLng;
+        })
+        .map(function (wp) {
+          return {
+            lat: wp.latLng.lat,
+            lng: wp.latLng.lng,
+            name: wp.name || "",
+          };
+        });
+    }
+
+    function setWaypoints(list) {
+      var wps = (list || [])
+        .filter(function (wp) {
+          return wp && typeof wp.lat === "number" && typeof wp.lng === "number";
+        })
+        .map(function (wp) {
+          return L.Routing.waypoint(L.latLng(wp.lat, wp.lng), wp.name || "");
+        });
+      routingControl.setWaypoints(wps);
+    }
+
+    function addStopAt(latLng, index) {
+      if (!routingControl || !latLng) return;
+      var wps = routingControl
+        .getWaypoints()
+        .filter(function (wp) {
+          return wp && wp.latLng;
+        });
+      var waypoint = L.Routing.waypoint(latLng);
+      if (typeof index === "number" && index >= 0 && index <= wps.length) {
+        wps.splice(index, 0, waypoint);
+      } else {
+        wps.push(waypoint);
+      }
+      routingControl.setWaypoints(wps);
+    }
+
+    function clearAll() {
+      if (!routingControl) return;
+      routingControl.setWaypoints([]);
+      setStatus("Cleared all stops.", "");
+    }
+
+    function setAddStopMode(active) {
+      addStopMode = !!active;
+      addStopBtn.setAttribute("aria-pressed", addStopMode ? "true" : "false");
+      addStopBtn.style.background = addStopMode ? "#2684ff" : "#f8f8f8";
+      addStopBtn.style.color = addStopMode ? "#fff" : "#000";
+      if (map) {
+        map.getContainer().style.cursor = addStopMode ? "copy" : "";
+      }
+    }
+
+    function optimizeOrder() {
+      if (!routingControl) return;
+      var pts = getWaypoints();
+      if (pts.length < 2) {
+        setStatus("Add at least two stops to optimize.", "error");
+        return;
+      }
+
+      var coords = pts
+        .map(function (wp) {
+          return wp.lng + "," + wp.lat;
+        })
+        .join(";");
+
+      var profile = KC_OSRM.profile || "driving";
+      var url =
+        tripBase.replace(/\/?$/, "/") +
+        encodeURIComponent(profile) +
+        "/" +
+        coords;
+
+      var params = [];
+      params.push("roundtrip=" + (roundtripToggle.input.checked ? "true" : "false"));
+      params.push("source=" + (fixStartToggle.input.checked ? "first" : "any"));
+      params.push("destination=" + (fixEndToggle.input.checked ? "last" : "any"));
+      url += "?" + params.join("&");
+
+      setLoading(true);
+
+      fetch(url)
+        .then(function (response) {
+          if (!response.ok) {
+            throw new Error("HTTP " + response.status);
+          }
+          return response.json();
+        })
+        .then(function (data) {
+          if (!data || data.code !== "Ok" || !data.waypoints) {
+            throw new Error(data && data.message ? data.message : "Unexpected response");
+          }
+
+          var ordered = new Array(data.waypoints.length);
+          data.waypoints.forEach(function (wp, idx) {
+            if (typeof wp.waypoint_index !== "number") return;
+            ordered[wp.waypoint_index] = {
+              lat: wp.location[1],
+              lng: wp.location[0],
+              name: pts[idx] ? pts[idx].name : "",
+            };
+          });
+
+          var cleaned = ordered.filter(function (item) {
+            return item && typeof item.lat === "number" && typeof item.lng === "number";
+          });
+
+          if (!cleaned.length) {
+            throw new Error("No optimized route returned");
+          }
+
+          setWaypoints(cleaned);
+          setStatus("Route optimized.", "success");
+        })
+        .catch(function (err) {
+          setStatus("Optimize failed: " + err.message, "error");
+        })
+        .finally(function () {
+          setLoading(false);
+        });
+    }
+
+    function exportWaypoints() {
+      var pts = getWaypoints();
+      if (!pts.length) {
+        setStatus("Nothing to export.", "error");
+        return;
+      }
+
+      var payload = {
+        roundtrip: !!roundtripToggle.input.checked,
+        fixStart: !!fixStartToggle.input.checked,
+        fixEnd: !!fixEndToggle.input.checked,
+        profile: KC_OSRM.profile || "driving",
+        waypoints: pts,
+      };
+
+      var blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download =
+        "kerbcycle-route-" + new Date().toISOString().replace(/[:.]/g, "-") + ".json";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () {
+        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 0);
+      setStatus("Exported current route.", "success");
+    }
+
+    function registerEvents() {
+      addStopBtn.addEventListener("click", function () {
+        setAddStopMode(!addStopMode);
+      });
+
+      map.on("click", function (e) {
+        if (!addStopMode) return;
+        addStopAt(e.latlng);
+        setAddStopMode(false);
+      });
+
+      optimizeBtn.addEventListener("click", optimizeOrder);
+      clearBtn.addEventListener("click", function () {
+        clearAll();
+        setAddStopMode(false);
+      });
+      exportBtn.addEventListener("click", exportWaypoints);
+
+      routingControl.on("routingerror", function (e) {
+        var message = "Routing failed";
+        if (e && e.error && e.error.message) {
+          message += ": " + e.error.message;
+        }
+        setStatus(message + ". Check endpoint/profile/CORS.", "error");
+      });
+    }
+
     try {
-      var map = L.map(el).setView(start, cfg.zoom || 12);
+      map = L.map(el).setView(start, cfg.zoom || 12);
       window._kcMap = map;
-      L.tileLayer(KC_OSRM.tileUrl, { attribution: KC_OSRM.tileAttrib }).addTo(
-        map,
-      );
-      L.Routing.control({
-        waypoints: [L.latLng(start[0], start[1]), L.latLng(end[0], end[1])],
-        router: L.Routing.osrmv1({ serviceUrl: KC_OSRM.base }), // ends with /route/v1
+      L.tileLayer(KC_OSRM.tileUrl, { attribution: KC_OSRM.tileAttrib }).addTo(map);
+
+      routingControl = L.Routing.control({
+        waypoints: [
+          L.latLng(start[0], start[1]),
+          L.latLng(end[0], end[1]),
+        ],
+        router: L.Routing.osrmv1({
+          serviceUrl: KC_OSRM.base,
+          profile: KC_OSRM.profile,
+        }),
+        addWaypoints: true,
+        draggableWaypoints: true,
+        routeWhileDragging: true,
+        showAlternatives: false,
       })
-        .on("routingerror", function (e) {
-          var msg = "Routing failed";
-          try {
-            if (e && e.error && e.error.message) msg += ": " + e.error.message;
-          } catch (_) {}
-          showMsg(el, msg + ". Check endpoint/profile/CORS.");
+        .on("routingstart", function () {
+          setStatus("Routing…", "");
+        })
+        .on("routesfound", function () {
+          setStatus("", "");
         })
         .addTo(map);
+
+      registerEvents();
+
+      setAddStopMode(false);
+      setStatus("", "");
 
       // Hidden-tab resilience
       setTimeout(function () {
@@ -62,9 +382,21 @@
           map.invalidateSize();
         }, 50);
       });
-    } catch (e) {
-      showMsg(el, "Map init error: " + e.message);
+    } catch (err) {
+      showMsg(el, "Map init error: " + err.message);
+      return;
     }
+
+    el._kcOsrm = {
+      map: map,
+      control: routingControl,
+      getWaypoints: getWaypoints,
+      setWaypoints: setWaypoints,
+      addStopAt: addStopAt,
+      clearAll: clearAll,
+      optimizeOrder: optimizeOrder,
+      export: exportWaypoints,
+    };
   }
 
   function drain() {
@@ -73,7 +405,6 @@
     window.KC_OSRM_QUEUE = []; // clear
   }
 
-  // Run after DOM ready
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", drain);
   } else {
