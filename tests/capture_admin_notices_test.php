@@ -1,7 +1,9 @@
 <?php
+
 declare(strict_types=1);
 
 // Stub the handful of WordPress functions that Admin::capture_admin_notices uses.
+
 namespace {
     if (!function_exists('add_action')) {
         function add_action($hook, $callback, $priority = 10, $accepted_args = 1)
@@ -33,6 +35,7 @@ namespace {
 }
 
 // Provide a minimal ErrorLogRepository double that records log entries in memory.
+
 namespace Kerbcycle\QrCode\Data\Repositories {
     class ErrorLogRepository
     {
