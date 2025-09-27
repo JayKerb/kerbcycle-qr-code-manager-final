@@ -37,8 +37,10 @@ class FrontAssets
         // Always register OSRM assets so they are available to the shortcode.
         wp_register_style('leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', [], null);
         wp_register_style('lrm', 'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css', [], null);
+        wp_register_style('leaflet-geocoder', 'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css', [], null);
         wp_register_script('leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', [], null, true);
         wp_register_script('lrm', 'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js', ['leaflet'], null, true);
+        wp_register_script('leaflet-geocoder', 'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js', ['leaflet'], null, true);
         wp_register_script(
             'kc-osrm',
             KERBCYCLE_QR_URL . 'assets/js/kc-osrm.js',

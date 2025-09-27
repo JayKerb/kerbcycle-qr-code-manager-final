@@ -183,8 +183,10 @@ class Shortcodes
         // enqueue assets
         wp_enqueue_style('leaflet');
         wp_enqueue_style('lrm');
+        wp_enqueue_style('leaflet-geocoder');
         wp_enqueue_script('leaflet');
         wp_enqueue_script('lrm');
+        wp_enqueue_script('leaflet-geocoder');
         wp_enqueue_script('kc-osrm'); // <-- THIS defines KC_OSRM via wp_localize_script
 
         // output container only
