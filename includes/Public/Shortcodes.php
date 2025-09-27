@@ -195,17 +195,20 @@ class Shortcodes
             }
 
             try {
-                var start = "<?php echo esc_js($atts['start']); ?>".split(',').map(Number);
-                var end = "<?php echo esc_js($atts['end']); ?>".split(',').map(Number);
+                var startStr = "<?php echo esc_js($atts['start']); ?>";
+                var endStr = "<?php echo esc_js($atts['end']); ?>";
+                var start = startStr ? startStr.split(',').map(Number) : [];
+                var end = endStr ? endStr.split(',').map(Number) : [];
                 var zoom = <?php echo (int) $atts['zoom']; ?>;
 
-                if (start.length !== 2 || end.length !== 2 || isNaN(start[0]) || isNaN(end[0])) {
+                if (start.length !== 2 || end.length !== 2 || isNaN(start[0]) || isNaN(start[1]) || isNaN(end[0]) || isNaN(end[1])) {
                     showMsg(el, '<strong>Error:</strong> Invalid start/end coordinates. Expected format: "lat,lon".');
                     return;
                 }
 
                 var map = L.map(el).setView(start, zoom);
-                window._kcMap = map; // For external hooks like invalidateSize()
+                window._kcMap = map; // For external hooks
+
                 L.tileLayer(KC_OSRM.tileUrl, { attribution: KC_OSRM.tileAttrib }).addTo(map);
 
                 var control = L.Routing.control({
@@ -217,6 +220,31 @@ class Shortcodes
                     var message = (e && e.error && e.error.message) ? e.error.message : 'Unknown reason.';
                     showMsg(el, '<strong>Routing Error:</strong> ' + message);
                 }).addTo(map);
+
+                // Add handlers to fix map rendering when revealed in a hidden tab/accordion.
+                function invalidateMapSize() {
+                    // A short delay helps ensure the container has finished its animation.
+                    setTimeout(function() {
+                        if (map) {
+                            map.invalidateSize();
+                        }
+                    }, 150);
+                }
+
+                // Modern browsers: Use ResizeObserver to detect when the container is resized.
+                if ('ResizeObserver' in window) {
+                    var resizeObserver = new ResizeObserver(invalidateMapSize);
+                    resizeObserver.observe(el);
+                }
+
+                // Fallback/specific support for Ultimate Member tabs.
+                document.addEventListener('um_tab_shown', invalidateMapSize);
+
+                // Fallback for generic accordion clicks.
+                var accordion = el.closest('.ui-accordion, .elementor-accordion');
+                if (accordion) {
+                    accordion.addEventListener('click', invalidateMapSize);
+                }
 
             } catch (e) {
                 showMsg(el, '<strong>Map Init Error:</strong> ' + e.message);

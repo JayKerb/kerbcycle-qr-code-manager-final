@@ -64,9 +64,9 @@ class RoutingPage
             <form method="post" action="options.php">
                 <?php
                 settings_fields(self::OPTION_KEY);
-        do_settings_sections(self::OPTION_KEY);
-        submit_button(__('Save OSRM Settings', 'kerbcycle'));
-        ?>
+                do_settings_sections(self::OPTION_KEY);
+                submit_button(__('Save OSRM Settings', 'kerbcycle'));
+                ?>
             </form>
 
             <h2><?php esc_html_e('Quick Test', 'kerbcycle'); ?></h2>
@@ -372,11 +372,23 @@ class RoutingPage
         }
 
         $code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+
         if (200 === $code) {
             wp_send_json(['ok' => true, 'ms' => $elapsed]);
         }
 
-        wp_send_json(['ok' => false, 'error' => sprintf('HTTP %d', $code)]);
+        $error_message = sprintf('HTTP %d', $code);
+        if (!empty($body)) {
+            $data = json_decode($body);
+            if ($data && !empty($data->message)) {
+                $error_message .= ': ' . $data->message;
+            } else {
+                $error_message .= ' - ' . esc_html(substr($body, 0, 200));
+            }
+        }
+
+        wp_send_json(['ok' => false, 'error' => $error_message]);
     }
 
 }

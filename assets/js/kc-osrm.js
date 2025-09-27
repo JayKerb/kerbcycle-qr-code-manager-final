@@ -1,72 +1,72 @@
 (function (window) {
-  if (!window.KC_OSRM) {
-    window.KC_OSRM = {};
-  }
+    if (!window.KC_OSRM) {
+        window.KC_OSRM = {};
+    }
 
-  var callbacks = [];
-  var isReady = false;
-  var pollTimer = null;
+    var callbacks = [];
+    var isReady = false;
+    var pollTimer = null;
 
-  function flushCallbacks() {
-    var callback;
+    function flushCallbacks() {
+        var callback;
 
-    while ((callback = callbacks.shift())) {
-      try {
-        callback(window.KC_OSRM);
-      } catch (error) {
-        if (window.console && typeof window.console.error === "function") {
-          window.console.error("KC_OSRM.ready callback failed", error);
+        while ((callback = callbacks.shift())) {
+            try {
+                callback(window.KC_OSRM);
+            } catch (error) {
+                if (window.console && typeof window.console.error === 'function') {
+                    window.console.error('KC_OSRM.ready callback failed', error);
+                }
+            }
         }
-      }
-    }
-  }
-
-  function checkReady() {
-    if (isReady) {
-      return;
     }
 
-    // Check that Leaflet and the Routing Machine are loaded
-    if (window.L && window.L.Routing) {
-      isReady = true;
+    function checkReady() {
+        if (isReady) {
+            return;
+        }
 
-      if (pollTimer) {
-        window.clearInterval(pollTimer);
-        pollTimer = null;
-      }
+        // Check that Leaflet and the Routing Machine are loaded
+        if (window.L && window.L.Routing) {
+            isReady = true;
 
-      flushCallbacks();
-    }
-  }
+            if (pollTimer) {
+                window.clearInterval(pollTimer);
+                pollTimer = null;
+            }
 
-  function ensurePolling() {
-    if (isReady || pollTimer) {
-      checkReady();
-      return;
-    }
-
-    pollTimer = window.setInterval(checkReady, 50);
-    checkReady();
-  }
-
-  window.KC_OSRM.ready = function (callback) {
-    if (typeof callback !== "function") {
-      return;
+            flushCallbacks();
+        }
     }
 
-    callbacks.push(callback);
+    function ensurePolling() {
+        if (isReady || pollTimer) {
+            checkReady();
+            return;
+        }
 
-    if (isReady) {
-      flushCallbacks();
+        pollTimer = window.setInterval(checkReady, 50);
+        checkReady();
+    }
+
+    window.KC_OSRM.ready = function (callback) {
+        if (typeof callback !== 'function') {
+            return;
+        }
+
+        callbacks.push(callback);
+
+        if (isReady) {
+            flushCallbacks();
+        } else {
+            ensurePolling();
+        }
+    };
+
+    // Start checking immediately if the page is already loaded
+    if (document.readyState === 'complete') {
+        ensurePolling();
     } else {
-      ensurePolling();
+        window.addEventListener('load', ensurePolling);
     }
-  };
-
-  // Start checking immediately if the page is already loaded
-  if (document.readyState === "complete") {
-    ensurePolling();
-  } else {
-    window.addEventListener("load", ensurePolling);
-  }
 })(window);
