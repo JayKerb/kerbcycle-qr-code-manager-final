@@ -24,6 +24,7 @@ class Shortcodes
     {
         add_shortcode('kerbcycle_scanner', [$this, 'generate_frontend_scanner']);
         add_shortcode('kerbcycle_qr_table', [$this, 'generate_qr_table']);
+        add_shortcode('kerbcycle_osrm_map', [$this, 'osrm_map_shortcode']);
     }
 
     /**
@@ -162,6 +163,81 @@ class Shortcodes
             </div>
             <div class="kerbcycle-qr-pagination" data-rows="10"></div>
         </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    /**
+     * Shortcode renderer for the OSRM map.
+     */
+    public function osrm_map_shortcode($atts)
+    {
+        $atts = shortcode_atts(
+            [
+                'start'  => '40.730,-73.990',
+                'end'    => '40.780,-73.970',
+                'height' => '420px',
+                'zoom'   => 12,
+            ],
+            $atts,
+            'kerbcycle_osrm_map'
+        );
+
+        wp_enqueue_style('leaflet');
+        wp_enqueue_style('lrm');
+        wp_enqueue_script('leaflet');
+        wp_enqueue_script('lrm');
+        wp_enqueue_script('kc-osrm');
+
+        $element_id = 'kc-osrm-' . wp_generate_uuid4();
+        ob_start();
+        ?>
+        <div id="<?php echo esc_attr($element_id); ?>" style="height:<?php echo esc_attr($atts['height']); ?>;position:relative;"></div>
+        <script>
+        (function(){
+            var el = document.getElementById('<?php echo esc_js($element_id); ?>');
+            function showMsg(el, msg) {
+                el.innerHTML = '<div style="padding:.5rem;border:1px solid #e33;background:#fee;position:absolute;top:0;left:0;right:0;z-index:999;">' + msg + '</div>';
+            }
+
+            if (!window.L) {
+                showMsg(el, '<strong>Error:</strong> Leaflet library (L) is not available.');
+                return;
+            }
+            if (!window.L.Routing) {
+                showMsg(el, '<strong>Error:</strong> Leaflet Routing Machine is not available.');
+                return;
+            }
+
+            try {
+                var start = "<?php echo esc_js($atts['start']); ?>".split(',').map(Number);
+                var end = "<?php echo esc_js($atts['end']); ?>".split(',').map(Number);
+                var zoom = <?php echo (int) $atts['zoom']; ?>;
+
+                if (start.length !== 2 || end.length !== 2 || isNaN(start[0]) || isNaN(end[0])) {
+                    showMsg(el, '<strong>Error:</strong> Invalid start/end coordinates. Expected format: "lat,lon".');
+                    return;
+                }
+
+                var map = L.map(el).setView(start, zoom);
+                window._kcMap = map; // For external hooks like invalidateSize()
+                L.tileLayer(KC_OSRM.tileUrl, { attribution: KC_OSRM.tileAttrib }).addTo(map);
+
+                var control = L.Routing.control({
+                    waypoints: [ L.latLng(start[0], start[1]), L.latLng(end[0], end[1]) ],
+                    router: L.Routing.osrmv1({
+                        serviceUrl: KC_OSRM.endpoint.replace(/\/route\/v1\/.*$/, '/route/v1')
+                    })
+                }).on('routingerror', function(e) {
+                    var message = (e && e.error && e.error.message) ? e.error.message : 'Unknown reason.';
+                    showMsg(el, '<strong>Routing Error:</strong> ' + message);
+                }).addTo(map);
+
+            } catch (e) {
+                showMsg(el, '<strong>Map Init Error:</strong> ' + e.message);
+            }
+        })();
+        </script>
         <?php
         return ob_get_clean();
     }
