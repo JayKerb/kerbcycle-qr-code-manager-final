@@ -34,7 +34,7 @@ class FrontAssets
      */
     public function enqueue_scripts()
     {
-        // Always enqueue OSRM assets to ensure they are available on any page.
+        // Always enqueue OSRM assets to ensure they are available for the map shortcode.
         wp_enqueue_style('leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', [], null);
         wp_enqueue_style('lrm', 'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css', [], null);
         wp_enqueue_script('leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', [], null, true);
@@ -55,7 +55,6 @@ class FrontAssets
         ]);
 
         global $post;
-
         if (!is_a($post, 'WP_Post')) {
             return;
         }
@@ -63,55 +62,53 @@ class FrontAssets
         $has_scanner = has_shortcode($post->post_content, 'kerbcycle_scanner');
         $has_table = has_shortcode($post->post_content, 'kerbcycle_qr_table');
 
-        // The other shortcodes are conditional.
-        if (!$has_scanner && !$has_table) {
-            return;
-        }
+        // Conditionally load assets for the other shortcodes.
+        if ($has_scanner || $has_table) {
+            $deps = [];
+            if ($has_scanner) {
+                wp_enqueue_script('html5-qrcode', 'https://unpkg.com/html5-qrcode', [], null, true);
+                $deps[] = 'html5-qrcode';
 
-        $deps = [];
-        if ($has_scanner) {
-            wp_enqueue_script('html5-qrcode', 'https://unpkg.com/html5-qrcode', [], null, true);
-            $deps[] = 'html5-qrcode';
+                wp_enqueue_script(
+                    'zxing-browser',
+                    'https://unpkg.com/@zxing/browser@latest',
+                    [],
+                    null,
+                    true
+                );
+                $deps[] = 'zxing-browser';
+
+                wp_enqueue_script(
+                    'jsqr',
+                    'https://unpkg.com/jsqr/dist/jsQR.js',
+                    [],
+                    null,
+                    true
+                );
+                $deps[] = 'jsqr';
+            }
+
+            wp_enqueue_style(
+                'kerbcycle-qr-frontend-css',
+                KERBCYCLE_QR_URL . 'assets/css/public.css',
+                [],
+                filemtime(KERBCYCLE_QR_PATH . 'assets/css/public.css')
+            );
 
             wp_enqueue_script(
-                'zxing-browser',
-                'https://unpkg.com/@zxing/browser@latest',
-                [],
-                null,
+                'kerbcycle-qr-frontend-js',
+                KERBCYCLE_QR_URL . 'assets/js/qr-scanner.js',
+                $deps,
+                filemtime(KERBCYCLE_QR_PATH . 'assets/js/qr-scanner.js'),
                 true
             );
-            $deps[] = 'zxing-browser';
 
-            wp_enqueue_script(
-                'jsqr',
-                'https://unpkg.com/jsqr/dist/jsQR.js',
-                [],
-                null,
-                true
-            );
-            $deps[] = 'jsqr';
+            wp_localize_script('kerbcycle-qr-frontend-js', 'kerbcycle_ajax', [
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('kerbcycle_qr_nonce'),
+                'scanner_enabled' => $has_scanner,
+            ]);
         }
-
-        wp_enqueue_style(
-            'kerbcycle-qr-frontend-css',
-            KERBCYCLE_QR_URL . 'assets/css/public.css',
-            [],
-            filemtime(KERBCYCLE_QR_PATH . 'assets/css/public.css')
-        );
-
-        wp_enqueue_script(
-            'kerbcycle-qr-frontend-js',
-            KERBCYCLE_QR_URL . 'assets/js/qr-scanner.js',
-            $deps,
-            filemtime(KERBCYCLE_QR_PATH . 'assets/js/qr-scanner.js'),
-            true
-        );
-
-        wp_localize_script('kerbcycle-qr-frontend-js', 'kerbcycle_ajax', [
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('kerbcycle_qr_nonce'),
-            'scanner_enabled' => $has_scanner,
-        ]);
     }
 
 }
