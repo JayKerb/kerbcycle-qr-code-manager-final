@@ -183,12 +183,6 @@ class Shortcodes
             'kerbcycle_osrm_map'
         );
 
-        wp_enqueue_style('leaflet');
-        wp_enqueue_style('lrm');
-        wp_enqueue_script('leaflet');
-        wp_enqueue_script('lrm');
-        wp_enqueue_script('kc-osrm');
-
         $element_id = 'kc-osrm-' . wp_generate_uuid4();
         ob_start();
         ?>

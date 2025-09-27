@@ -65,10 +65,10 @@ class DashboardPage
                     'status'   => 'success',
                 ]
             );
-        ?>
+            ?>
             <div id="qr-scanner-container">
                 <?php
-            $email_enabled    = (bool) get_option('kerbcycle_qr_enable_email', 1);
+                $email_enabled    = (bool) get_option('kerbcycle_qr_enable_email', 1);
         $sms_enabled      = (bool) get_option('kerbcycle_qr_enable_sms', 0);
         $reminder_enabled = (bool) get_option('kerbcycle_qr_enable_reminders', 0);
         $scanner_enabled  = (bool) get_option('kerbcycle_qr_enable_scanner', 1);
@@ -217,13 +217,13 @@ class DashboardPage
                             <input type="checkbox" class="qr-select" id="qr-select-all" title="<?php esc_attr_e('Select all', 'kerbcycle'); ?>" />
                             <?php
                             $id_label        = __('ID', 'kerbcycle');
-        $code_label      = __('QR Code', 'kerbcycle');
-        $user_label      = __('User ID', 'kerbcycle');
-        $customer_label  = __('Customer', 'kerbcycle');
-        $status_label    = __('Status', 'kerbcycle');
-        $assigned_label  = __('Assigned At', 'kerbcycle');
-        $sort_label_text = __('Sort by %s', 'kerbcycle');
-        ?>
+                            $code_label      = __('QR Code', 'kerbcycle');
+                            $user_label      = __('User ID', 'kerbcycle');
+                            $customer_label  = __('Customer', 'kerbcycle');
+                            $status_label    = __('Status', 'kerbcycle');
+                            $assigned_label  = __('Assigned At', 'kerbcycle');
+                            $sort_label_text = __('Sort by %s', 'kerbcycle');
+                            ?>
                             <span class="qr-id">
                                 <button type="button" class="qr-sort-control" data-sort-key="id" data-sort-type="number" data-sort-label="<?= esc_attr($id_label); ?>" aria-pressed="false" title="<?= esc_attr(sprintf($sort_label_text, $id_label)); ?>">
                                     <span class="qr-sort-label"><?= esc_html($id_label); ?></span>
