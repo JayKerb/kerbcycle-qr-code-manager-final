@@ -94,6 +94,7 @@
     }
 
     var addStopBtn = makeButton("Add stop");
+    var pasteBtn = makeButton("Paste list");
     var optimizeBtn = makeButton("Optimize");
     var roundtripToggle = makeToggle("Roundtrip", true);
     var fixStartToggle = makeToggle("Fix start", true);
@@ -102,6 +103,7 @@
     var exportBtn = makeButton("Export");
 
     toolbar.appendChild(addStopBtn);
+    toolbar.appendChild(pasteBtn);
     toolbar.appendChild(optimizeBtn);
     toolbar.appendChild(roundtripToggle.label);
     toolbar.appendChild(fixStartToggle.label);
@@ -131,6 +133,7 @@
     var addStopMode = false;
     var map;
     var routingControl;
+    var geocoderControl;
     var tripBase = getTripBase(KC_OSRM.base);
 
     function setStatus(message, type) {
@@ -320,6 +323,105 @@
         setAddStopMode(false);
       });
 
+      pasteBtn.addEventListener("click", function () {
+        var existing = wrapper.querySelector('[data-kc="paste-box"]');
+        if (existing) {
+          existing.remove();
+        }
+
+        var box = document.createElement("div");
+        box.setAttribute("data-kc", "paste-box");
+        box.style.position = "absolute";
+        box.style.zIndex = "1001";
+        box.style.top = "56px";
+        box.style.left = "8px";
+        box.style.background = "#fff";
+        box.style.border = "1px solid #ddd";
+        box.style.borderRadius = "6px";
+        box.style.padding = "8px";
+        box.style.boxShadow = "0 1px 3px rgba(0,0,0,.12)";
+        box.style.maxWidth = "340px";
+        box.innerHTML =
+          '' +
+          '<div style="font-weight:600;margin-bottom:6px">Paste addresses (one per line)</div>' +
+          '<textarea data-kc="paste-input" style="width:320px;height:120px"></textarea>' +
+          '<div style="margin-top:6px;display:flex;gap:6px">' +
+          '<button class="button button-primary" data-kc="go">Geocode</button>' +
+          '<button class="button" data-kc="close">Close</button>' +
+          "</div>" +
+          '<div data-kc="status" style="margin-top:6px;font:12px/1.4 system-ui,Arial;color:#555"></div>';
+
+        wrapper.appendChild(box);
+
+        var closeBtn = box.querySelector('[data-kc="close"]');
+        if (closeBtn) {
+          closeBtn.addEventListener("click", function () {
+            box.remove();
+          });
+        }
+
+        var goBtn = box.querySelector('[data-kc="go"]');
+        if (goBtn) {
+          goBtn.addEventListener("click", async function () {
+            var ta = box.querySelector('[data-kc="paste-input"]');
+            var status = box.querySelector('[data-kc="status"]');
+            if (!ta || !status) {
+              return;
+            }
+
+            var lines = ta.value
+              .split("\n")
+              .map(function (s) {
+                return s.trim();
+              })
+              .filter(Boolean);
+
+            if (!lines.length) {
+              status.textContent = "Nothing to geocode.";
+              return;
+            }
+
+            status.textContent = "Geocoding " + lines.length + "…";
+            var added = 0;
+
+            for (var i = 0; i < lines.length; i++) {
+              var query = lines[i];
+              try {
+                var response = await fetch(
+                  "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=" +
+                    encodeURIComponent(query),
+                  {
+                    headers: { Accept: "application/json" },
+                  }
+                );
+                var arr = await response.json();
+                if (arr && arr[0]) {
+                  var lat = parseFloat(arr[0].lat);
+                  var lon = parseFloat(arr[0].lon);
+                  if (!Number.isNaN(lat) && !Number.isNaN(lon)) {
+                    addStopAt(L.latLng(lat, lon));
+                    added++;
+                  }
+                } else {
+                  console.warn("No result for:", query);
+                }
+              } catch (error) {
+                console.warn("Geocode failed for", query, error);
+              }
+
+              if (i < lines.length - 1) {
+                await new Promise(function (resolve) {
+                  setTimeout(resolve, 1100);
+                });
+              }
+            }
+
+            status.textContent =
+              "Added " + added + " of " + lines.length + " lines.";
+          });
+        }
+      });
+
       optimizeBtn.addEventListener("click", optimizeOrder);
       clearBtn.addEventListener("click", function () {
         clearAll();
@@ -340,6 +442,27 @@
       map = L.map(el).setView(start, cfg.zoom || 12);
       window._kcMap = map;
       L.tileLayer(KC_OSRM.tileUrl, { attribution: KC_OSRM.tileAttrib }).addTo(map);
+
+      if (L.Control && L.Control.Geocoder && typeof L.Control.geocoder === "function") {
+        geocoderControl = L.Control.geocoder({
+          defaultMarkGeocode: false,
+          geocoder: L.Control.Geocoder.nominatim({
+            serviceUrl: "https://nominatim.openstreetmap.org/",
+          }),
+        })
+          .on("markgeocode", function (e) {
+            if (!e || !e.geocode || !e.geocode.center) {
+              return;
+            }
+            addStopAt(e.geocode.center);
+            if (map && typeof map.panTo === "function") {
+              map.panTo(e.geocode.center);
+            }
+          })
+          .addTo(map);
+      } else {
+        console.warn("Leaflet Control Geocoder is unavailable.");
+      }
 
       routingControl = L.Routing.control({
         waypoints: [
