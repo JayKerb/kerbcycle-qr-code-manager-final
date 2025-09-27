@@ -172,86 +172,39 @@ class Shortcodes
      */
     public function osrm_map_shortcode($atts)
     {
-        $atts = shortcode_atts(
-            [
-                'start'  => '40.730,-73.990',
-                'end'    => '40.780,-73.970',
-                'height' => '420px',
-                'zoom'   => 12,
-            ],
-            $atts,
-            'kerbcycle_osrm_map'
-        );
+        $atts = shortcode_atts([
+            'start'  => '40.730,-73.990', // lat,lon
+            'end'    => '40.780,-73.970', // lat,lon
+            'height' => '420px',
+            'zoom'   => 12,
+            'id'     => 'kc-osrm-'.wp_generate_uuid4(),
+        ], $atts, 'kerbcycle_osrm_map');
 
-        $element_id = 'kc-osrm-' . wp_generate_uuid4();
-        ob_start();
-        ?>
-        <div id="<?php echo esc_attr($element_id); ?>" style="height:<?php echo esc_attr($atts['height']); ?>;position:relative;"></div>
-        <script>
-        KC_OSRM.ready(function(KC_OSRM) {
-            var el = document.getElementById('<?php echo esc_js($element_id); ?>');
-            function showMsg(el, msg) {
-                el.innerHTML = '<div style="padding:.5rem;border:1px solid #e33;background:#fee;position:absolute;top:0;left:0;right:0;z-index:999;">' + msg + '</div>';
-            }
+        // enqueue assets
+        wp_enqueue_style('leaflet');
+        wp_enqueue_style('lrm');
+        wp_enqueue_script('leaflet');
+        wp_enqueue_script('lrm');
+        wp_enqueue_script('kc-osrm'); // <-- THIS defines KC_OSRM via wp_localize_script
 
-            try {
-                var startStr = "<?php echo esc_js($atts['start']); ?>";
-                var endStr = "<?php echo esc_js($atts['end']); ?>";
-                var start = startStr ? startStr.split(',').map(Number) : [];
-                var end = endStr ? endStr.split(',').map(Number) : [];
-                var zoom = <?php echo (int) $atts['zoom']; ?>;
+        // output container only
+        $id     = esc_attr($atts['id']);
+        $start  = esc_js($atts['start']);
+        $end    = esc_js($atts['end']);
+        $zoom   = (int)$atts['zoom'];
+        $height = esc_attr($atts['height']);
 
-                if (start.length !== 2 || end.length !== 2 || isNaN(start[0]) || isNaN(start[1]) || isNaN(end[0]) || isNaN(end[1])) {
-                    showMsg(el, '<strong>Error:</strong> Invalid start/end coordinates. Expected format: "lat,lon".');
-                    return;
-                }
+        // push params to a queue that kc-osrm.js will consume
+        $payload = wp_json_encode([
+            'id'    => $id,
+            'start' => $start,
+            'end'   => $end,
+            'zoom'  => $zoom,
+        ]);
 
-                var map = L.map(el).setView(start, zoom);
-                window._kcMap = map; // For external hooks
+        // Ensure inline runs AFTER kc-osrm is present
+        wp_add_inline_script('kc-osrm', "window.KC_OSRM_QUEUE=(window.KC_OSRM_QUEUE||[]).concat([$payload]);", 'after');
 
-                L.tileLayer(KC_OSRM.tileUrl, { attribution: KC_OSRM.tileAttrib }).addTo(map);
-
-                var control = L.Routing.control({
-                    waypoints: [ L.latLng(start[0], start[1]), L.latLng(end[0], end[1]) ],
-                    router: L.Routing.osrmv1({
-                        serviceUrl: KC_OSRM.endpoint.replace(/\/route\/v1\/.*$/, '/route/v1')
-                    })
-                }).on('routingerror', function(e) {
-                    var message = (e && e.error && e.error.message) ? e.error.message : 'Unknown reason.';
-                    showMsg(el, '<strong>Routing Error:</strong> ' + message);
-                }).addTo(map);
-
-                // Add handlers to fix map rendering when revealed in a hidden tab/accordion.
-                function invalidateMapSize() {
-                    // A short delay helps ensure the container has finished its animation.
-                    setTimeout(function() {
-                        if (map) {
-                            map.invalidateSize();
-                        }
-                    }, 150);
-                }
-
-                // Modern browsers: Use ResizeObserver to detect when the container is resized.
-                if ('ResizeObserver' in window) {
-                    var resizeObserver = new ResizeObserver(invalidateMapSize);
-                    resizeObserver.observe(el);
-                }
-
-                // Fallback/specific support for Ultimate Member tabs.
-                document.addEventListener('um_tab_shown', invalidateMapSize);
-
-                // Fallback for generic accordion clicks.
-                var accordion = el.closest('.ui-accordion, .elementor-accordion');
-                if (accordion) {
-                    accordion.addEventListener('click', invalidateMapSize);
-                }
-
-            } catch (e) {
-                showMsg(el, '<strong>Map Init Error:</strong> ' + e.message);
-            }
-        });
-        </script>
-        <?php
-        return ob_get_clean();
+        return '<div id="'.$id.'" class="kc-osrm-container" style="height:'.$height.';"></div>';
     }
 }

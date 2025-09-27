@@ -34,12 +34,12 @@ class FrontAssets
      */
     public function enqueue_scripts()
     {
-        // Always enqueue OSRM assets to ensure they are available for the map shortcode.
-        wp_enqueue_style('leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', [], null);
-        wp_enqueue_style('lrm', 'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css', [], null);
-        wp_enqueue_script('leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', [], null, true);
-        wp_enqueue_script('lrm', 'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js', ['leaflet'], null, true);
-        wp_enqueue_script(
+        // Always register OSRM assets so they are available to the shortcode.
+        wp_register_style('leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', [], null);
+        wp_register_style('lrm', 'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css', [], null);
+        wp_register_script('leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', [], null, true);
+        wp_register_script('lrm', 'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js', ['leaflet'], null, true);
+        wp_register_script(
             'kc-osrm',
             KERBCYCLE_QR_URL . 'assets/js/kc-osrm.js',
             ['leaflet', 'lrm'],
@@ -47,9 +47,12 @@ class FrontAssets
             true
         );
 
+        // Localize the main script with data.
         $options = OsrmService::get_options();
+        $base_url = rtrim(OsrmService::current_endpoint($options), '/');
         wp_localize_script('kc-osrm', 'KC_OSRM', [
-            'endpoint'   => trailingslashit(OsrmService::current_endpoint($options)) . 'route/v1/' . $options['profile'],
+            'base'       => $base_url . '/route/v1',
+            'profile'    => $options['profile'],
             'tileUrl'    => $options['tile_url'],
             'tileAttrib' => $options['tile_attrib'],
         ]);
