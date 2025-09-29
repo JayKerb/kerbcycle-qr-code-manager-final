@@ -87,6 +87,10 @@
     var fixEndToggle = makeToggle("Fix finish", true);
     var clearBtn = makeButton("Clear");
     var exportBtn = makeButton("Export");
+    // Follow / unfollow button
+    var followBtn = makeButton("Follow", "primary");
+    // Recenter now
+    var recenterBtn = makeButton("Recenter");
 
     toolbar.appendChild(addStopBtn);
     toolbar.appendChild(pasteBtn);
@@ -96,6 +100,8 @@
     toolbar.appendChild(fixEndToggle.label);
     toolbar.appendChild(clearBtn);
     toolbar.appendChild(exportBtn);
+    toolbar.appendChild(followBtn);
+    toolbar.appendChild(recenterBtn);
 
     var statusEl = document.createElement("div");
     statusEl.className = "kc-osrm-status";
@@ -121,11 +127,129 @@
     var routingControl;
     var geocoderControl;
     var tripBase = getTripBase(KC_OSRM.base);
+    var stepQueue = [];
+    var stepIndex = 0;
+    var following = true;
+    var posMarker = null;
+
+    function setFollowMode(active) {
+      following = !!active;
+      if (followBtn) {
+        followBtn.classList.toggle("button-primary", following);
+        followBtn.classList.toggle("button-secondary", !following);
+        followBtn.setAttribute("aria-pressed", following ? "true" : "false");
+      }
+    }
 
     function setStatus(message, type) {
       statusEl.textContent = message || "";
       statusEl.style.color =
         type === "error" ? "#c00" : type === "success" ? "#256029" : "#555";
+    }
+
+    // 1) Build a flat list of OSRM steps from the current route
+    function buildSteps(route) {
+      stepQueue = [];
+      stepIndex = 0;
+      try {
+        if (!route || !route.legs) {
+          return;
+        }
+        route.legs.forEach(function (leg) {
+          if (!leg || !leg.steps) {
+            return;
+          }
+          leg.steps.forEach(function (step) {
+            if (!step || !step.maneuver || !step.maneuver.location) {
+              return;
+            }
+            var loc = step.maneuver.location; // [lon, lat]
+            var name = step.name || "";
+            var type = step.maneuver.type || "";
+            var modifier = (step.maneuver.modifier || "").toLowerCase();
+            var text;
+            if (type === "depart") {
+              text = "Head out";
+            } else if (type === "arrive") {
+              text = "Arrive at destination";
+            } else {
+              text = (modifier ? "Turn " + modifier : "Continue") + (name ? " onto " + name : "");
+            }
+            stepQueue.push({
+              lat: loc[1],
+              lon: loc[0],
+              text: text,
+              distance: step.distance || 0,
+            });
+          });
+        });
+      } catch (error) {
+        console.warn("No steps available", error);
+      }
+    }
+
+    // 2) Phone GPS: show a live position marker and optionally keep map centered
+    function updatePosition(lat, lon) {
+      var ll = L.latLng(lat, lon);
+      if (!posMarker) {
+        posMarker = L.marker(ll, { title: "You" }).addTo(map);
+      } else {
+        posMarker.setLatLng(ll);
+      }
+      if (following && map && typeof map.panTo === "function") {
+        map.panTo(ll, { animate: true });
+      }
+    }
+
+    // 3) Speak instructions with the Web Speech API (simple TTS)
+    function speak(text) {
+      if (!text) {
+        return;
+      }
+      try {
+        if (!window.speechSynthesis || typeof window.SpeechSynthesisUtterance !== "function") {
+          return;
+        }
+        window.speechSynthesis.cancel();
+        var utterance = new window.SpeechSynthesisUtterance(text);
+        utterance.lang = "en-US";
+        utterance.rate = 1;
+        window.speechSynthesis.speak(utterance);
+      } catch (error) {
+        // Silent if unsupported
+      }
+    }
+
+    // 4) When you get close to the next step, speak it and advance
+    function haversineMeters(a, b) {
+      var R = 6371000;
+      var toRad = function (x) {
+        return (x * Math.PI) / 180;
+      };
+      var dLat = toRad(b.lat - a.lat);
+      var dLon = toRad(b.lon - a.lon);
+      var sLat1 = toRad(a.lat);
+      var sLat2 = toRad(b.lat);
+      var h =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(sLat1) * Math.cos(sLat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return 2 * R * Math.asin(Math.sqrt(h));
+    }
+
+    function onPosition(lat, lon) {
+      updatePosition(lat, lon);
+      if (!stepQueue.length || stepIndex >= stepQueue.length) {
+        return;
+      }
+
+      var here = { lat: lat, lon: lon };
+      var next = stepQueue[stepIndex];
+      var distance = haversineMeters(here, next);
+      var threshold = 60;
+      if (distance <= threshold) {
+        speak(next.text);
+        stepIndex += 1;
+      }
     }
 
     function setLoading(isLoading) {
@@ -184,6 +308,8 @@
       if (!routingControl) return;
       routingControl.setWaypoints([]);
       setStatus("Cleared all stops.", "");
+      stepQueue = [];
+      stepIndex = 0;
     }
 
     function setAddStopMode(active) {
@@ -416,6 +542,14 @@
         setAddStopMode(false);
       });
       exportBtn.addEventListener("click", exportWaypoints);
+      followBtn.addEventListener("click", function () {
+        setFollowMode(!following);
+      });
+      recenterBtn.addEventListener("click", function () {
+        if (posMarker && map && typeof map.panTo === "function") {
+          map.panTo(posMarker.getLatLng(), { animate: true });
+        }
+      });
 
       routingControl.on("routingerror", function (e) {
         var message = "Routing failed";
@@ -424,6 +558,12 @@
         }
         setStatus(message + ". Check endpoint/profile/CORS.", "error");
       });
+
+      if (map) {
+        map.on("dragstart", function () {
+          setFollowMode(false);
+        });
+      }
     }
 
     try {
@@ -470,8 +610,15 @@
         .on("routingstart", function () {
           setStatus("Routing…", "");
         })
-        .on("routesfound", function () {
+        .on("routesfound", function (e) {
           setStatus("", "");
+          if (e && e.routes && e.routes[0]) {
+            buildSteps(e.routes[0]);
+            if (posMarker && typeof posMarker.getLatLng === "function") {
+              var current = posMarker.getLatLng();
+              onPosition(current.lat, current.lng);
+            }
+          }
         })
         .addTo(map);
 
@@ -485,6 +632,7 @@
 
       setAddStopMode(false);
       setStatus("", "");
+      setFollowMode(true);
 
       // Hidden-tab resilience
       setTimeout(function () {
@@ -500,6 +648,22 @@
           map.invalidateSize();
         }, 50);
       });
+
+      // 5) Start GPS tracking (prompt appears on first user gesture/page interaction)
+      if (navigator.geolocation && typeof navigator.geolocation.watchPosition === "function") {
+        navigator.geolocation.watchPosition(
+          function (pos) {
+            if (!pos || !pos.coords) {
+              return;
+            }
+            onPosition(pos.coords.latitude, pos.coords.longitude);
+          },
+          function (err) {
+            console.warn("GPS error", err);
+          },
+          { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
+        );
+      }
     } catch (err) {
       showMsg(el, "Map init error: " + err.message);
       return;
