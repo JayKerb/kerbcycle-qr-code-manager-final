@@ -101,6 +101,8 @@
     var fixEndToggle = makeToggle("Fix finish", true);
     var clearBtn = makeButton("Clear");
     var exportBtn = makeButton("Export");
+    var followBtn = makeButton("Follow");
+    var recenterBtn = makeButton("Recenter");
 
     toolbar.appendChild(addStopBtn);
     toolbar.appendChild(pasteBtn);
@@ -110,6 +112,8 @@
     toolbar.appendChild(fixEndToggle.label);
     toolbar.appendChild(clearBtn);
     toolbar.appendChild(exportBtn);
+    toolbar.appendChild(followBtn);
+    toolbar.appendChild(recenterBtn);
 
     var statusEl = document.createElement("div");
     statusEl.className = "kc-osrm-status";
@@ -135,6 +139,19 @@
     var routingControl;
     var geocoderControl;
     var tripBase = getTripBase(KC_OSRM.base);
+    var stepQueue = [];
+    var stepIndex = 0;
+    var lastAnnouncedIndex = -1;
+    var liveMarker = null;
+    var followPosition = true;
+    var lastPosition = null;
+    var geolocationWatchId = null;
+    var hasArrived = false;
+    var stepAnnounceDistance = 35; // meters
+    var speechEnabled =
+      typeof window !== "undefined" &&
+      "speechSynthesis" in window &&
+      typeof window.SpeechSynthesisUtterance === "function";
 
     function setStatus(message, type) {
       statusEl.textContent = message || "";
@@ -148,6 +165,399 @@
       optimizeBtn.style.opacity = isLoading ? "0.6" : "1";
       if (isLoading) {
         setStatus("Optimizing route…", "");
+      }
+    }
+
+    function updateFollowButton() {
+      if (!followBtn) return;
+      followBtn.style.background = followPosition ? "#2684ff" : "#f8f8f8";
+      followBtn.style.color = followPosition ? "#fff" : "#000";
+      followBtn.setAttribute("aria-pressed", followPosition ? "true" : "false");
+    }
+
+    function speakInstruction(text) {
+      if (!speechEnabled || !text) {
+        return;
+      }
+      try {
+        var utterance = new window.SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.warn("Speech synthesis error", err);
+      }
+    }
+
+    function toTitle(str) {
+      if (!str) return "";
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function toOrdinalWord(num) {
+      if (typeof num !== "number" || !Number.isFinite(num)) {
+        return "";
+      }
+      var rounded = Math.round(num);
+      var dictionary = {
+        1: "first",
+        2: "second",
+        3: "third",
+        4: "fourth",
+        5: "fifth",
+        6: "sixth",
+        7: "seventh",
+        8: "eighth",
+        9: "ninth",
+        10: "tenth",
+      };
+      if (dictionary[rounded]) {
+        return dictionary[rounded];
+      }
+      var suffix = "th";
+      var mod100 = rounded % 100;
+      if (mod100 < 11 || mod100 > 13) {
+        switch (rounded % 10) {
+          case 1:
+            suffix = "st";
+            break;
+          case 2:
+            suffix = "nd";
+            break;
+          case 3:
+            suffix = "rd";
+            break;
+        }
+      }
+      return rounded + suffix;
+    }
+
+    function formatInstruction(step) {
+      if (!step || !step.maneuver) {
+        return "";
+      }
+
+      var maneuver = step.maneuver || {};
+      var type = (maneuver.type || "").toLowerCase().replace(/\s+/g, "_");
+      var modifier = (maneuver.modifier || "").replace(/_/g, " ");
+      var street = (step.name || "").trim();
+      var base;
+
+      switch (type) {
+        case "depart":
+          base = "Head";
+          break;
+        case "arrive":
+          base = "Arrive at your destination";
+          modifier = "";
+          break;
+        case "turn":
+          base = "Turn";
+          break;
+        case "new_name":
+        case "continue":
+          base = "Continue";
+          break;
+        case "merge":
+          base = "Merge";
+          break;
+        case "on_ramp":
+          base = "Take the ramp";
+          modifier = "";
+          break;
+        case "off_ramp":
+          base = "Take the exit";
+          modifier = "";
+          break;
+        case "fork":
+          base = "Keep";
+          break;
+        case "end_of_road":
+          base = "At the end of the road, turn";
+          break;
+        case "roundabout":
+        case "rotary":
+          base = "Enter the roundabout";
+          break;
+        case "roundabout_turn":
+          base = "In the roundabout";
+          break;
+        case "exit_roundabout":
+          base = "Exit the roundabout";
+          modifier = "";
+          break;
+        case "uturn":
+          base = "Make a U-turn";
+          modifier = "";
+          break;
+        default:
+          base = "Proceed";
+      }
+
+      var sentence = base;
+      if (
+        (type === "roundabout" ||
+          type === "rotary" ||
+          type === "roundabout_turn" ||
+          type === "exit_roundabout") &&
+        typeof maneuver.exit === "number"
+      ) {
+        var exitWord = toOrdinalWord(maneuver.exit);
+        if (exitWord) {
+          sentence += (sentence ? " and take the " : "") + exitWord + " exit";
+        }
+        modifier = "";
+      }
+      if (modifier) {
+        sentence += (base.slice(-1) === "," ? " " : " ") + modifier.toLowerCase();
+      }
+
+      if (street) {
+        sentence += (sentence ? " " : "") + "onto " + street;
+      }
+
+      return toTitle(sentence.trim());
+    }
+
+    function rebuildStepQueue(routes) {
+      stepQueue = [];
+      stepIndex = 0;
+      lastAnnouncedIndex = -1;
+      hasArrived = false;
+
+      if (!routes || !routes.length || !routes[0] || !routes[0].legs) {
+        return;
+      }
+
+      var primary = routes[0];
+      for (var i = 0; i < primary.legs.length; i++) {
+        var leg = primary.legs[i];
+        if (!leg || !Array.isArray(leg.steps)) {
+          continue;
+        }
+        for (var j = 0; j < leg.steps.length; j++) {
+          var step = leg.steps[j];
+          if (!step || !step.maneuver) {
+            continue;
+          }
+          var loc = step.maneuver.location || (step.intersections && step.intersections[0] && step.intersections[0].location);
+          if (!loc || loc.length < 2) {
+            continue;
+          }
+          var instruction = formatInstruction(step);
+          stepQueue.push({
+            lat: loc[1],
+            lng: loc[0],
+            instruction: instruction || "",
+          });
+        }
+      }
+
+      if (stepQueue.length) {
+        if (stepQueue[0].instruction) {
+          setStatus("Next: " + stepQueue[0].instruction, "");
+        }
+        if (lastPosition) {
+          processStepQueue(lastPosition.lat, lastPosition.lng);
+        }
+      }
+    }
+
+    function haversineDistance(lat1, lng1, lat2, lng2) {
+      if (
+        typeof lat1 !== "number" ||
+        typeof lng1 !== "number" ||
+        typeof lat2 !== "number" ||
+        typeof lng2 !== "number"
+      ) {
+        return Infinity;
+      }
+      var R = 6371000;
+      var toRad = function (deg) {
+        return (deg * Math.PI) / 180;
+      };
+      var dLat = toRad(lat2 - lat1);
+      var dLon = toRad(lng2 - lng1);
+      var a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) *
+          Math.cos(toRad(lat2)) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function processStepQueue(lat, lng) {
+      if (!stepQueue.length || hasArrived) {
+        return;
+      }
+
+      var arrivalSpeech = "You have arrived at your destination.";
+
+      while (stepIndex < stepQueue.length) {
+        var candidate = stepQueue[stepIndex];
+        if (
+          candidate &&
+          typeof candidate.lat === "number" &&
+          typeof candidate.lng === "number"
+        ) {
+          break;
+        }
+        stepIndex++;
+      }
+
+      if (stepIndex >= stepQueue.length) {
+        hasArrived = true;
+        setStatus("Arrived at destination.", "success");
+        speakInstruction(arrivalSpeech);
+        return;
+      }
+
+      var step = stepQueue[stepIndex];
+      if (lastAnnouncedIndex !== stepIndex) {
+        if (step.instruction) {
+          setStatus("Next: " + step.instruction, "");
+        } else {
+          setStatus("", "");
+        }
+        lastAnnouncedIndex = stepIndex;
+      }
+
+      var distance = haversineDistance(lat, lng, step.lat, step.lng);
+      if (distance <= stepAnnounceDistance) {
+        if (step.instruction) {
+          speakInstruction(step.instruction);
+        }
+        stepIndex++;
+        lastAnnouncedIndex = -1;
+        if (stepIndex >= stepQueue.length) {
+          hasArrived = true;
+          setStatus("Arrived at destination.", "success");
+          if (
+            !step.instruction ||
+            step.instruction.toLowerCase().indexOf("arrive") === -1
+          ) {
+            speakInstruction(arrivalSpeech);
+          }
+        }
+      }
+    }
+
+    function updateLivePosition(lat, lng) {
+      if (!map || typeof lat !== "number" || typeof lng !== "number") {
+        return;
+      }
+
+      lastPosition = { lat: lat, lng: lng };
+
+      if (!liveMarker) {
+        liveMarker = L.circleMarker([lat, lng], {
+          radius: 6,
+          color: "#2684ff",
+          weight: 2,
+          fillColor: "#2684ff",
+          fillOpacity: 0.7,
+        }).addTo(map);
+      } else {
+        liveMarker.setLatLng([lat, lng]);
+      }
+
+      if (followPosition && typeof map.panTo === "function") {
+        map.panTo([lat, lng]);
+      }
+
+      processStepQueue(lat, lng);
+    }
+
+    function startGeolocationWatch() {
+      if (
+        typeof navigator === "undefined" ||
+        !navigator.geolocation ||
+        typeof navigator.geolocation.watchPosition !== "function"
+      ) {
+        console.info("Geolocation is not supported in this browser.");
+        return;
+      }
+
+      var geo = navigator.geolocation;
+      var highOptions = {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 5000,
+      };
+      var relaxedOptions = {
+        enableHighAccuracy: false,
+        timeout: 20000,
+        maximumAge: 15000,
+      };
+
+      var fallbackStarted = false;
+
+      function successHandler(position) {
+        if (!position || !position.coords) {
+          return;
+        }
+        var lat = position.coords.latitude;
+        var lng = position.coords.longitude;
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+          return;
+        }
+        updateLivePosition(lat, lng);
+      }
+
+      function startRelaxedWatch() {
+        if (fallbackStarted) {
+          return;
+        }
+        fallbackStarted = true;
+        try {
+          geolocationWatchId = geo.watchPosition(
+            successHandler,
+            function (err) {
+              console.warn("Geolocation (relaxed) error", err);
+            },
+            relaxedOptions
+          );
+        } catch (error) {
+          console.warn("Unable to start relaxed geolocation watch", error);
+        }
+      }
+
+      function errorHandler(err) {
+        console.warn("Geolocation error", err);
+        if (!err || typeof err.code !== "number") {
+          return;
+        }
+        if (typeof geo.clearWatch === "function" && err.code === err.PERMISSION_DENIED) {
+          if (geolocationWatchId) {
+            geo.clearWatch(geolocationWatchId);
+            geolocationWatchId = null;
+          }
+          return;
+        }
+        if (err.code === err.TIMEOUT || err.code === err.POSITION_UNAVAILABLE) {
+          startRelaxedWatch();
+        }
+      }
+
+      try {
+        geo.getCurrentPosition(
+          successHandler,
+          errorHandler,
+          highOptions
+        );
+      } catch (error) {
+        console.warn("getCurrentPosition failed", error);
+      }
+
+      try {
+        geolocationWatchId = geo.watchPosition(
+          successHandler,
+          errorHandler,
+          highOptions
+        );
+      } catch (error2) {
+        console.warn("watchPosition failed", error2);
+        startRelaxedWatch();
       }
     }
 
@@ -323,6 +733,14 @@
         setAddStopMode(false);
       });
 
+      map.on("dragstart", function () {
+        if (!followPosition) {
+          return;
+        }
+        followPosition = false;
+        updateFollowButton();
+      });
+
       pasteBtn.addEventListener("click", function () {
         var existing = wrapper.querySelector('[data-kc="paste-box"]');
         if (existing) {
@@ -428,6 +846,20 @@
         setAddStopMode(false);
       });
       exportBtn.addEventListener("click", exportWaypoints);
+      followBtn.addEventListener("click", function () {
+        followPosition = !followPosition;
+        updateFollowButton();
+        if (followPosition && lastPosition && map && typeof map.panTo === "function") {
+          map.panTo([lastPosition.lat, lastPosition.lng]);
+        }
+      });
+      recenterBtn.addEventListener("click", function () {
+        if (!lastPosition || !map || typeof map.panTo !== "function") {
+          setStatus("Waiting for location…", "");
+          return;
+        }
+        map.panTo([lastPosition.lat, lastPosition.lng]);
+      });
 
       routingControl.on("routingerror", function (e) {
         var message = "Routing failed";
@@ -436,6 +868,8 @@
         }
         setStatus(message + ". Check endpoint/profile/CORS.", "error");
       });
+
+      updateFollowButton();
     }
 
     try {
@@ -482,8 +916,9 @@
         .on("routingstart", function () {
           setStatus("Routing…", "");
         })
-        .on("routesfound", function () {
+        .on("routesfound", function (e) {
           setStatus("", "");
+          rebuildStepQueue(e && e.routes);
         })
         .addTo(map);
 
@@ -494,6 +929,8 @@
       }, 0);
 
       registerEvents();
+
+      startGeolocationWatch();
 
       setAddStopMode(false);
       setStatus("", "");
