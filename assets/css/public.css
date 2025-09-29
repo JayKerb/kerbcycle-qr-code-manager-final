@@ -40,6 +40,13 @@
   padding-bottom: 0;
 }
 
+.kc-osrm-toolbar .button {
+  font-size: 14px;
+  line-height: 1.2;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+}
+
 .kc-combobox-list {
   position: absolute;
   z-index: 10000;

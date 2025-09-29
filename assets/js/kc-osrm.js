@@ -54,26 +54,12 @@
     toolbar.style.alignItems = "center";
     toolbar.style.marginBottom = "0.5rem";
 
-    var buttonStyle = {
-      padding: "0.35rem 0.75rem",
-      border: "1px solid #ccc",
-      background: "#f8f8f8",
-      borderRadius: "4px",
-      cursor: "pointer",
-      font: "14px/1.2 system-ui, Arial, sans-serif",
-    };
-
-    function makeButton(label) {
+    function makeButton(label, priority) {
       var btn = document.createElement("button");
       btn.type = "button";
       btn.textContent = label;
-      Object.assign(btn.style, buttonStyle);
-      btn.addEventListener("focus", function () {
-        btn.style.outline = "2px solid #2684ff";
-      });
-      btn.addEventListener("blur", function () {
-        btn.style.outline = "";
-      });
+      btn.className =
+        "button " + (priority === "primary" ? "button-primary" : "button-secondary");
       return btn;
     }
 
@@ -95,7 +81,7 @@
 
     var addStopBtn = makeButton("Add stop");
     var pasteBtn = makeButton("Paste list");
-    var optimizeBtn = makeButton("Optimize");
+    var optimizeBtn = makeButton("Optimize", "primary");
     var roundtripToggle = makeToggle("Roundtrip", true);
     var fixStartToggle = makeToggle("Fix start", true);
     var fixEndToggle = makeToggle("Fix finish", true);
