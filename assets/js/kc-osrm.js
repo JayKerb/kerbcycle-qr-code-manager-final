@@ -172,11 +172,11 @@
 
     function speakWeb(text) {
       if (!text) {
-        return;
+        return false;
       }
       try {
         if (typeof window.SpeechSynthesisUtterance !== "function") {
-          return;
+          return false;
         }
         if (!preferredVoice) {
           refreshPreferredVoice();
@@ -195,11 +195,119 @@
         if (window.speechSynthesis && typeof window.speechSynthesis.cancel === "function") {
           window.speechSynthesis.cancel();
           window.speechSynthesis.speak(utterance);
+          return true;
         }
       } catch (error) {
         // ignore
       }
+      return false;
     }
+
+    function isCapacitorNative() {
+      try {
+        if (!window.Capacitor) {
+          return false;
+        }
+        if (typeof window.Capacitor.isNativePlatform === "function") {
+          return !!window.Capacitor.isNativePlatform();
+        }
+        return !!window.Capacitor.isNativePlatform;
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function getNativeTts() {
+      try {
+        if (window.Capacitor && window.Capacitor.Plugins) {
+          if (window.Capacitor.Plugins.TextToSpeech) {
+            return window.Capacitor.Plugins.TextToSpeech;
+          }
+        }
+      } catch (error) {
+        // ignore
+      }
+      try {
+        if (window.TextToSpeech) {
+          return window.TextToSpeech;
+        }
+      } catch (error2) {
+        // ignore
+      }
+      return null;
+    }
+
+    function nativeSpeak(text, lang, rate, pitch) {
+      if (!text) {
+        return Promise.resolve(false);
+      }
+      if (!isCapacitorNative()) {
+        return Promise.resolve(false);
+      }
+      var plugin = getNativeTts();
+      if (!plugin || typeof plugin.speak !== "function") {
+        return Promise.resolve(false);
+      }
+      try {
+        var result = plugin.speak({
+          text: text,
+          lang: lang || "en-US",
+          rate: typeof rate === "number" ? rate : 1.0,
+          pitch: typeof pitch === "number" ? pitch : 1.0,
+          volume: 1.0,
+        });
+        if (result && typeof result.then === "function") {
+          return result
+            .then(function () {
+              return true;
+            })
+            .catch(function () {
+              return false;
+            });
+        }
+        return Promise.resolve(true);
+      } catch (error) {
+        return Promise.resolve(false);
+      }
+    }
+
+    var ttsPrimed = false;
+
+    function primeTTS() {
+      if (ttsPrimed) {
+        return false;
+      }
+      ttsPrimed = true;
+      if (
+        window.speechSynthesis &&
+        typeof window.speechSynthesis.getVoices === "function" &&
+        window.speechSynthesis.getVoices().length === 0
+      ) {
+        if (typeof window.speechSynthesis.addEventListener === "function") {
+          var handleVoicesReady = function handleVoicesReady() {
+            window.speechSynthesis.removeEventListener("voiceschanged", handleVoicesReady);
+            refreshPreferredVoice();
+          };
+          window.speechSynthesis.addEventListener("voiceschanged", handleVoicesReady);
+        } else {
+          var originalHandler = window.speechSynthesis.onvoiceschanged;
+          window.speechSynthesis.onvoiceschanged = function (event) {
+            if (typeof originalHandler === "function") {
+              originalHandler.call(this, event);
+            }
+            refreshPreferredVoice();
+          };
+        }
+      }
+      if (typeof window.kcSay === "function") {
+        window.kcSay("Navigation started");
+      } else {
+        speakWeb("Navigation started");
+      }
+      return true;
+    }
+
+    window.kcPrimeTTS = primeTTS;
 
     if (window.speechSynthesis) {
       refreshPreferredVoice();
@@ -360,17 +468,28 @@
       if (!text) {
         return;
       }
-      if (nativeAvailable()) {
-        sendNative({ type: "kc:tts", text: text });
-      } else {
+      nativeSpeak(text).then(function (spoken) {
+        if (spoken) {
+          return;
+        }
+        if (!nativeAvailable()) {
+          speakWeb(text);
+          return;
+        }
+        try {
+          sendNative({ type: "kc:tts", text: text });
+        } catch (error) {
+          // ignore
+        }
         speakWeb(text);
-      }
+      });
     };
 
-    window.kcNavStart = function () {
+    window.kcNavStart = function (primedFromHandler) {
       if (navRunning) {
         return;
       }
+      var primedThisCall = primedFromHandler === true ? true : primeTTS();
       navRunning = true;
       renderFabState();
       if (nativeAvailable()) {
@@ -390,7 +509,9 @@
           },
           { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
         );
-        speakWeb("Navigation started");
+      }
+      if (!primedThisCall) {
+        window.kcSay("Navigation started");
       }
     };
 
@@ -415,9 +536,16 @@
 
     if (btnStart && !btnStart.dataset.kcFabBound) {
       btnStart.addEventListener("click", function () {
-        window.kcNavStart();
+        var primed = primeTTS();
+        window.kcNavStart(primed);
       });
       btnStart.dataset.kcFabBound = "1";
+    }
+
+    var primaryStartButton = document.getElementById("kc-start");
+    if (primaryStartButton && !primaryStartButton.dataset.kcPrimeBound) {
+      primaryStartButton.addEventListener("click", primeTTS);
+      primaryStartButton.dataset.kcPrimeBound = "1";
     }
 
     if (btnStop && !btnStop.dataset.kcFabBound) {
