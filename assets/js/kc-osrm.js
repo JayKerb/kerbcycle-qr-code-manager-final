@@ -131,6 +131,41 @@
     var stepIndex = 0;
     var following = true;
     var posMarker = null;
+    var geoWatchId = null;
+    var navRunning = false;
+
+    function speakWeb(text) {
+      if (!text) {
+        return;
+      }
+      try {
+        if (typeof window.SpeechSynthesisUtterance !== "function") {
+          return;
+        }
+        var utterance = new window.SpeechSynthesisUtterance(text);
+        utterance.lang = "en-US";
+        utterance.rate = 1.0;
+        if (window.speechSynthesis && typeof window.speechSynthesis.cancel === "function") {
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(utterance);
+        }
+      } catch (error) {
+        // ignore
+      }
+    }
+
+    function nativeAvailable() {
+      var ua = typeof navigator !== "undefined" && navigator.userAgent ? navigator.userAgent : "";
+      return !!window.Capacitor || /Android.*(wv|Version\/)/i.test(ua);
+    }
+
+    function sendNative(msg) {
+      try {
+        window.postMessage(msg, "*");
+      } catch (error) {
+        // ignore
+      }
+    }
 
     function setFollowMode(active) {
       following = !!active;
@@ -201,26 +236,7 @@
       }
     }
 
-    // 3) Speak instructions with the Web Speech API (simple TTS)
-    function speak(text) {
-      if (!text) {
-        return;
-      }
-      try {
-        if (!window.speechSynthesis || typeof window.SpeechSynthesisUtterance !== "function") {
-          return;
-        }
-        window.speechSynthesis.cancel();
-        var utterance = new window.SpeechSynthesisUtterance(text);
-        utterance.lang = "en-US";
-        utterance.rate = 1;
-        window.speechSynthesis.speak(utterance);
-      } catch (error) {
-        // Silent if unsupported
-      }
-    }
-
-    // 4) When you get close to the next step, speak it and advance
+    // 3) When you get close to the next step, speak it and advance
     function haversineMeters(a, b) {
       var R = 6371000;
       var toRad = function (x) {
@@ -247,10 +263,126 @@
       var distance = haversineMeters(here, next);
       var threshold = 60;
       if (distance <= threshold) {
-        speak(next.text);
+        if (typeof window.kcSay === "function") {
+          window.kcSay(next.text);
+        } else {
+          speakWeb(next.text);
+        }
         stepIndex += 1;
       }
     }
+
+    // 4) Floating Start/Stop controls and native messaging helpers
+    var fab = mapHolder && mapHolder.querySelector(".kc-fab");
+    if (!fab) {
+      fab = document.createElement("div");
+      fab.className = "kc-fab";
+      fab.innerHTML =
+        '<button class="kc-start" type="button">Start</button>' +
+        '<button class="kc-stop" type="button" style="display:none">Stop</button>';
+      (mapHolder || wrapper || document.body).appendChild(fab);
+    }
+
+    var btnStart = fab.querySelector(".kc-start");
+    var btnStop = fab.querySelector(".kc-stop");
+
+    function renderFabState() {
+      if (!btnStart || !btnStop) {
+        return;
+      }
+      btnStart.style.display = navRunning ? "none" : "inline-block";
+      btnStop.style.display = navRunning ? "inline-block" : "none";
+    }
+
+    window.kcSay = function (text) {
+      if (!text) {
+        return;
+      }
+      if (nativeAvailable()) {
+        sendNative({ type: "kc:tts", text: text });
+      } else {
+        speakWeb(text);
+      }
+    };
+
+    window.kcNavStart = function () {
+      if (navRunning) {
+        return;
+      }
+      navRunning = true;
+      renderFabState();
+      if (nativeAvailable()) {
+        sendNative({ type: "kc:navigation:start" });
+      } else if (
+        navigator.geolocation &&
+        typeof navigator.geolocation.watchPosition === "function"
+      ) {
+        geoWatchId = navigator.geolocation.watchPosition(
+          function (pos) {
+            if (pos && pos.coords) {
+              onPosition(pos.coords.latitude, pos.coords.longitude);
+            }
+          },
+          function (err) {
+            console.warn("Geo error", err);
+          },
+          { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
+        );
+        speakWeb("Navigation started");
+      }
+    };
+
+    window.kcNavStop = function () {
+      if (!navRunning) {
+        return;
+      }
+      navRunning = false;
+      renderFabState();
+      if (nativeAvailable()) {
+        sendNative({ type: "kc:navigation:stop" });
+      }
+      if (
+        geoWatchId != null &&
+        navigator.geolocation &&
+        typeof navigator.geolocation.clearWatch === "function"
+      ) {
+        navigator.geolocation.clearWatch(geoWatchId);
+        geoWatchId = null;
+      }
+    };
+
+    if (btnStart && !btnStart.dataset.kcFabBound) {
+      btnStart.addEventListener("click", function () {
+        window.kcNavStart();
+      });
+      btnStart.dataset.kcFabBound = "1";
+    }
+
+    if (btnStop && !btnStop.dataset.kcFabBound) {
+      btnStop.addEventListener("click", function () {
+        window.kcNavStop();
+      });
+      btnStop.dataset.kcFabBound = "1";
+    }
+
+    window.kcHandlePosition = onPosition;
+    if (!window._kcPositionListenerBound) {
+      window.addEventListener("message", function (e) {
+        if (e && e.data && e.data.type === "kc:position" && e.data.detail) {
+          var c = e.data.detail;
+          if (
+            typeof window.kcHandlePosition === "function" &&
+            typeof c.latitude === "number" &&
+            typeof c.longitude === "number"
+          ) {
+            window.kcHandlePosition(c.latitude, c.longitude);
+          }
+        }
+      });
+      window._kcPositionListenerBound = true;
+    }
+
+    renderFabState();
 
     function setLoading(isLoading) {
       optimizeBtn.disabled = isLoading;
@@ -649,21 +781,6 @@
         }, 50);
       });
 
-      // 5) Start GPS tracking (prompt appears on first user gesture/page interaction)
-      if (navigator.geolocation && typeof navigator.geolocation.watchPosition === "function") {
-        navigator.geolocation.watchPosition(
-          function (pos) {
-            if (!pos || !pos.coords) {
-              return;
-            }
-            onPosition(pos.coords.latitude, pos.coords.longitude);
-          },
-          function (err) {
-            console.warn("GPS error", err);
-          },
-          { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
-        );
-      }
     } catch (err) {
       showMsg(el, "Map init error: " + err.message);
       return;
