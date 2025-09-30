@@ -132,7 +132,10 @@
     var following = true;
     var posMarker = null;
     var geoWatchId = null;
+    var geoWatchReason = null;
     var navRunning = false;
+    var fallbackTimerId = null;
+    var receivedNativePosition = false;
 
     var preferredVoice = null;
 
@@ -325,8 +328,31 @@
     }
 
     function nativeAvailable() {
-      var ua = typeof navigator !== "undefined" && navigator.userAgent ? navigator.userAgent : "";
-      return !!window.Capacitor || /Android.*(wv|Version\/)/i.test(ua);
+      var cap =
+        (typeof window !== "undefined" && window.Capacitor) ||
+        (typeof window !== "undefined" && window.capacitorExports && window.capacitorExports.Capacitor);
+      if (!cap) {
+        return false;
+      }
+      if (typeof cap.isPluginAvailable === "function") {
+        try {
+          if (cap.isPluginAvailable("Geolocation")) {
+            return true;
+          }
+        } catch (error) {
+          // ignore
+        }
+      }
+      var plugins = cap.Plugins || {};
+      if (
+        plugins.Geolocation ||
+        plugins.GeolocationPlugin ||
+        plugins.GeolocationNative ||
+        plugins.KerbcycleGeolocation
+      ) {
+        return true;
+      }
+      return false;
     }
 
     function sendNative(msg) {
@@ -485,30 +511,66 @@
       });
     };
 
+    function clearFallbackTimer() {
+      if (fallbackTimerId != null) {
+        clearTimeout(fallbackTimerId);
+        fallbackTimerId = null;
+      }
+    }
+
+    function stopGeoWatch() {
+      if (
+        geoWatchId != null &&
+        navigator.geolocation &&
+        typeof navigator.geolocation.clearWatch === "function"
+      ) {
+        navigator.geolocation.clearWatch(geoWatchId);
+      }
+      geoWatchId = null;
+      geoWatchReason = null;
+    }
+
+    function startGeoWatch(reason) {
+      if (
+        geoWatchId != null ||
+        !navigator.geolocation ||
+        typeof navigator.geolocation.watchPosition !== "function"
+      ) {
+        return;
+      }
+      geoWatchReason = reason || "web";
+      geoWatchId = navigator.geolocation.watchPosition(
+        function (pos) {
+          if (pos && pos.coords) {
+            onPosition(pos.coords.latitude, pos.coords.longitude);
+          }
+        },
+        function (err) {
+          console.warn("Geo error", err);
+        },
+        { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
+      );
+    }
+
     window.kcNavStart = function (primedFromHandler) {
       if (navRunning) {
         return;
       }
       var primedThisCall = primedFromHandler === true ? true : primeTTS();
       navRunning = true;
+      receivedNativePosition = false;
+      clearFallbackTimer();
       renderFabState();
       if (nativeAvailable()) {
         sendNative({ type: "kc:navigation:start" });
-      } else if (
-        navigator.geolocation &&
-        typeof navigator.geolocation.watchPosition === "function"
-      ) {
-        geoWatchId = navigator.geolocation.watchPosition(
-          function (pos) {
-            if (pos && pos.coords) {
-              onPosition(pos.coords.latitude, pos.coords.longitude);
-            }
-          },
-          function (err) {
-            console.warn("Geo error", err);
-          },
-          { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
-        );
+        fallbackTimerId = window.setTimeout(function () {
+          if (!navRunning || receivedNativePosition) {
+            return;
+          }
+          startGeoWatch("fallback");
+        }, 5000);
+      } else {
+        startGeoWatch("web");
       }
       if (!primedThisCall) {
         window.kcSay("Navigation started");
@@ -520,18 +582,13 @@
         return;
       }
       navRunning = false;
+      receivedNativePosition = false;
+      clearFallbackTimer();
       renderFabState();
       if (nativeAvailable()) {
         sendNative({ type: "kc:navigation:stop" });
       }
-      if (
-        geoWatchId != null &&
-        navigator.geolocation &&
-        typeof navigator.geolocation.clearWatch === "function"
-      ) {
-        navigator.geolocation.clearWatch(geoWatchId);
-        geoWatchId = null;
-      }
+      stopGeoWatch();
     };
 
     if (btnStart && !btnStart.dataset.kcFabBound) {
@@ -565,6 +622,11 @@
             typeof c.latitude === "number" &&
             typeof c.longitude === "number"
           ) {
+            receivedNativePosition = true;
+            clearFallbackTimer();
+            if (geoWatchId != null && geoWatchReason === "fallback") {
+              stopGeoWatch();
+            }
             window.kcHandlePosition(c.latitude, c.longitude);
           }
         }
