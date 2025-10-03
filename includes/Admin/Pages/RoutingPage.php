@@ -244,10 +244,26 @@ class RoutingPage
 
         $default_start = isset($input['default_start']) ? trim((string) $input['default_start']) : '';
         if ('' !== $default_start) {
-            $parts = array_map('trim', explode(',', $default_start));
-            if (count($parts) >= 2 && is_numeric($parts[0]) && is_numeric($parts[1])) {
-                $output['default_start'] = (float) $parts[0] . ',' . (float) $parts[1];
+            if (preg_match('/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/', $default_start, $matches)) {
+                $lat = (float) $matches[1];
+                $lon = (float) $matches[2];
+
+                if ($lat < -90 || $lat > 90 || $lon < -180 || $lon > 180) {
+                    add_settings_error(
+                        self::OPTION_KEY,
+                        'default_start_oob',
+                        __('Latitude must be between -90 and 90 and longitude between -180 and 180.', 'kerbcycle')
+                    );
+                    $output['default_start'] = '';
+                } else {
+                    $output['default_start'] = sprintf('%.6f,%.6f', $lat, $lon);
+                }
             } else {
+                add_settings_error(
+                    self::OPTION_KEY,
+                    'default_start_invalid',
+                    __('Default start must be in the format "lat,lon" (e.g. 40.730000,-73.990000).', 'kerbcycle')
+                );
                 $output['default_start'] = '';
             }
         } else {
@@ -338,11 +354,11 @@ class RoutingPage
     {
         $options = OsrmService::get_options();
         printf(
-            '<input type="text" size="30" name="%1$s[default_start]" value="%2$s" placeholder="41.733207,-72.791104" />',
+            '<input type="text" size="30" name="%1$s[default_start]" value="%2$s" placeholder="40.730000,-73.990000" />',
             esc_attr(self::OPTION_KEY),
             esc_attr($options['default_start'])
         );
-        echo '<p class="description">' . esc_html__('Format: latitude,longitude. Leave blank to disable.', 'kerbcycle') . '</p>';
+        echo '<p class="description">' . esc_html__('Format: latitude,longitude (example: 40.730000,-73.990000). Leave blank to disable.', 'kerbcycle') . '</p>';
     }
 
     /**
