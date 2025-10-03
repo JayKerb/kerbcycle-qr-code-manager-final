@@ -1,9 +1,42 @@
 (function () {
   function parseLatLon(str) {
-    var p = (str || "").split(",").map(function (n) {
-      return parseFloat(n);
-    });
+    if (Array.isArray(str) && str.length >= 2) {
+      var fromArrayLat = parseFloat(str[0]);
+      var fromArrayLon = parseFloat(str[1]);
+      if (isFinite(fromArrayLat) && isFinite(fromArrayLon)) {
+        return [fromArrayLat, fromArrayLon];
+      }
+    }
+
+    if (typeof str !== "string") {
+      return null;
+    }
+
+    var p = str
+      .split(",")
+      .map(function (n) {
+        return parseFloat(n);
+      })
+      .filter(function (value, index) {
+        return index < 2;
+      });
+
+    if (!isFinite(p[0]) || !isFinite(p[1])) {
+      return null;
+    }
+
     return [p[0], p[1]]; // [lat, lon]
+  }
+
+  function readStoredDefaultStart() {
+    try {
+      if (typeof window !== "undefined" && window.localStorage) {
+        return window.localStorage.getItem("kc_default_start") || "";
+      }
+    } catch (error) {
+      // localStorage can throw in private browsing; ignore.
+    }
+    return "";
   }
 
   function showMsg(el, msg) {
@@ -35,8 +68,13 @@
       return;
     }
 
-    var start = parseLatLon(cfg.start);
-    var end = parseLatLon(cfg.end);
+    var storedStart = readStoredDefaultStart();
+    var start =
+      parseLatLon(storedStart) ||
+      parseLatLon(cfg.start) ||
+      parseLatLon(KC_OSRM.defaultStart) ||
+      [40.73, -73.99];
+    var end = parseLatLon(cfg.end) || [40.78, -73.97];
 
     var parent = el.parentNode;
     if (!parent) return;
@@ -85,6 +123,7 @@
     var roundtripToggle = makeToggle("Roundtrip", true);
     var fixStartToggle = makeToggle("Fix start", true);
     var fixEndToggle = makeToggle("Fix finish", true);
+    var saveDefaultBtn = makeButton("Set current as default Start");
     var clearBtn = makeButton("Clear");
     var exportBtn = makeButton("Export");
     // Follow / unfollow button
@@ -98,6 +137,7 @@
     toolbar.appendChild(roundtripToggle.label);
     toolbar.appendChild(fixStartToggle.label);
     toolbar.appendChild(fixEndToggle.label);
+    toolbar.appendChild(saveDefaultBtn);
     toolbar.appendChild(clearBtn);
     toolbar.appendChild(exportBtn);
     toolbar.appendChild(followBtn);
@@ -674,18 +714,41 @@
 
     function addStopAt(latLng, index) {
       if (!routingControl || !latLng) return;
-      var wps = routingControl
-        .getWaypoints()
-        .filter(function (wp) {
-          return wp && wp.latLng;
-        });
-      var waypoint = L.Routing.waypoint(latLng);
+
+      var lat = null;
+      var lng = null;
+
+      if (typeof latLng.lat === "number" && typeof latLng.lng === "number") {
+        lat = latLng.lat;
+        lng = latLng.lng;
+      } else if (
+        latLng.latLng &&
+        typeof latLng.latLng.lat === "number" &&
+        typeof latLng.latLng.lng === "number"
+      ) {
+        lat = latLng.latLng.lat;
+        lng = latLng.latLng.lng;
+      }
+
+      if (!isFinite(lat) || !isFinite(lng)) {
+        return;
+      }
+
+      var wps = getWaypoints();
+      var waypoint = {
+        lat: lat,
+        lng: lng,
+        name: latLng.name || "",
+      };
+
       if (typeof index === "number" && index >= 0 && index <= wps.length) {
         wps.splice(index, 0, waypoint);
       } else {
-        wps.push(waypoint);
+        var insertAt = wps.length <= 1 ? wps.length : Math.max(1, wps.length - 1);
+        wps.splice(insertAt, 0, waypoint);
       }
-      routingControl.setWaypoints(wps);
+
+      setWaypoints(wps);
     }
 
     function clearAll() {
@@ -729,11 +792,42 @@
         "/" +
         coords;
 
-      var params = [];
-      params.push("roundtrip=" + (roundtripToggle.input.checked ? "true" : "false"));
-      params.push("source=" + (fixStartToggle.input.checked ? "first" : "any"));
-      params.push("destination=" + (fixEndToggle.input.checked ? "last" : "any"));
-      url += "?" + params.join("&");
+      var roundtrip = roundtripToggle.input.checked;
+      var fixStart = fixStartToggle.input.checked;
+      var fixEnd = fixEndToggle.input.checked;
+      var queryString = "";
+      if (typeof URLSearchParams === "function") {
+        var params = new URLSearchParams({
+          roundtrip: roundtrip ? "true" : "false",
+          overview: "full",
+          steps: "true",
+        });
+        if (!roundtrip) {
+          if (fixStart) {
+            params.set("source", "first");
+          }
+          if (fixEnd) {
+            params.set("destination", "last");
+          }
+        }
+        queryString = params.toString();
+      } else {
+        var fallbackParams = [
+          "roundtrip=" + (roundtrip ? "true" : "false"),
+          "overview=full",
+          "steps=true",
+        ];
+        if (!roundtrip) {
+          if (fixStart) {
+            fallbackParams.push("source=first");
+          }
+          if (fixEnd) {
+            fallbackParams.push("destination=last");
+          }
+        }
+        queryString = fallbackParams.join("&");
+      }
+      url += "?" + queryString;
 
       setLoading(true);
 
@@ -921,6 +1015,35 @@
       });
 
       optimizeBtn.addEventListener("click", optimizeOrder);
+      saveDefaultBtn.addEventListener("click", function () {
+        var wps = getWaypoints();
+        if (!wps.length) {
+          setStatus("No start point to save.", "error");
+          return;
+        }
+        var first = wps[0] || {};
+        var lat = typeof first.lat === "number" ? first.lat : NaN;
+        var lng = typeof first.lng === "number" ? first.lng : NaN;
+        if (!isFinite(lat) || !isFinite(lng)) {
+          setStatus("No valid start point to save.", "error");
+          return;
+        }
+        var value = lat.toFixed(6) + "," + lng.toFixed(6);
+        var saved = false;
+        try {
+          if (typeof window !== "undefined" && window.localStorage) {
+            window.localStorage.setItem("kc_default_start", value);
+            saved = true;
+          }
+        } catch (error) {
+          console.warn("Unable to save default start", error);
+        }
+        if (saved) {
+          setStatus("Saved default start for this browser.", "success");
+        } else {
+          setStatus("Unable to access browser storage.", "error");
+        }
+      });
       clearBtn.addEventListener("click", function () {
         clearAll();
         setAddStopMode(false);

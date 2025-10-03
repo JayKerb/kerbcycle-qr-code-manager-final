@@ -36,6 +36,7 @@ class OsrmService
             'tile_attrib'      => '© OpenStreetMap',
             'deny_demo_in_prod' => 1,
             'timeout'          => 10,
+            'default_start'    => '',
         ];
     }
 

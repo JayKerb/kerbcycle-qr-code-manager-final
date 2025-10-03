@@ -189,6 +189,14 @@ class RoutingPage
         );
 
         add_settings_field(
+            'default_start',
+            __('Default start (lat,lon)', 'kerbcycle'),
+            [$this, 'render_default_start_field'],
+            self::OPTION_KEY,
+            'kc_osrm_main'
+        );
+
+        add_settings_field(
             'timeout',
             __('HTTP timeout (s)', 'kerbcycle'),
             [$this, 'render_timeout_field'],
@@ -233,6 +241,18 @@ class RoutingPage
         $output['deny_demo_in_prod'] = empty($input['deny_demo_in_prod']) ? 0 : 1;
         $timeout = isset($input['timeout']) ? (int) $input['timeout'] : $defaults['timeout'];
         $output['timeout'] = max(1, min(60, $timeout));
+
+        $default_start = isset($input['default_start']) ? trim((string) $input['default_start']) : '';
+        if ('' !== $default_start) {
+            $parts = array_map('trim', explode(',', $default_start));
+            if (count($parts) >= 2 && is_numeric($parts[0]) && is_numeric($parts[1])) {
+                $output['default_start'] = (float) $parts[0] . ',' . (float) $parts[1];
+            } else {
+                $output['default_start'] = '';
+            }
+        } else {
+            $output['default_start'] = '';
+        }
 
         return $output;
     }
@@ -309,6 +329,20 @@ class RoutingPage
             esc_attr(self::OPTION_KEY),
             esc_attr($options['tile_attrib'])
         );
+    }
+
+    /**
+     * Render the default start field.
+     */
+    public function render_default_start_field()
+    {
+        $options = OsrmService::get_options();
+        printf(
+            '<input type="text" size="30" name="%1$s[default_start]" value="%2$s" placeholder="41.733207,-72.791104" />',
+            esc_attr(self::OPTION_KEY),
+            esc_attr($options['default_start'])
+        );
+        echo '<p class="description">' . esc_html__('Format: latitude,longitude. Leave blank to disable.', 'kerbcycle') . '</p>';
     }
 
     /**
