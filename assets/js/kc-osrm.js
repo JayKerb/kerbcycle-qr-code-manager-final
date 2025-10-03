@@ -160,7 +160,7 @@
 
     var fileInput = document.createElement("input");
     fileInput.type = "file";
-    fileInput.accept = ".csv,.geojson,.json";
+    fileInput.accept = ".csv,.geojson,.json,.txt";
     fileInput.style.display = "none";
     toolbar.appendChild(fileInput);
 
@@ -490,6 +490,83 @@
       setStatus("Downloaded import error report.", "success");
     }
 
+
+    function stripBOM(text) {
+      if (!text) {
+        return "";
+      }
+      return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+    }
+
+    function toLatLngMaybe(a, b) {
+      var n1 = parseFloat(a);
+      var n2 = parseFloat(b);
+      if (!isFinite(n1) || !isFinite(n2)) {
+        return null;
+      }
+      if (Math.abs(n1) <= 90 && Math.abs(n2) <= 180) {
+        return L.latLng(n1, n2);
+      }
+      if (Math.abs(n2) <= 90 && Math.abs(n1) <= 180) {
+        return L.latLng(n2, n1);
+      }
+      return null;
+    }
+
+    function normHeader(value) {
+      return String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z]/g, "");
+    }
+
+    function sniffDelimiter(headerLine) {
+      var candidates = [",", ";", "	", "|"]; // includes tab delimiter
+      var best = ",";
+      var bestCount = -1;
+      for (var i = 0; i < candidates.length; i++) {
+        var delim = candidates[i];
+        var count = String(headerLine || "").split(delim).length;
+        if (count > bestCount) {
+          best = delim;
+          bestCount = count;
+        }
+      }
+      return best;
+    }
+
+    function splitCSVLine(line, delimiter) {
+      var delim = delimiter || ",";
+      var out = [];
+      var cur = "";
+      var inQuotes = false;
+      var str = String(line || "");
+      for (var i = 0; i < str.length; i++) {
+        var ch = str.charAt(i);
+        if (ch === '"') {
+          if (inQuotes && str.charAt(i + 1) === '"') {
+            cur += '"';
+            i += 1;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (ch === delim && !inQuotes) {
+          out.push(cur.trim());
+          cur = "";
+        } else {
+          cur += ch;
+        }
+      }
+      out.push(cur.trim());
+      return out.map(function (value) {
+        var v = value;
+        if (v.length >= 2 && v.charAt(0) === '"' && v.charAt(v.length - 1) === '"') {
+          v = v.slice(1, -1).replace(/""/g, '"');
+        }
+        return v;
+      });
+    }
+
     function handleImportFile(file) {
       if (!file) {
         return;
@@ -499,167 +576,335 @@
       var ext = (file.name.split(".").pop() || "").toLowerCase();
       var reader = new FileReader();
       reader.onerror = function () {
-        setStatus("Failed to read file.", "error");
+        setStatus("Failed to read file", "error");
       };
-      if (ext === "csv") {
-        reader.onload = function () {
-          importCSV(String(reader.result || ""));
-        };
-        reader.readAsText(file);
-      } else if (ext === "geojson" || ext === "json") {
-        reader.onload = function () {
-          importGeoJSON(String(reader.result || ""));
-        };
-        reader.readAsText(file);
-      } else {
-        setStatus("Unsupported file type. Use .csv or .geojson.", "error");
-      }
+      reader.onload = function () {
+        var raw = stripBOM(String(reader.result || ""));
+        if (!raw.trim()) {
+          setStatus("File is empty", "warn");
+          return;
+        }
+        if (ext === "json" || ext === "geojson") {
+          importFromJSON(raw);
+        } else if (ext === "csv" || ext === "txt") {
+          if (/^\s*[\[{]/.test(raw)) {
+            importFromJSON(raw);
+          } else {
+            importFromCSV(raw);
+          }
+        } else {
+          if (/^\s*[\[{]/.test(raw)) {
+            importFromJSON(raw);
+          } else {
+            importFromCSV(raw);
+          }
+        }
+      };
+      reader.readAsText(file);
     }
 
-    function splitCSVRow(row) {
-      return String(row || "")
-        .split(",")
-        .map(function (part) {
-          return part.trim();
+    function importFromCSV(text) {
+      var lines = String(text || "")
+        .split(/
+?
+/)
+        .filter(function (line) {
+          return line.trim().length > 0;
         });
-    }
+      if (!lines.length) {
+        setStatus("CSV has no rows", "warn");
+        return;
+      }
 
-    function importCSV(text) {
-      var rows = String(text || "")
-        .split(/\r?\n/)
-        .map(function (row) {
-          return row.trim();
-        })
-        .filter(Boolean);
-      if (!rows.length) {
-        setStatus("CSV is empty.", "warn");
-        return;
-      }
-      var headers = splitCSVRow(rows[0]).map(function (header) {
-        return header.toLowerCase();
-      });
+      var delimiter = sniffDelimiter(lines[0]);
+      var headers = splitCSVLine(lines[0], delimiter).map(normHeader);
+
       if (!headers.length) {
-        setStatus("CSV header row is empty.", "error");
+        setStatus("CSV header row is empty", "error");
         return;
       }
-      var idxAddr = headers.indexOf("address");
-      var idxLat = headers.indexOf("lat");
-      var idxLon = headers.indexOf("lon");
-      if (idxLon === -1) {
-        idxLon = headers.indexOf("lng");
-      }
-      if (idxAddr === -1 && (idxLat === -1 || idxLon === -1)) {
+
+      var idx = {
+        address: headers.indexOf("address"),
+        lat: (function () {
+          var i = headers.indexOf("lat");
+          if (i === -1) {
+            i = headers.indexOf("latitude");
+          }
+          return i;
+        })(),
+        lon: (function () {
+          var candidates = ["lon", "lng", "long", "longitude"];
+          for (var j = 0; j < candidates.length; j++) {
+            var pos = headers.indexOf(candidates[j]);
+            if (pos !== -1) {
+              return pos;
+            }
+          }
+          return -1;
+        })(),
+      };
+
+      if (idx.address === -1 && (idx.lat === -1 || idx.lon === -1)) {
         setStatus(
-          'CSV must include an "address" column or both "lat" and "lon" columns.',
+          'CSV needs an "address" column or both "lat" and "lon" columns',
           "error"
         );
         return;
       }
-      var geocodeItems = [];
+
       var added = 0;
-      for (var i = 1; i < rows.length; i++) {
-        var cols = splitCSVRow(rows[i]);
+      var queued = [];
+
+      for (var r = 1; r < lines.length; r++) {
+        var cols = splitCSVLine(lines[r], delimiter);
         if (!cols.length) {
           continue;
         }
-        if (idxAddr !== -1) {
-          var addr = cols[idxAddr] || "";
-          var trimmed = addr.trim();
-          if (trimmed) {
-            geocodeItems.push({
-              value: trimmed,
-              label: trimmed + " (row " + (i + 1) + ")",
-              row: i + 1,
-            });
-          } else {
-            recordImportError({
-              label: "Row " + (i + 1),
-              reason: "Missing address",
-            });
-          }
-        } else {
-          var lat = parseFloat(cols[idxLat]);
-          var lon = parseFloat(cols[idxLon]);
-          if (isFinite(lat) && isFinite(lon)) {
-            addStopAt(L.latLng(lat, lon));
-            added += 1;
-          } else {
-            recordImportError({
-              label: "Row " + (i + 1),
-              reason: "Invalid coordinates",
-            });
-          }
-        }
-      }
-      if (idxAddr !== -1) {
-        if (!geocodeItems.length) {
-          updateErrorReportButton();
-          setStatus("No valid addresses found in CSV.", "warn");
-          return;
-        }
-        setStatus("Geocoding " + geocodeItems.length + " address(es)…", "");
-        geocodeSequential(geocodeItems);
-        return;
-      }
-      updateErrorReportButton();
-      if (added > 0) {
-        var summary = "Added " + added + " stop(s) by coordinates.";
-        if (importErrors.length) {
-          summary += " Skipped " + importErrors.length + " invalid row(s).";
-        }
-        setStatus(summary, importErrors.length ? "warn" : "success");
-      } else {
-        setStatus("No valid coordinates found in CSV.", "warn");
-      }
-    }
 
-    function importGeoJSON(text) {
-      var gj;
-      try {
-        gj = JSON.parse(text);
-      } catch (error) {
-        setStatus("Invalid GeoJSON.", "error");
-        return;
-      }
-      if (!gj || gj.type !== "FeatureCollection" || !Array.isArray(gj.features)) {
-        setStatus("GeoJSON must be a FeatureCollection of Points.", "error");
-        return;
-      }
-      var added = 0;
-      var skipped = 0;
-      for (var i = 0; i < gj.features.length; i++) {
-        var feature = gj.features[i];
-        if (!feature || !feature.geometry || feature.geometry.type !== "Point") {
-          skipped += 1;
-          recordImportError({
-            label: "Feature " + (i + 1),
-            reason: "Not a Point geometry",
+        var label = "Row " + (r + 1);
+        var latVal = idx.lat !== -1 ? cols[idx.lat] : null;
+        var lonVal = idx.lon !== -1 ? cols[idx.lon] : null;
+        var addrVal = idx.address !== -1 ? cols[idx.address] : null;
+        var ll = idx.lat !== -1 && idx.lon !== -1 ? toLatLngMaybe(latVal, lonVal) : null;
+
+        if (ll) {
+          addStopAt({ lat: ll.lat, lng: ll.lng });
+          added += 1;
+          continue;
+        }
+
+        if (idx.address !== -1 && addrVal && addrVal.trim()) {
+          queued.push({
+            value: addrVal.trim(),
+            label: addrVal.trim() + " (" + label + ")",
+            row: r + 1,
           });
           continue;
         }
-        var coords = feature.geometry.coordinates || [];
-        var lon = coords[0];
-        var lat = coords[1];
-        if (isFinite(lat) && isFinite(lon)) {
-          addStopAt(L.latLng(lat, lon));
-          added += 1;
-        } else {
-          skipped += 1;
+
+        recordImportError({
+          label: label,
+          reason: idx.address !== -1 ? "Empty address" : "Invalid coordinates",
+        });
+      }
+
+      var parts = [];
+      if (added > 0) {
+        parts.push("Added " + added + " stop(s) from CSV.");
+      }
+      if (queued.length) {
+        parts.push("Geocoding " + queued.length + " address(es)…");
+      }
+      if (!parts.length) {
+        parts.push("No valid rows found in CSV.");
+      }
+
+      updateErrorReportButton();
+      var statusType = "";
+      if (importErrors.length) {
+        statusType = "warn";
+      } else if (added > 0) {
+        statusType = "success";
+      } else if (!queued.length) {
+        statusType = "warn";
+      }
+      setStatus(parts.join(" "), statusType);
+
+      if (queued.length) {
+        geocodeSequential(queued);
+      }
+    }
+
+    function importFromJSON(raw) {
+      var data;
+      try {
+        data = JSON.parse(raw);
+      } catch (error) {
+        setStatus("Invalid JSON", "error");
+        return;
+      }
+
+      var added = 0;
+      var queued = [];
+
+      if (
+        data &&
+        data.type === "FeatureCollection" &&
+        Array.isArray(data.features)
+      ) {
+        for (var i = 0; i < data.features.length; i++) {
+          var feature = data.features[i];
+          if (!feature || !feature.geometry) {
+            recordImportError({
+              label: "Feature " + (i + 1),
+              reason: "Missing geometry",
+            });
+            continue;
+          }
+
+          var geom = feature.geometry;
+          if (geom.type === "Point") {
+            var coords = geom.coordinates || [];
+            var ll = toLatLngMaybe(coords[1], coords[0]) || toLatLngMaybe(coords[0], coords[1]);
+            if (ll) {
+              var props = feature.properties || {};
+              addStopAt({
+                lat: ll.lat,
+                lng: ll.lng,
+                name: props.name || props.title || props.address || "",
+              });
+              added += 1;
+            } else {
+              recordImportError({
+                label: "Feature " + (i + 1),
+                reason: "Invalid coordinates",
+              });
+            }
+            continue;
+          }
+
+          if (geom.type === "LineString" && Array.isArray(geom.coordinates)) {
+            for (var j = 0; j < geom.coordinates.length; j++) {
+              var coord = geom.coordinates[j] || [];
+              var llLine =
+                toLatLngMaybe(coord[1], coord[0]) || toLatLngMaybe(coord[0], coord[1]);
+              if (llLine) {
+                addStopAt({ lat: llLine.lat, lng: llLine.lng });
+                added += 1;
+              }
+            }
+            continue;
+          }
+
           recordImportError({
             label: "Feature " + (i + 1),
-            reason: "Invalid coordinates",
+            reason: "Unsupported geometry type",
           });
         }
+
+        updateErrorReportButton();
+        setStatus(
+          added > 0
+            ? "Added " + added + " stop(s) from GeoJSON."
+            : "No valid points found in GeoJSON.",
+          importErrors.length && added ? "warn" : added ? "success" : "warn"
+        );
+        return;
       }
-      updateErrorReportButton();
-      if (added > 0) {
-        var message = "Added " + added + " stop(s) from GeoJSON.";
-        if (skipped > 0) {
-          message += " Skipped " + skipped + " feature(s).";
+
+      if (data && Array.isArray(data.waypoints)) {
+        for (var w = 0; w < data.waypoints.length; w++) {
+          var item = data.waypoints[w];
+          if (!item) {
+            continue;
+          }
+          var llWaypoint = toLatLngMaybe(item.lat, item.lng || item.lon || item.long);
+          if (llWaypoint) {
+            addStopAt({
+              lat: llWaypoint.lat,
+              lng: llWaypoint.lng,
+              name: item.name || item.address || "",
+            });
+            added += 1;
+          } else if (item.address) {
+            queued.push({
+              value: item.address,
+              label: item.address + " (Waypoint " + (w + 1) + ")",
+              row: w + 1,
+            });
+          } else {
+            recordImportError({
+              label: "Waypoint " + (w + 1),
+              reason: "Missing coordinates",
+            });
+          }
         }
-        setStatus(message, skipped > 0 ? "warn" : "success");
+      } else if (Array.isArray(data)) {
+        for (var a = 0; a < data.length; a++) {
+          var entry = data[a];
+          if (Array.isArray(entry) && entry.length >= 2) {
+            var llArr = toLatLngMaybe(entry[0], entry[1]);
+            if (llArr) {
+              addStopAt({ lat: llArr.lat, lng: llArr.lng });
+              added += 1;
+            } else {
+              recordImportError({
+                label: "Item " + (a + 1),
+                reason: "Invalid coordinate pair",
+              });
+            }
+            continue;
+          }
+
+          if (entry && (entry.lat !== undefined || entry.latitude !== undefined)) {
+            var llObj = toLatLngMaybe(
+              entry.lat || entry.latitude,
+              entry.lon || entry.lng || entry.long || entry.longitude
+            );
+            if (llObj) {
+              addStopAt({
+                lat: llObj.lat,
+                lng: llObj.lng,
+                name: entry.name || entry.address || "",
+              });
+              added += 1;
+            } else if (entry.address) {
+              queued.push({
+                value: entry.address,
+                label: entry.address + " (Item " + (a + 1) + ")",
+                row: a + 1,
+              });
+            } else {
+              recordImportError({
+                label: "Item " + (a + 1),
+                reason: "Invalid coordinates",
+              });
+            }
+            continue;
+          }
+
+          if (entry && entry.address) {
+            queued.push({
+              value: entry.address,
+              label: entry.address + " (Item " + (a + 1) + ")",
+              row: a + 1,
+            });
+            continue;
+          }
+
+          recordImportError({
+            label: "Item " + (a + 1),
+            reason: "Unrecognized entry",
+          });
+        }
       } else {
-        setStatus("No valid points found in GeoJSON.", "warn");
+        setStatus(
+          "JSON format not recognized. Expect GeoJSON, {waypoints:[]}, or an array.",
+          "error"
+        );
+        return;
+      }
+
+      var summaryParts = [];
+      if (added > 0) {
+        summaryParts.push("Added " + added + " stop(s) from JSON.");
+      }
+      if (queued.length) {
+        summaryParts.push("Geocoding " + queued.length + " address(es)…");
+      }
+      if (!summaryParts.length) {
+        summaryParts.push("No valid entries found in JSON.");
+      }
+
+      updateErrorReportButton();
+      setStatus(
+        summaryParts.join(" "),
+        importErrors.length ? "warn" : added ? "success" : queued.length ? "" : "warn"
+      );
+
+      if (queued.length) {
+        geocodeSequential(queued);
       }
     }
 
@@ -1202,6 +1447,17 @@
         });
     }
 
+    function csvEscape(value) {
+      var str = value == null ? "" : String(value);
+      if (/["]/.test(str)) {
+        str = str.replace(/"/g, '""');
+      }
+      if (/[",\n\r]/.test(str)) {
+        return '"' + str + '"';
+      }
+      return str;
+    }
+
     function exportWaypoints() {
       var pts = getWaypoints();
       if (!pts.length) {
@@ -1209,29 +1465,50 @@
         return;
       }
 
-      var payload = {
-        roundtrip: !!roundtripToggle.input.checked,
-        fixStart: !!fixStartToggle.input.checked,
-        fixEnd: !!fixEndToggle.input.checked,
-        profile: KC_OSRM.profile || "driving",
-        waypoints: pts,
-      };
+      var stops = pts.slice();
+      if (stops.length > 2) {
+        stops = stops.slice(1, stops.length - 1);
+      } else if (stops.length <= 2) {
+        stops = [];
+      }
 
-      var blob = new Blob([JSON.stringify(payload, null, 2)], {
-        type: "application/json",
+      var rows = ["name,address,lat,lon"];
+      for (var i = 0; i < stops.length; i++) {
+        var stop = stops[i];
+        if (!stop || typeof stop.lat !== "number" || typeof stop.lng !== "number") {
+          continue;
+        }
+        var name = stop.name || "";
+        var address = stop.address || name;
+        rows.push(
+          [
+            csvEscape(name),
+            csvEscape(address),
+            String(stop.lat),
+            String(stop.lng),
+          ].join(",")
+        );
+      }
+
+      var csvContent = rows.join("\n");
+      var blob = new Blob([csvContent], {
+        type: "text/csv;charset=utf-8;",
       });
       var url = URL.createObjectURL(blob);
       var a = document.createElement("a");
       a.href = url;
       a.download =
-        "kerbcycle-route-" + new Date().toISOString().replace(/[:.]/g, "-") + ".json";
+        "kerbcycle-route-" + new Date().toISOString().replace(/[:.]/g, "-") + ".csv";
       document.body.appendChild(a);
       a.click();
       setTimeout(function () {
         URL.revokeObjectURL(url);
         document.body.removeChild(a);
       }, 0);
-      setStatus("Exported current route.", "success");
+      setStatus(
+        "Exported " + stops.length + " stop(s) to CSV.",
+        stops.length ? "success" : "warn"
+      );
     }
 
     function registerEvents() {
