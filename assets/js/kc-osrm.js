@@ -120,10 +120,11 @@
     var addStopBtn = makeButton("Add stop");
     var pasteBtn = makeButton("Paste list");
     var optimizeBtn = makeButton("Optimize", "primary");
-    var roundtripToggle = makeToggle("Roundtrip", true);
+    var roundtripToggle = makeToggle("Roundtrip", false);
     var fixStartToggle = makeToggle("Fix start", true);
     var fixEndToggle = makeToggle("Fix finish", true);
     var saveDefaultBtn = makeButton("Set current as default Start");
+    var resetDefaultBtn = makeButton("Reset defaults");
     var clearBtn = makeButton("Clear");
     var exportBtn = makeButton("Export");
     // Follow / unfollow button
@@ -138,6 +139,7 @@
     toolbar.appendChild(fixStartToggle.label);
     toolbar.appendChild(fixEndToggle.label);
     toolbar.appendChild(saveDefaultBtn);
+    toolbar.appendChild(resetDefaultBtn);
     toolbar.appendChild(clearBtn);
     toolbar.appendChild(exportBtn);
     toolbar.appendChild(followBtn);
@@ -1040,6 +1042,25 @@
         }
         if (saved) {
           setStatus("Saved default start for this browser.", "success");
+        } else {
+          setStatus("Unable to access browser storage.", "error");
+        }
+      });
+      resetDefaultBtn.addEventListener("click", function () {
+        var cleared = false;
+        try {
+          if (typeof window !== "undefined" && window.localStorage) {
+            window.localStorage.removeItem("kc_default_start");
+            cleared = true;
+          }
+        } catch (error) {
+          console.warn("Unable to clear default start", error);
+        }
+        if (cleared) {
+          setStatus(
+            "Per-user default cleared. Reload to use shortcode/site default.",
+            ""
+          );
         } else {
           setStatus("Unable to access browser storage.", "error");
         }
