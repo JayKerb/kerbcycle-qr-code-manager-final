@@ -119,6 +119,7 @@
 
     var addStopBtn = makeButton("Add stop");
     var pasteBtn = makeButton("Paste list");
+    var importBtn = makeButton("Import");
     var optimizeBtn = makeButton("Optimize", "primary");
     var roundtripToggle = makeToggle("Roundtrip", false);
     var fixStartToggle = makeToggle("Fix start", true);
@@ -127,6 +128,9 @@
     var resetDefaultBtn = makeButton("Reset defaults");
     var clearBtn = makeButton("Clear");
     var exportBtn = makeButton("Export");
+    var errorReportBtn = makeButton("Download errors");
+    errorReportBtn.disabled = true;
+    var errorButtonBaseLabel = "Download errors";
     // Follow / unfollow button
     var followBtn = makeButton("Follow", "primary");
     // Recenter now
@@ -134,6 +138,7 @@
 
     toolbar.appendChild(addStopBtn);
     toolbar.appendChild(pasteBtn);
+    toolbar.appendChild(importBtn);
     toolbar.appendChild(optimizeBtn);
     toolbar.appendChild(roundtripToggle.label);
     toolbar.appendChild(fixStartToggle.label);
@@ -142,6 +147,7 @@
     toolbar.appendChild(resetDefaultBtn);
     toolbar.appendChild(clearBtn);
     toolbar.appendChild(exportBtn);
+    toolbar.appendChild(errorReportBtn);
     toolbar.appendChild(followBtn);
     toolbar.appendChild(recenterBtn);
 
@@ -151,6 +157,12 @@
     statusEl.style.minWidth = "200px";
     statusEl.style.font = "13px/1.3 system-ui, Arial, sans-serif";
     statusEl.style.color = "#555";
+
+    var fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".csv,.geojson,.json";
+    fileInput.style.display = "none";
+    toolbar.appendChild(fileInput);
 
     toolbar.appendChild(statusEl);
 
@@ -180,6 +192,8 @@
     var receivedNativePosition = false;
 
     var preferredVoice = null;
+    var importErrors = [];
+    var geocodeDelayMs = 1100;
 
     function pickVoice() {
       if (!window.speechSynthesis || typeof window.speechSynthesis.getVoices !== "function") {
@@ -418,6 +432,320 @@
       statusEl.textContent = message || "";
       statusEl.style.color =
         type === "error" ? "#c00" : type === "success" ? "#256029" : "#555";
+    }
+
+    function updateErrorReportButton() {
+      if (!errorReportBtn) {
+        return;
+      }
+      var count = importErrors.length;
+      errorReportBtn.textContent =
+        count > 0 ? errorButtonBaseLabel + " (" + count + ")" : errorButtonBaseLabel;
+      errorReportBtn.disabled = count === 0;
+      errorReportBtn.title = count
+        ? "Download a report of " + count + " failed item(s)."
+        : "No import errors to download.";
+    }
+
+    function resetImportErrors() {
+      importErrors = [];
+      updateErrorReportButton();
+    }
+
+    function recordImportError(entry) {
+      if (!entry) {
+        return;
+      }
+      importErrors.push({
+        label: entry.label || "Unknown item",
+        reason: entry.reason || "",
+      });
+      updateErrorReportButton();
+    }
+
+    function downloadErrorReport() {
+      if (!importErrors.length) {
+        setStatus("No import errors to download.", "error");
+        return;
+      }
+      var lines = importErrors.map(function (item, index) {
+        var label = item && item.label ? item.label : "Item " + (index + 1);
+        var reason = item && item.reason ? item.reason : "";
+        return label + (reason ? " — " + reason : "");
+      });
+      var blob = new Blob([lines.join("\n")], { type: "text/plain" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download =
+        "kerbcycle-import-errors-" +
+        new Date().toISOString().replace(/[:.]/g, "-") +
+        ".txt";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () {
+        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 0);
+      setStatus("Downloaded import error report.", "success");
+    }
+
+    function handleImportFile(file) {
+      if (!file) {
+        return;
+      }
+      resetImportErrors();
+      setStatus("Reading " + file.name + "…", "");
+      var ext = (file.name.split(".").pop() || "").toLowerCase();
+      var reader = new FileReader();
+      reader.onerror = function () {
+        setStatus("Failed to read file.", "error");
+      };
+      if (ext === "csv") {
+        reader.onload = function () {
+          importCSV(String(reader.result || ""));
+        };
+        reader.readAsText(file);
+      } else if (ext === "geojson" || ext === "json") {
+        reader.onload = function () {
+          importGeoJSON(String(reader.result || ""));
+        };
+        reader.readAsText(file);
+      } else {
+        setStatus("Unsupported file type. Use .csv or .geojson.", "error");
+      }
+    }
+
+    function splitCSVRow(row) {
+      return String(row || "")
+        .split(",")
+        .map(function (part) {
+          return part.trim();
+        });
+    }
+
+    function importCSV(text) {
+      var rows = String(text || "")
+        .split(/\r?\n/)
+        .map(function (row) {
+          return row.trim();
+        })
+        .filter(Boolean);
+      if (!rows.length) {
+        setStatus("CSV is empty.", "warn");
+        return;
+      }
+      var headers = splitCSVRow(rows[0]).map(function (header) {
+        return header.toLowerCase();
+      });
+      if (!headers.length) {
+        setStatus("CSV header row is empty.", "error");
+        return;
+      }
+      var idxAddr = headers.indexOf("address");
+      var idxLat = headers.indexOf("lat");
+      var idxLon = headers.indexOf("lon");
+      if (idxLon === -1) {
+        idxLon = headers.indexOf("lng");
+      }
+      if (idxAddr === -1 && (idxLat === -1 || idxLon === -1)) {
+        setStatus(
+          'CSV must include an "address" column or both "lat" and "lon" columns.',
+          "error"
+        );
+        return;
+      }
+      var geocodeItems = [];
+      var added = 0;
+      for (var i = 1; i < rows.length; i++) {
+        var cols = splitCSVRow(rows[i]);
+        if (!cols.length) {
+          continue;
+        }
+        if (idxAddr !== -1) {
+          var addr = cols[idxAddr] || "";
+          var trimmed = addr.trim();
+          if (trimmed) {
+            geocodeItems.push({
+              value: trimmed,
+              label: trimmed + " (row " + (i + 1) + ")",
+              row: i + 1,
+            });
+          } else {
+            recordImportError({
+              label: "Row " + (i + 1),
+              reason: "Missing address",
+            });
+          }
+        } else {
+          var lat = parseFloat(cols[idxLat]);
+          var lon = parseFloat(cols[idxLon]);
+          if (isFinite(lat) && isFinite(lon)) {
+            addStopAt(L.latLng(lat, lon));
+            added += 1;
+          } else {
+            recordImportError({
+              label: "Row " + (i + 1),
+              reason: "Invalid coordinates",
+            });
+          }
+        }
+      }
+      if (idxAddr !== -1) {
+        if (!geocodeItems.length) {
+          updateErrorReportButton();
+          setStatus("No valid addresses found in CSV.", "warn");
+          return;
+        }
+        setStatus("Geocoding " + geocodeItems.length + " address(es)…", "");
+        geocodeSequential(geocodeItems);
+        return;
+      }
+      updateErrorReportButton();
+      if (added > 0) {
+        var summary = "Added " + added + " stop(s) by coordinates.";
+        if (importErrors.length) {
+          summary += " Skipped " + importErrors.length + " invalid row(s).";
+        }
+        setStatus(summary, importErrors.length ? "warn" : "success");
+      } else {
+        setStatus("No valid coordinates found in CSV.", "warn");
+      }
+    }
+
+    function importGeoJSON(text) {
+      var gj;
+      try {
+        gj = JSON.parse(text);
+      } catch (error) {
+        setStatus("Invalid GeoJSON.", "error");
+        return;
+      }
+      if (!gj || gj.type !== "FeatureCollection" || !Array.isArray(gj.features)) {
+        setStatus("GeoJSON must be a FeatureCollection of Points.", "error");
+        return;
+      }
+      var added = 0;
+      var skipped = 0;
+      for (var i = 0; i < gj.features.length; i++) {
+        var feature = gj.features[i];
+        if (!feature || !feature.geometry || feature.geometry.type !== "Point") {
+          skipped += 1;
+          recordImportError({
+            label: "Feature " + (i + 1),
+            reason: "Not a Point geometry",
+          });
+          continue;
+        }
+        var coords = feature.geometry.coordinates || [];
+        var lon = coords[0];
+        var lat = coords[1];
+        if (isFinite(lat) && isFinite(lon)) {
+          addStopAt(L.latLng(lat, lon));
+          added += 1;
+        } else {
+          skipped += 1;
+          recordImportError({
+            label: "Feature " + (i + 1),
+            reason: "Invalid coordinates",
+          });
+        }
+      }
+      updateErrorReportButton();
+      if (added > 0) {
+        var message = "Added " + added + " stop(s) from GeoJSON.";
+        if (skipped > 0) {
+          message += " Skipped " + skipped + " feature(s).";
+        }
+        setStatus(message, skipped > 0 ? "warn" : "success");
+      } else {
+        setStatus("No valid points found in GeoJSON.", "warn");
+      }
+    }
+
+    async function geocodeAndAdd(item) {
+      var address = item && item.value ? item.value : item;
+      var displayLabel =
+        (item && item.label ? item.label : null) ||
+        (item && item.row ? "Row " + item.row : "Unknown address");
+      if (!address) {
+        recordImportError({
+          label: displayLabel,
+          reason: "Empty address",
+        });
+        return false;
+      }
+      try {
+        var base = (KC_OSRM && KC_OSRM.geocodeUrl) || "https://photon.komoot.io/api";
+        var url = base;
+        if (url.indexOf("?") === -1) {
+          url += "?";
+        } else if (!/[?&]$/.test(url)) {
+          url += "&";
+        }
+        url += "q=" + encodeURIComponent(address) + "&limit=1";
+        var response = await fetch(url, {
+          headers: { Accept: "application/json" },
+        });
+        if (!response.ok) {
+          throw new Error("HTTP " + response.status);
+        }
+        var json = await response.json();
+        var feat = json && json.features && json.features[0];
+        if (!feat || !feat.geometry || !feat.geometry.coordinates) {
+          throw new Error("No result");
+        }
+        var coords = feat.geometry.coordinates;
+        var lon = coords[0];
+        var lat = coords[1];
+        if (!isFinite(lat) || !isFinite(lon)) {
+          throw new Error("Invalid coordinates");
+        }
+        addStopAt(L.latLng(lat, lon));
+        return true;
+      } catch (error) {
+        var message = error && error.message ? error.message : "Geocode failed";
+        recordImportError({
+          label: displayLabel,
+          reason: message,
+        });
+        return false;
+      }
+    }
+
+    function geocodeSequential(addresses) {
+      (async function () {
+        var success = 0;
+        for (var i = 0; i < addresses.length; i++) {
+          var ok = false;
+          try {
+            ok = await geocodeAndAdd(addresses[i]);
+          } catch (error) {
+            ok = false;
+          }
+          if (ok) {
+            success += 1;
+          }
+          if (i < addresses.length - 1) {
+            await new Promise(function (resolve) {
+              setTimeout(resolve, geocodeDelayMs);
+            });
+          }
+        }
+        updateErrorReportButton();
+        var message =
+          "Imported " + success + " of " + addresses.length + " address(es).";
+        if (importErrors.length) {
+          message += " Download errors for details.";
+        }
+        var type =
+          success === addresses.length
+            ? "success"
+            : success > 0
+            ? "warn"
+            : "error";
+        setStatus(message, type);
+      })();
     }
 
     // 1) Build a flat list of OSRM steps from the current route
@@ -907,8 +1235,26 @@
     }
 
     function registerEvents() {
+      updateErrorReportButton();
+
       addStopBtn.addEventListener("click", function () {
         setAddStopMode(!addStopMode);
+      });
+
+      importBtn.addEventListener("click", function () {
+        fileInput.click();
+      });
+
+      fileInput.addEventListener("change", function () {
+        var selected = fileInput.files && fileInput.files[0];
+        if (selected) {
+          handleImportFile(selected);
+        }
+        fileInput.value = "";
+      });
+
+      errorReportBtn.addEventListener("click", function () {
+        downloadErrorReport();
       });
 
       map.on("click", function (e) {
