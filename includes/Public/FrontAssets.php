@@ -57,6 +57,7 @@ class FrontAssets
             'profile'    => $options['profile'],
             'tileUrl'    => $options['tile_url'],
             'tileAttrib' => $options['tile_attrib'],
+            'defaultStart' => isset($options['default_start']) ? $options['default_start'] : '',
         ]);
 
         global $post;
