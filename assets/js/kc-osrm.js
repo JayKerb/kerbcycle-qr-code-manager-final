@@ -124,6 +124,7 @@
     var roundtripToggle = makeToggle("Roundtrip", false);
     var fixStartToggle = makeToggle("Fix start", true);
     var fixEndToggle = makeToggle("Fix finish", true);
+    var gpsStartToggle = makeToggle("Use GPS as start", true);
     var saveDefaultBtn = makeButton("Set current as default Start");
     var resetDefaultBtn = makeButton("Reset defaults");
     var clearBtn = makeButton("Clear");
@@ -143,6 +144,7 @@
     toolbar.appendChild(roundtripToggle.label);
     toolbar.appendChild(fixStartToggle.label);
     toolbar.appendChild(fixEndToggle.label);
+    toolbar.appendChild(gpsStartToggle.label);
     toolbar.appendChild(saveDefaultBtn);
     toolbar.appendChild(resetDefaultBtn);
     toolbar.appendChild(clearBtn);
@@ -165,6 +167,10 @@
     toolbar.appendChild(fileInput);
 
     toolbar.appendChild(statusEl);
+
+    if (gpsStartToggle && gpsStartToggle.input) {
+      preferGpsStart = !!gpsStartToggle.input.checked;
+    }
 
     var mapHolder = document.createElement("div");
     mapHolder.className = "kc-osrm-map";
@@ -190,6 +196,8 @@
     var navRunning = false;
     var fallbackTimerId = null;
     var receivedNativePosition = false;
+    var firstFixApplied = false;
+    var preferGpsStart = true;
 
     var preferredVoice = null;
     var importErrors = [];
@@ -432,6 +440,140 @@
       statusEl.textContent = message || "";
       statusEl.style.color =
         type === "error" ? "#c00" : type === "success" ? "#256029" : "#555";
+    }
+
+    function setWaypointsLatLngs(latlngs) {
+      if (!routingControl || !Array.isArray(latlngs)) {
+        return;
+      }
+      var wps = latlngs
+        .map(function (entry) {
+          if (!entry) {
+            return null;
+          }
+
+          var ll = null;
+          var name = "";
+
+          if (
+            entry.latLng &&
+            typeof entry.latLng.lat === "number" &&
+            typeof entry.latLng.lng === "number"
+          ) {
+            ll = entry.latLng;
+            name =
+              typeof entry.name === "string"
+                ? entry.name
+                : typeof entry.latLng.name === "string"
+                ? entry.latLng.name
+                : "";
+          } else if (
+            typeof entry.lat === "number" &&
+            typeof entry.lng === "number"
+          ) {
+            ll = L.latLng(entry.lat, entry.lng);
+            name = typeof entry.name === "string" ? entry.name : "";
+          } else if (
+            typeof entry.lat === "number" &&
+            typeof entry.lon === "number"
+          ) {
+            ll = L.latLng(entry.lat, entry.lon);
+            name = typeof entry.name === "string" ? entry.name : "";
+          } else if (Array.isArray(entry) && entry.length >= 2) {
+            var latFromArray = parseFloat(entry[0]);
+            var lngFromArray = parseFloat(entry[1]);
+            if (isFinite(latFromArray) && isFinite(lngFromArray)) {
+              ll = L.latLng(latFromArray, lngFromArray);
+            }
+          }
+
+          if (!ll || !isFinite(ll.lat) || !isFinite(ll.lng)) {
+            return null;
+          }
+
+          return {
+            latLng: L.latLng(ll.lat, ll.lng),
+            name: typeof name === "string" ? name : "",
+          };
+        })
+        .filter(function (entry) {
+          return (
+            entry &&
+            entry.latLng &&
+            typeof entry.latLng.lat === "number" &&
+            typeof entry.latLng.lng === "number" &&
+            isFinite(entry.latLng.lat) &&
+            isFinite(entry.latLng.lng)
+          );
+        })
+        .map(function (entry) {
+          return L.Routing.waypoint(entry.latLng, entry.name || "");
+        });
+      routingControl.setWaypoints(wps);
+    }
+
+    function ensureCurrentIsStart(lat, lon) {
+      if (!preferGpsStart || firstFixApplied || !routingControl) {
+        return false;
+      }
+
+      var waypoints = [];
+      if (typeof routingControl.getWaypoints === "function") {
+        waypoints = routingControl
+          .getWaypoints()
+          .map(function (wp) {
+            if (!wp || !wp.latLng) {
+              return null;
+            }
+            var ll = wp.latLng;
+            if (
+              typeof ll.lat !== "number" ||
+              typeof ll.lng !== "number" ||
+              !isFinite(ll.lat) ||
+              !isFinite(ll.lng)
+            ) {
+              return null;
+            }
+            return {
+              latLng: L.latLng(ll.lat, ll.lng),
+              name: typeof wp.name === "string" ? wp.name : "",
+            };
+          })
+          .filter(Boolean);
+      }
+
+      var here = L.latLng(lat, lon);
+      var applied = false;
+
+      if (waypoints.length === 0) {
+        setWaypointsLatLngs([{ latLng: here, name: "" }]);
+        applied = true;
+      } else if (waypoints.length === 1) {
+        var existing = waypoints[0];
+        setWaypointsLatLngs([
+          { latLng: here, name: "" },
+          existing,
+        ]);
+        routingControl.route();
+        applied = true;
+      } else {
+        var currentStart = waypoints[0];
+        if (currentStart && currentStart.latLng && typeof here.distanceTo === "function") {
+          var dist = here.distanceTo(currentStart.latLng);
+          if (isFinite(dist) && dist > 50) {
+            waypoints[0] = {
+              latLng: here,
+              name: typeof currentStart.name === "string" ? currentStart.name : "",
+            };
+            setWaypointsLatLngs(waypoints);
+            routingControl.route();
+            applied = true;
+          }
+        }
+      }
+
+      firstFixApplied = true;
+      return applied;
     }
 
     function updateErrorReportButton() {
@@ -819,7 +961,13 @@
     }
 
     function onPosition(lat, lon) {
+      var gpsStartApplied = ensureCurrentIsStart(lat, lon);
       updatePosition(lat, lon);
+
+      if (gpsStartApplied && map && typeof map.panTo === "function") {
+        setFollowMode(true);
+        map.panTo([lat, lon], { animate: true });
+      }
       if (!stepQueue.length || stepIndex >= stepQueue.length) {
         return;
       }
@@ -929,6 +1077,9 @@
       var primedThisCall = primedFromHandler === true ? true : primeTTS();
       navRunning = true;
       receivedNativePosition = false;
+      if (preferGpsStart) {
+        firstFixApplied = false;
+      }
       clearFallbackTimer();
       renderFabState();
       if (nativeAvailable()) {
@@ -1448,6 +1599,14 @@
         clearAll();
         setAddStopMode(false);
       });
+      if (gpsStartToggle && gpsStartToggle.input) {
+        gpsStartToggle.input.addEventListener("change", function () {
+          preferGpsStart = !!gpsStartToggle.input.checked;
+          if (preferGpsStart) {
+            firstFixApplied = false;
+          }
+        });
+      }
       exportBtn.addEventListener("click", exportWaypoints);
       followBtn.addEventListener("click", function () {
         setFollowMode(!following);
