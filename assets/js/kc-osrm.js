@@ -1031,6 +1031,39 @@
         });
     }
 
+    function routeIfReady(potentialWaypoints) {
+      if (
+        !routingControl ||
+        !routingControl.options ||
+        routingControl.options.autoRoute !== false ||
+        typeof routingControl.route !== "function"
+      ) {
+        return;
+      }
+
+      var source;
+      if (Array.isArray(potentialWaypoints)) {
+        source = potentialWaypoints;
+      } else if (typeof routingControl.getWaypoints === "function") {
+        source = routingControl.getWaypoints();
+      } else {
+        source = [];
+      }
+
+      var active = source.filter(function (wp) {
+        return (
+          wp &&
+          wp.latLng &&
+          typeof wp.latLng.lat === "number" &&
+          typeof wp.latLng.lng === "number"
+        );
+      });
+
+      if (active.length >= 2) {
+        routingControl.route();
+      }
+    }
+
     function setWaypoints(list) {
       var wps = (list || [])
         .filter(function (wp) {
@@ -1083,7 +1116,7 @@
 
     function clearAll() {
       if (!routingControl) return;
-      routingControl.setWaypoints([]);
+      setWaypoints([]);
       setStatus("Cleared all stops.", "");
       stepQueue = [];
       stepIndex = 0;
@@ -1467,10 +1500,8 @@
       }
 
       routingControl = L.Routing.control({
-        waypoints: [
-          L.latLng(start[0], start[1]),
-          L.latLng(end[0], end[1]),
-        ],
+        waypoints: [],
+        autoRoute: false,
         router: L.Routing.osrmv1({
           serviceUrl: KC_OSRM.base,
           profile: KC_OSRM.profile,
@@ -1481,11 +1512,16 @@
         showAlternatives: false,
         collapsible: true,
       })
+        .on("waypointschanged", function () {
+          routeIfReady();
+        })
         .on("routingstart", function () {
           setStatus("Routing…", "");
+          clearItinerary();
         })
         .on("routesfound", function (e) {
           setStatus("", "");
+          clearItinerary();
           if (e && e.routes && e.routes[0]) {
             buildSteps(e.routes[0]);
             if (posMarker && typeof posMarker.getLatLng === "function") {
@@ -1493,14 +1529,96 @@
               onPosition(current.lat, current.lng);
             }
           }
+          if (isMobile) {
+            collapseItinerary();
+          }
         })
         .addTo(map);
 
-      setTimeout(function () {
-        if (routingControl && routingControl._container) {
-          routingControl._container.classList.add("leaflet-routing-collapsed");
+      function collapseItinerary() {
+        var container = routingControl && routingControl._container;
+        if (!container) {
+          return;
         }
-      }, 0);
+        container.classList.add("leaflet-routing-collapsed");
+        container.classList.add("leaflet-routing-container-hide");
+      }
+
+      function clearItinerary() {
+        var container = routingControl && routingControl._container;
+        if (!container) {
+          return;
+        }
+
+        var altWrap = container.querySelector(
+          ".leaflet-routing-alternatives-container"
+        );
+        if (altWrap) {
+          altWrap.innerHTML = "";
+        }
+
+        var altNodes = container.querySelectorAll(".leaflet-routing-alt");
+        Array.prototype.forEach.call(altNodes, function (node) {
+          node.innerHTML = "";
+        });
+
+        var summary = container.querySelector(".leaflet-routing-summary");
+        if (summary) {
+          summary.innerHTML = "";
+        }
+
+        var errors = container.querySelector(".leaflet-routing-error");
+        if (errors) {
+          errors.innerHTML = "";
+        }
+
+        var customHost = document.querySelector(
+          ".kc-steps, #kc-steps, .kc-steps-list"
+        );
+        if (customHost) {
+          customHost.innerHTML = "";
+        }
+      }
+
+      var isMobile = false;
+      if (typeof window !== "undefined" && window.matchMedia) {
+        isMobile = window.matchMedia("(max-width: 768px)").matches;
+      }
+
+      clearItinerary();
+
+      if (typeof requestAnimationFrame === "function") {
+        requestAnimationFrame(clearItinerary);
+      } else {
+        setTimeout(clearItinerary, 0);
+      }
+
+      (function ensureClearedForAMoment() {
+        if (typeof window === "undefined" || !window.MutationObserver) {
+          return;
+        }
+        var container = routingControl && routingControl._container;
+        if (!container) {
+          return;
+        }
+        var observer = new MutationObserver(function () {
+          clearItinerary();
+        });
+        observer.observe(container, { childList: true, subtree: true });
+        setTimeout(function () {
+          try {
+            observer.disconnect();
+          } catch (error) {}
+        }, 1000);
+      })();
+
+      if (isMobile) {
+        if (typeof requestAnimationFrame === "function") {
+          requestAnimationFrame(collapseItinerary);
+        } else {
+          setTimeout(collapseItinerary, 0);
+        }
+      }
 
       registerEvents();
 
