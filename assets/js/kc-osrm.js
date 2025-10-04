@@ -1483,6 +1483,7 @@
       })
         .on("routingstart", function () {
           setStatus("Routing…", "");
+          clearItinerary();
         })
         .on("routesfound", function (e) {
           setStatus("", "");
@@ -1493,14 +1494,47 @@
               onPosition(current.lat, current.lng);
             }
           }
+          if (isMobile) {
+            collapseItinerary();
+          }
         })
         .addTo(map);
 
-      setTimeout(function () {
-        if (routingControl && routingControl._container) {
-          routingControl._container.classList.add("leaflet-routing-collapsed");
+      function collapseItinerary() {
+        var container = routingControl && routingControl._container;
+        if (!container) {
+          return;
         }
-      }, 0);
+        container.classList.add("leaflet-routing-collapsed");
+        container.classList.add("leaflet-routing-container-hide");
+      }
+
+      function clearItinerary() {
+        var altContainer =
+          routingControl &&
+          routingControl._container &&
+          routingControl._container.querySelector(
+            ".leaflet-routing-alternatives-container"
+          );
+        if (altContainer) {
+          altContainer.innerHTML = "";
+        }
+      }
+
+      var isMobile = false;
+      if (typeof window !== "undefined" && window.matchMedia) {
+        isMobile = window.matchMedia("(max-width: 768px)").matches;
+      }
+
+      clearItinerary();
+
+      if (isMobile) {
+        if (typeof requestAnimationFrame === "function") {
+          requestAnimationFrame(collapseItinerary);
+        } else {
+          setTimeout(collapseItinerary, 0);
+        }
+      }
 
       registerEvents();
 
