@@ -1,0 +1,69 @@
+<?php
+
+namespace Kerbcycle\QrCode\Install;
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+/**
+ * Fired during plugin activation.
+ *
+ * This class defines all code necessary to run during the plugin's activation.
+ *
+ * @since      1.0.0
+ * @package    Kerbcycle\QrCode
+ * @subpackage Kerbcycle\QrCode\Install
+ */
+class Activator
+{
+    /**
+     * Short Description. (use period)
+     *
+     * Long Description.
+     *
+     * @since    1.0.0
+     */
+    public static function activate()
+    {
+        global $wpdb;
+
+        // Create QR codes table
+        $table_name = $wpdb->prefix . 'kerbcycle_qr_codes';
+        $charset_collate = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE $table_name (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            qr_code varchar(255) NOT NULL,
+            user_id mediumint(9),
+            status varchar(20) DEFAULT 'available',
+            assigned_at datetime DEFAULT NULL,
+            created_at datetime DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id)
+        ) $charset_collate;";
+
+        require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
+        dbDelta($sql);
+
+        // Create message logs table
+        $table_name = $wpdb->prefix . 'kerbcycle_message_logs';
+
+        $sql = "CREATE TABLE $table_name (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            type VARCHAR(10) NOT NULL,
+            recipient VARCHAR(190) NOT NULL,
+            subject VARCHAR(255) DEFAULT '',
+            body LONGTEXT,
+            status VARCHAR(30) DEFAULT '',
+            provider VARCHAR(100) DEFAULT '',
+            response LONGTEXT,
+            created_at DATETIME NOT NULL,
+            PRIMARY KEY  (id),
+            KEY type_idx (type),
+            KEY created_idx (created_at),
+            KEY recipient_idx (recipient)
+        ) $charset_collate;";
+
+        dbDelta($sql);
+    }
+}
