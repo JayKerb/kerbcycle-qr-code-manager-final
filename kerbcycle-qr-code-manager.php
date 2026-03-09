@@ -268,6 +268,64 @@ class KerbCycle_QR_Manager {
             'callback' => array($this, 'handle_qr_code_scan'),
             'permission_callback' => '__return_true'
         ));
+
+        register_rest_route('kerbcycle/v1', '/ai', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'handle_ai_dispatch'),
+            'permission_callback' => array($this, 'check_ai_permissions')
+        ));
+    }
+
+    public function check_ai_permissions(WP_REST_Request $request) {
+        if (!current_user_can('manage_options')) {
+            return new WP_Error('kerbcycle_ai_forbidden', 'Sorry, you are not allowed to access this endpoint.', array('status' => 403));
+        }
+
+        $nonce = $request->get_header('x_wp_nonce');
+        if (empty($nonce)) {
+            $nonce = $request->get_param('_wpnonce');
+        }
+
+        if (empty($nonce) || !wp_verify_nonce($nonce, 'wp_rest')) {
+            return new WP_Error('kerbcycle_ai_invalid_nonce', 'Invalid REST nonce.', array('status' => 403));
+        }
+
+        return true;
+    }
+
+    public function handle_ai_dispatch(WP_REST_Request $request) {
+        $action = sanitize_text_field($request->get_param('action'));
+        $allowed_actions = array('pickup_summary', 'qr_exceptions', 'draft_template');
+
+        if (empty($action)) {
+            return new WP_Error('kerbcycle_ai_missing_action', 'Missing required action parameter.', array('status' => 400));
+        }
+
+        if (!in_array($action, $allowed_actions, true)) {
+            return new WP_Error('kerbcycle_ai_invalid_action', 'Invalid action value.', array('status' => 400));
+        }
+
+        $mock_data = array(
+            'pickup_summary' => array(
+                'action' => 'pickup_summary',
+                'summary' => 'Mock pickup summary response.'
+            ),
+            'qr_exceptions' => array(
+                'action' => 'qr_exceptions',
+                'exceptions' => array(
+                    array('code' => 'QR-001', 'reason' => 'Mock exception item')
+                )
+            ),
+            'draft_template' => array(
+                'action' => 'draft_template',
+                'template' => 'Mock draft template response.'
+            )
+        );
+
+        return new WP_REST_Response(array(
+            'success' => true,
+            'data' => $mock_data[$action]
+        ), 200);
     }
 
     public function handle_qr_code_scan(WP_REST_Request $request) {
