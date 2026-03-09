@@ -32,6 +32,8 @@ class RestService
      */
     public function register_routes()
     {
+        $ai_controller = new Controllers\AiController();
+
         register_rest_route('kerbcycle/v1', '/qr-code/scanned', [
             'methods'  => 'POST',
             'callback' => [new Controllers\QrController(), 'handle_qr_code_scan'],
@@ -46,6 +48,12 @@ class RestService
             'permission_callback' => function () {
                 return is_user_logged_in();
             },
+        ]);
+
+        register_rest_route('kerbcycle/v1', '/ai', [
+            'methods'  => 'POST',
+            'callback' => [$ai_controller, 'dispatch_action'],
+            'permission_callback' => [$ai_controller, 'permissions'],
         ]);
     }
 }
