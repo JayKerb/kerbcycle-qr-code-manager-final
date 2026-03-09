@@ -8,6 +8,7 @@ if (!defined('ABSPATH')) {
 
 use WP_REST_Request;
 use WP_REST_Response;
+use Kerbcycle\QrCode\Services\AiProviderService;
 
 /**
  * Option B AI endpoint controller.
@@ -54,28 +55,56 @@ class AiController
             return new \WP_Error('kerbcycle_ai_action_missing', __('Missing action parameter.', 'kerbcycle'), ['status' => 400]);
         }
 
+        $ai_service = new AiProviderService();
+
         switch ($action) {
             case 'pickup_summary':
+                $pickup_payload = [
+                    'from_date' => sanitize_text_field($request->get_param('from_date')),
+                    'to_date'   => sanitize_text_field($request->get_param('to_date')),
+                    'context'   => sanitize_textarea_field($request->get_param('context')),
+                ];
+                $pickup_result = $ai_service->generate($action, $pickup_payload);
+                if (is_wp_error($pickup_result)) {
+                    return $pickup_result;
+                }
+
                 return new WP_REST_Response([
                     'success' => true,
                     'action'  => $action,
-                    'data'    => [
-                        'summary' => __('Mock pickup summary response.', 'kerbcycle'),
-                    ],
+                    'data'    => $pickup_result['output'],
+                    'meta'    => $this->build_ai_meta($pickup_result),
                 ], 200);
             case 'qr_exceptions':
+                $qr_payload = $this->get_qr_exceptions_data($request);
+                $qr_result = $ai_service->generate($action, $qr_payload);
+                if (is_wp_error($qr_result)) {
+                    return $qr_result;
+                }
+
                 return new WP_REST_Response([
                     'success' => true,
                     'action'  => $action,
-                    'data'    => $this->get_qr_exceptions_data($request),
+                    'data'    => $qr_result['output'],
+                    'source'  => $qr_payload,
+                    'meta'    => $this->build_ai_meta($qr_result),
                 ], 200);
             case 'draft_template':
+                $draft_payload = [
+                    'topic'   => sanitize_text_field($request->get_param('topic')),
+                    'tone'    => sanitize_text_field($request->get_param('tone')),
+                    'details' => sanitize_textarea_field($request->get_param('details')),
+                ];
+                $draft_result = $ai_service->generate($action, $draft_payload);
+                if (is_wp_error($draft_result)) {
+                    return $draft_result;
+                }
+
                 return new WP_REST_Response([
                     'success'  => true,
                     'action'   => $action,
-                    'data'     => [
-                        'template' => __('Mock draft template response.', 'kerbcycle'),
-                    ],
+                    'data'     => $draft_result['output'],
+                    'meta'     => $this->build_ai_meta($draft_result),
                 ], 200);
             default:
                 return new \WP_Error('kerbcycle_ai_action_invalid', __('Invalid action parameter.', 'kerbcycle'), ['status' => 400]);
@@ -341,5 +370,19 @@ class AiController
 
         $found = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
         return $found === $table_name;
+    }
+
+    /**
+     * @param array<string,mixed> $result
+     *
+     * @return array<string,mixed>
+     */
+    private function build_ai_meta(array $result)
+    {
+        return [
+            'provider'   => isset($result['provider']) ? $result['provider'] : 'unknown',
+            'model'      => isset($result['model']) ? $result['model'] : '',
+            'latency_ms' => isset($result['latency_ms']) ? (int) $result['latency_ms'] : 0,
+        ];
     }
 }
