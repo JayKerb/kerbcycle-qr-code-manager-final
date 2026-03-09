@@ -222,3 +222,17 @@
   gap: 20px;
   margin: 10px 0;
 }
+
+
+#kerbcycle-ai-panel {
+  margin: 16px 0;
+  max-width: 900px;
+}
+
+#kerbcycle-ai-panel .inside {
+  padding-top: 12px;
+}
+
+#kerbcycle-ai-result ul {
+  margin: 8px 0 0 18px;
+}

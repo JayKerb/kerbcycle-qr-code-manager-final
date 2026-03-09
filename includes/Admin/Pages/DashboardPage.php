@@ -109,6 +109,18 @@ class DashboardPage
                     ?>
                 <?php endif; ?>
                 <div id="scan-result" class="updated"></div>
+                <div id="kerbcycle-ai-panel" class="postbox">
+                    <h2 class="hndle"><?php esc_html_e('AI Assistant (Beta)', 'kerbcycle'); ?></h2>
+                    <div class="inside">
+                        <div class="qr-select-group">
+                            <input type="date" id="kerbcycle-ai-from-date" />
+                            <button id="kerbcycle-ai-qr-exceptions-btn" class="button"><?php esc_html_e('AI: QR Exceptions', 'kerbcycle'); ?></button>
+                            <button id="kerbcycle-ai-draft-template-btn" class="button"><?php esc_html_e('AI: Draft Template', 'kerbcycle'); ?></button>
+                        </div>
+                        <p id="kerbcycle-ai-status" class="description" aria-live="polite"></p>
+                        <div id="kerbcycle-ai-result" class="notice inline" style="display:none;"></div>
+                    </div>
+                </div>
                 <h2><?php esc_html_e('Manual QR Code Tasks', 'kerbcycle'); ?></h2>
                 <div id="qr-task-options">
                     <label><input type="checkbox" id="send-email" <?php checked($email_enabled); ?> <?php disabled(!$email_enabled); ?>> <?php esc_html_e('Send notification email', 'kerbcycle'); ?></label>
