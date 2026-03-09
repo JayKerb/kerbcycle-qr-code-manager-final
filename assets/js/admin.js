@@ -624,6 +624,137 @@ function initKerbcycleAdmin() {
   });
   updateSortIndicators();
 
+  const aiFromDate = document.getElementById("kerbcycle-ai-from-date");
+  const aiQrExceptionsBtn = document.getElementById(
+    "kerbcycle-ai-qr-exceptions-btn",
+  );
+  const aiDraftTemplateBtn = document.getElementById(
+    "kerbcycle-ai-draft-template-btn",
+  );
+  const aiStatus = document.getElementById("kerbcycle-ai-status");
+  const aiResult = document.getElementById("kerbcycle-ai-result");
+
+  function renderAiList(items) {
+    if (!Array.isArray(items) || !items.length) {
+      return "";
+    }
+    const lis = items
+      .slice(0, 5)
+      .map((item) => `<li>${escapeHtml(String(item))}</li>`)
+      .join("");
+    return `<ul>${lis}</ul>`;
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll("\"", "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function setAiResult(html, statusClass = "notice-info") {
+    if (!aiResult) {
+      return;
+    }
+    aiResult.className = `notice inline ${statusClass}`;
+    aiResult.innerHTML = html;
+    aiResult.style.display = "block";
+  }
+
+  function callAiAction(action) {
+    if (!kerbcycle_ajax.rest_url || !kerbcycle_ajax.rest_nonce) {
+      setAiResult("<p>AI endpoint is not configured in admin assets.</p>", "notice-error");
+      return;
+    }
+
+    const fromDate = aiFromDate ? aiFromDate.value : "";
+    const body = { action };
+    if (fromDate) {
+      body.from_date = fromDate;
+      body.to_date = new Date().toISOString().slice(0, 10);
+    }
+
+    if (aiStatus) {
+      aiStatus.textContent = "Loading AI response...";
+    }
+
+    setAiResult("<p>Loading...</p>", "notice-info");
+
+    return fetch(kerbcycle_ajax.rest_url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-WP-Nonce": kerbcycle_ajax.rest_nonce,
+      },
+      body: JSON.stringify(body),
+    })
+      .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+      .then(({ ok, data }) => {
+        if (!ok || !data || data.success !== true) {
+          const message =
+            (data && data.message) ||
+            (data && data.code) ||
+            "Unable to load AI response.";
+          throw new Error(message);
+        }
+
+        if (action === "qr_exceptions") {
+          const aiData = data.data || {};
+          const priorities = Array.isArray(aiData.priority_exceptions)
+            ? aiData.priority_exceptions
+                .slice(0, 5)
+                .map(
+                  (item) =>
+                    `${item.type || "Issue"}: ${item.count || 0} (${item.reason || "No reason provided"})`,
+                )
+            : [];
+          const totalExceptions = Array.isArray(data.source?.groups)
+            ? data.source.groups.reduce((sum, group) => sum + (group.count || 0), 0)
+            : 0;
+
+          setAiResult(
+            `<p><strong>Summary:</strong> ${escapeHtml(aiData.overview || "No summary returned.")}</p>` +
+              `<p><strong>Total exceptions scanned:</strong> ${escapeHtml(totalExceptions)}</p>` +
+              `<p><strong>Top issues:</strong></p>${renderAiList(priorities)}`,
+            "notice-success",
+          );
+        } else {
+          const aiData = data.data || {};
+          setAiResult(
+            `<p><strong>Title:</strong> ${escapeHtml(aiData.title || "Untitled")}</p>` +
+              `<p><strong>Audience:</strong> ${escapeHtml(aiData.audience || "General")}</p>` +
+              `<p><strong>Draft:</strong> ${escapeHtml(aiData.message || "No draft returned.")}</p>`,
+            "notice-success",
+          );
+        }
+
+        if (aiStatus) {
+          aiStatus.textContent = "AI response loaded.";
+        }
+      })
+      .catch((error) => {
+        console.error("AI request failed:", error);
+        setAiResult(`<p>${escapeHtml(error.message || "AI request failed.")}</p>`, "notice-error");
+        if (aiStatus) {
+          aiStatus.textContent = "AI request failed.";
+        }
+      });
+  }
+
+  if (aiQrExceptionsBtn) {
+    aiQrExceptionsBtn.addEventListener("click", function () {
+      callAiAction("qr_exceptions");
+    });
+  }
+
+  if (aiDraftTemplateBtn) {
+    aiDraftTemplateBtn.addEventListener("click", function () {
+      callAiAction("draft_template");
+    });
+  }
+
   if (userField && assignedSelect) {
     userField.addEventListener("change", function () {
       const userId = userField.value;

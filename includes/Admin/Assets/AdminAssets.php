@@ -86,6 +86,8 @@ class AdminAssets
         wp_localize_script('kerbcycle-qr-admin-js', 'kerbcycle_ajax', [
             'ajax_url'          => admin_url('admin-ajax.php'),
             'nonce'             => wp_create_nonce('kerbcycle_qr_nonce'),
+            'rest_url'          => rest_url('kerbcycle/v1/ai'),
+            'rest_nonce'        => wp_create_nonce('wp_rest'),
             'scanner_enabled'   => $scanner_enabled,
             'drag_drop_disabled' => $drag_drop_disabled,
         ]);
