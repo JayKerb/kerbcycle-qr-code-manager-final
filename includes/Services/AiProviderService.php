@@ -25,6 +25,10 @@ class AiProviderService
     {
         $provider = $this->get_provider();
 
+        if ($provider === 'render') {
+            return $this->call_render_endpoint($action, $payload);
+        }
+
         if ($provider !== 'ollama') {
             return new \WP_Error('kerbcycle_ai_provider_unsupported', __('Unsupported AI provider configured.', 'kerbcycle'), ['status' => 500]);
         }
@@ -127,6 +131,75 @@ class AiProviderService
             'model'    => $model,
             'latency_ms' => $elapsed_ms,
             'output'   => $parsed_output,
+        ];
+    }
+
+    /**
+     * @param string $action
+     * @param array<string,mixed> $payload
+     *
+     * @return array<string,mixed>|\WP_Error
+     */
+    private function call_render_endpoint($action, array $payload)
+    {
+        $endpoint = defined('KERBCYCLE_AI_RENDER_ENDPOINT') ? KERBCYCLE_AI_RENDER_ENDPOINT : get_option('kerbcycle_ai_render_endpoint', '');
+        $api_key  = defined('KERBCYCLE_AI_RENDER_API_KEY') ? KERBCYCLE_AI_RENDER_API_KEY : get_option('kerbcycle_ai_render_api_key', '');
+
+        $endpoint = is_string($endpoint) ? trim($endpoint) : '';
+        $api_key  = is_string($api_key) ? trim($api_key) : '';
+
+        if ($endpoint === '' || $api_key === '') {
+            return new \WP_Error('kerbcycle_ai_provider_misconfigured', __('AI provider configuration is incomplete.', 'kerbcycle'), ['status' => 500]);
+        }
+
+        $started = microtime(true);
+        $response = wp_remote_post($endpoint, [
+            'headers' => [
+                'Content-Type' => 'application/json',
+                'x-api-key'    => $api_key,
+            ],
+            'body'    => wp_json_encode([
+                'task' => $action,
+                'data' => $payload,
+            ]),
+            'timeout' => 20,
+        ]);
+        $elapsed_ms = (int) round((microtime(true) - $started) * 1000);
+
+        if (is_wp_error($response)) {
+            ErrorLogRepository::log([
+                'type'    => 'ai_provider',
+                'message' => sprintf('AI request failed (%s): %s', $action, $response->get_error_message()),
+                'page'    => 'api-ai',
+                'status'  => 'failure',
+            ]);
+
+            return new \WP_Error('kerbcycle_ai_provider_unreachable', __('AI provider is unreachable.', 'kerbcycle'), ['status' => 502]);
+        }
+
+        $status_code = (int) wp_remote_retrieve_response_code($response);
+        $body        = (string) wp_remote_retrieve_body($response);
+
+        if ($status_code < 200 || $status_code >= 300) {
+            ErrorLogRepository::log([
+                'type'    => 'ai_provider',
+                'message' => sprintf('AI provider HTTP %d (%s).', $status_code, $action),
+                'page'    => 'api-ai',
+                'status'  => 'failure',
+            ]);
+
+            return new \WP_Error('kerbcycle_ai_provider_http_error', __('AI provider returned an unexpected response.', 'kerbcycle'), ['status' => 502]);
+        }
+
+        $decoded = json_decode($body, true);
+        if (!is_array($decoded) || !isset($decoded['result']) || !is_array($decoded['result'])) {
+            return new \WP_Error('kerbcycle_ai_provider_invalid_response', __('AI provider response could not be parsed.', 'kerbcycle'), ['status' => 502]);
+        }
+
+        return [
+            'provider'   => 'render',
+            'latency_ms' => $elapsed_ms,
+            'output'     => $decoded['result'],
         ];
     }
 
