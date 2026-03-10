@@ -35,6 +35,14 @@ class Admin
      */
     public function register_admin_menu()
     {
+        add_management_page(
+            'KerbCycle AI Test',
+            'KerbCycle AI Test',
+            'manage_options',
+            'kerbcycle-ai-test',
+            [$this, 'render_ai_test_page']
+        );
+
         add_menu_page(
             'QR Code Manager',
             'QR Codes',
@@ -161,6 +169,56 @@ class Admin
             'kerbcycle-plugin-integrations',
             [new Pages\IntegrationsPage(), 'render']
         );
+    }
+
+    /**
+     * Render a minimal Tools page to test the AI endpoint.
+     */
+    public function render_ai_test_page()
+    {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        $customer_name = '';
+        $result        = null;
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            check_admin_referer('kerbcycle_ai_test_action', 'kerbcycle_ai_test_nonce');
+
+            $customer_name = isset($_POST['customer_name']) ? sanitize_text_field(wp_unslash($_POST['customer_name'])) : '';
+
+            $result = \kc_call_ai_endpoint(
+                'draft_sms',
+                array(
+                    'customer_name' => $customer_name,
+                )
+            );
+        }
+        ?>
+        <div class="wrap">
+            <h1><?php echo esc_html__('KerbCycle AI Test', 'kerbcycle'); ?></h1>
+            <form method="post">
+                <?php wp_nonce_field('kerbcycle_ai_test_action', 'kerbcycle_ai_test_nonce'); ?>
+                <table class="form-table" role="presentation">
+                    <tr>
+                        <th scope="row">
+                            <label for="customer_name"><?php echo esc_html__('Customer Name', 'kerbcycle'); ?></label>
+                        </th>
+                        <td>
+                            <input type="text" id="customer_name" name="customer_name" class="regular-text" value="<?php echo esc_attr($customer_name); ?>" />
+                        </td>
+                    </tr>
+                </table>
+                <?php submit_button(__('Test AI Endpoint', 'kerbcycle')); ?>
+            </form>
+
+            <?php if (null !== $result) : ?>
+                <h2><?php echo esc_html__('Response', 'kerbcycle'); ?></h2>
+                <pre><?php echo esc_html(wp_json_encode($result, JSON_PRETTY_PRINT)); ?></pre>
+            <?php endif; ?>
+        </div>
+        <?php
     }
 
     /**
