@@ -144,6 +144,7 @@ class AiProviderService
     {
         $endpoint = $this->get_render_endpoint();
         $api_key  = $this->get_render_api_key();
+        $model    = $this->get_render_model();
 
         if ($endpoint === '' || $api_key === '') {
             return new \WP_Error('kerbcycle_ai_provider_misconfigured', __('AI provider configuration is incomplete.', 'kerbcycle'), ['status' => 500]);
@@ -189,15 +190,59 @@ class AiProviderService
         }
 
         $decoded = json_decode($body, true);
-        if (!is_array($decoded) || !isset($decoded['result']) || !is_array($decoded['result'])) {
+        if (!is_array($decoded)) {
             return new \WP_Error('kerbcycle_ai_provider_invalid_response', __('AI provider response could not be parsed.', 'kerbcycle'), ['status' => 502]);
+        }
+
+        $raw_output = null;
+        foreach (['result', 'output', 'response', 'data'] as $candidate_key) {
+            if (array_key_exists($candidate_key, $decoded)) {
+                $raw_output = $decoded[$candidate_key];
+                break;
+            }
+        }
+
+        if ($raw_output === null) {
+            $raw_output = $decoded;
+        }
+
+        if (is_string($raw_output)) {
+            $raw_output = json_decode(trim($raw_output), true);
+        }
+
+        if (!is_array($raw_output)) {
+            ErrorLogRepository::log([
+                'type'    => 'ai_provider',
+                'message' => sprintf('AI returned non-JSON output (%s).', $action),
+                'page'    => 'api-ai',
+                'status'  => 'failure',
+            ]);
+
+            return new \WP_Error('kerbcycle_ai_output_invalid_json', __('AI output was not valid JSON.', 'kerbcycle'), ['status' => 422]);
         }
 
         return [
             'provider'   => 'render',
+            'model'      => $model,
             'latency_ms' => $elapsed_ms,
-            'output'     => $decoded['result'],
+            'output'     => $raw_output,
         ];
+    }
+
+    /**
+     * @return string|null
+     */
+    private function get_render_model()
+    {
+        $model = defined('KERBCYCLE_AI_RENDER_MODEL') ? KERBCYCLE_AI_RENDER_MODEL : get_option('kerbcycle_ai_render_model', '');
+
+        if (!is_string($model)) {
+            return null;
+        }
+
+        $model = trim($model);
+
+        return $model !== '' ? $model : null;
     }
 
     /**
