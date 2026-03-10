@@ -142,11 +142,8 @@ class AiProviderService
      */
     private function call_render_endpoint($action, array $payload)
     {
-        $endpoint = defined('KERBCYCLE_AI_RENDER_ENDPOINT') ? KERBCYCLE_AI_RENDER_ENDPOINT : get_option('kerbcycle_ai_render_endpoint', '');
-        $api_key  = defined('KERBCYCLE_AI_RENDER_API_KEY') ? KERBCYCLE_AI_RENDER_API_KEY : get_option('kerbcycle_ai_render_api_key', '');
-
-        $endpoint = is_string($endpoint) ? trim($endpoint) : '';
-        $api_key  = is_string($api_key) ? trim($api_key) : '';
+        $endpoint = $this->get_render_endpoint();
+        $api_key  = $this->get_render_api_key();
 
         if ($endpoint === '' || $api_key === '') {
             return new \WP_Error('kerbcycle_ai_provider_misconfigured', __('AI provider configuration is incomplete.', 'kerbcycle'), ['status' => 500]);
@@ -201,6 +198,26 @@ class AiProviderService
             'latency_ms' => $elapsed_ms,
             'output'     => $decoded['result'],
         ];
+    }
+
+    /**
+     * @return string
+     */
+    private function get_render_endpoint()
+    {
+        $endpoint = defined('KERBCYCLE_AI_RENDER_URL') ? KERBCYCLE_AI_RENDER_URL : get_option('kerbcycle_ai_render_endpoint', '');
+
+        return is_string($endpoint) ? trim($endpoint) : '';
+    }
+
+    /**
+     * @return string
+     */
+    private function get_render_api_key()
+    {
+        $api_key = defined('KERBCYCLE_AI_RENDER_API_KEY') ? KERBCYCLE_AI_RENDER_API_KEY : get_option('kerbcycle_ai_render_api_key', '');
+
+        return is_string($api_key) ? trim($api_key) : '';
     }
 
     /**
