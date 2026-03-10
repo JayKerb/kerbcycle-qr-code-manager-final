@@ -25,26 +25,31 @@ class AiProviderService
     {
         $provider = $this->get_provider();
 
-        if ($provider === 'render') {
-            return $this->call_render_endpoint($action, $payload);
+        if (is_wp_error($provider)) {
+            return $provider;
         }
 
-        if ($provider !== 'ollama') {
-            return new \WP_Error('kerbcycle_ai_provider_unsupported', __('Unsupported AI provider configured.', 'kerbcycle'), ['status' => 500]);
+        if ($provider === 'render') {
+            return $this->call_render_endpoint($action, $payload);
         }
 
         return $this->call_ollama($action, $payload);
     }
 
     /**
-     * @return string
+     * @return string|\WP_Error
      */
     private function get_provider()
     {
         $provider = defined('KERBCYCLE_AI_PROVIDER') ? KERBCYCLE_AI_PROVIDER : get_option('kerbcycle_ai_provider', 'ollama');
         $provider = is_string($provider) ? strtolower(trim($provider)) : 'ollama';
+        $provider = $provider !== '' ? $provider : 'ollama';
 
-        return $provider !== '' ? $provider : 'ollama';
+        if (!in_array($provider, ['ollama', 'render'], true)) {
+            return new \WP_Error('kerbcycle_ai_provider_unsupported', __('Unsupported AI provider configured.', 'kerbcycle'), ['status' => 500]);
+        }
+
+        return $provider;
     }
 
     /**
