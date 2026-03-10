@@ -90,12 +90,7 @@ class AiProviderService
         $elapsed_ms = (int) round((microtime(true) - $started) * 1000);
 
         if (is_wp_error($response)) {
-            ErrorLogRepository::log([
-                'type'    => 'ai_provider',
-                'message' => sprintf('AI request failed (%s): %s', $action, $response->get_error_message()),
-                'page'    => 'api-ai',
-                'status'  => 'failure',
-            ]);
+            $this->log_provider_event('ollama', $action, $elapsed_ms, 'failure', $response->get_error_message());
 
             return new \WP_Error('kerbcycle_ai_provider_unreachable', __('AI provider is unreachable.', 'kerbcycle'), ['status' => 502]);
         }
@@ -104,12 +99,7 @@ class AiProviderService
         $body        = (string) wp_remote_retrieve_body($response);
 
         if ($status_code < 200 || $status_code >= 300) {
-            ErrorLogRepository::log([
-                'type'    => 'ai_provider',
-                'message' => sprintf('AI provider HTTP %d (%s).', $status_code, $action),
-                'page'    => 'api-ai',
-                'status'  => 'failure',
-            ]);
+            $this->log_provider_event('ollama', $action, $elapsed_ms, 'failure', sprintf('http_status=%d', $status_code));
 
             return new \WP_Error('kerbcycle_ai_provider_http_error', __('AI provider returned an unexpected response.', 'kerbcycle'), ['status' => 502]);
         }
@@ -121,15 +111,12 @@ class AiProviderService
 
         $parsed_output = json_decode(trim($decoded['response']), true);
         if (!is_array($parsed_output)) {
-            ErrorLogRepository::log([
-                'type'    => 'ai_provider',
-                'message' => sprintf('AI returned non-JSON output (%s).', $action),
-                'page'    => 'api-ai',
-                'status'  => 'failure',
-            ]);
+            $this->log_provider_event('ollama', $action, $elapsed_ms, 'failure', 'invalid_json_output');
 
             return new \WP_Error('kerbcycle_ai_output_invalid_json', __('AI output was not valid JSON.', 'kerbcycle'), ['status' => 422]);
         }
+
+        $this->log_provider_event('ollama', $action, $elapsed_ms, 'success');
 
         return [
             'provider' => 'ollama',
@@ -170,12 +157,7 @@ class AiProviderService
         $elapsed_ms = (int) round((microtime(true) - $started) * 1000);
 
         if (is_wp_error($response)) {
-            ErrorLogRepository::log([
-                'type'    => 'ai_provider',
-                'message' => sprintf('AI request failed (%s): %s', $action, $response->get_error_message()),
-                'page'    => 'api-ai',
-                'status'  => 'failure',
-            ]);
+            $this->log_provider_event('render', $action, $elapsed_ms, 'failure', $response->get_error_message());
 
             return new \WP_Error('kerbcycle_ai_provider_unreachable', __('AI provider is unreachable.', 'kerbcycle'), ['status' => 502]);
         }
@@ -184,12 +166,7 @@ class AiProviderService
         $body        = (string) wp_remote_retrieve_body($response);
 
         if ($status_code < 200 || $status_code >= 300) {
-            ErrorLogRepository::log([
-                'type'    => 'ai_provider',
-                'message' => sprintf('AI provider HTTP %d (%s).', $status_code, $action),
-                'page'    => 'api-ai',
-                'status'  => 'failure',
-            ]);
+            $this->log_provider_event('render', $action, $elapsed_ms, 'failure', sprintf('http_status=%d', $status_code));
 
             return new \WP_Error('kerbcycle_ai_provider_http_error', __('AI provider returned an unexpected response.', 'kerbcycle'), ['status' => 502]);
         }
@@ -216,15 +193,12 @@ class AiProviderService
         }
 
         if (!is_array($raw_output)) {
-            ErrorLogRepository::log([
-                'type'    => 'ai_provider',
-                'message' => sprintf('AI returned non-JSON output (%s).', $action),
-                'page'    => 'api-ai',
-                'status'  => 'failure',
-            ]);
+            $this->log_provider_event('render', $action, $elapsed_ms, 'failure', 'invalid_json_output');
 
             return new \WP_Error('kerbcycle_ai_output_invalid_json', __('AI output was not valid JSON.', 'kerbcycle'), ['status' => 422]);
         }
+
+        $this->log_provider_event('render', $action, $elapsed_ms, 'success');
 
         return [
             'provider'   => 'render',
@@ -268,6 +242,37 @@ class AiProviderService
         $api_key = defined('KERBCYCLE_AI_RENDER_API_KEY') ? KERBCYCLE_AI_RENDER_API_KEY : get_option('kerbcycle_ai_render_api_key', '');
 
         return is_string($api_key) ? trim($api_key) : '';
+    }
+
+    /**
+     * @param string $provider
+     * @param string $action
+     * @param int    $latency_ms
+     * @param string $status
+     * @param string $detail
+     *
+     * @return void
+     */
+    private function log_provider_event($provider, $action, $latency_ms, $status, $detail = '')
+    {
+        $message = sprintf(
+            'AI provider request provider=%s action=%s latency_ms=%d status=%s',
+            $provider,
+            $action,
+            $latency_ms,
+            $status
+        );
+
+        if ($detail !== '') {
+            $message .= sprintf(' detail=%s', $detail);
+        }
+
+        ErrorLogRepository::log([
+            'type'    => 'ai_provider',
+            'message' => $message,
+            'page'    => 'api-ai',
+            'status'  => $status,
+        ]);
     }
 
     /**
