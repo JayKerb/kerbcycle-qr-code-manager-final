@@ -153,6 +153,16 @@ class Admin
             [$routing, 'render']
         );
 
+        $ai_settings = Pages\AiSettingsPage::instance();
+        add_submenu_page(
+            'kerbcycle-qr-manager',
+            'AI Settings',
+            'AI Settings',
+            'manage_options',
+            'kerbcycle-ai-settings',
+            [$ai_settings, 'render']
+        );
+
         add_submenu_page(
             'kerbcycle-qr-manager',
             'Plugin Integrations',
