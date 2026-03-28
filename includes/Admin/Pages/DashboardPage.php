@@ -119,6 +119,14 @@ class DashboardPage
                         </div>
                         <p id="kerbcycle-ai-status" class="description" aria-live="polite"></p>
                         <div id="kerbcycle-ai-result" class="notice inline" style="display:none;"></div>
+                        <?php // TEMPORARY ADMIN TEST HOOK FOR AI / n8n INTEGRATION ?>
+                        <div class="kerbcycle-ai-test">
+                            <h3><?php esc_html_e('AI Test (Temporary)', 'kerbcycle'); ?></h3>
+                            <button id="kerbcycle-test-pickup-exception" class="button button-primary">
+                                <?php esc_html_e('Test Pickup Exception → n8n', 'kerbcycle'); ?>
+                            </button>
+                            <pre id="kerbcycle-ai-test-result" style="margin-top:10px;"></pre>
+                        </div>
                     </div>
                 </div>
                 <h2><?php esc_html_e('Manual QR Code Tasks', 'kerbcycle'); ?></h2>
