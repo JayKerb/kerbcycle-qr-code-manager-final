@@ -633,6 +633,12 @@ function initKerbcycleAdmin() {
   );
   const aiStatus = document.getElementById("kerbcycle-ai-status");
   const aiResult = document.getElementById("kerbcycle-ai-result");
+  const pickupExceptionTestBtn = document.getElementById(
+    "kerbcycle-test-pickup-exception",
+  );
+  const pickupExceptionTestResult = document.getElementById(
+    "kerbcycle-ai-test-result",
+  );
 
   function renderAiList(items) {
     if (!Array.isArray(items) || !items.length) {
@@ -752,6 +758,51 @@ function initKerbcycleAdmin() {
   if (aiDraftTemplateBtn) {
     aiDraftTemplateBtn.addEventListener("click", function () {
       callAiAction("draft_template");
+    });
+  }
+
+  if (pickupExceptionTestBtn) {
+    pickupExceptionTestBtn.addEventListener("click", function () {
+      const originalText = pickupExceptionTestBtn.textContent;
+      pickupExceptionTestBtn.disabled = true;
+      pickupExceptionTestBtn.textContent = "Testing...";
+      if (pickupExceptionTestResult) {
+        pickupExceptionTestResult.textContent = "Loading AI webhook response...";
+      }
+
+      const params = new URLSearchParams();
+      params.append("action", "kerbcycle_test_pickup_exception");
+      params.append("security", kerbcycle_ajax.nonce);
+
+      fetch(kerbcycle_ajax.ajax_url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        },
+        body: params.toString(),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (pickupExceptionTestResult) {
+            pickupExceptionTestResult.textContent = JSON.stringify(data, null, 2);
+          }
+        })
+        .catch((error) => {
+          if (pickupExceptionTestResult) {
+            pickupExceptionTestResult.textContent = JSON.stringify(
+              {
+                success: false,
+                message: error.message || "Request failed.",
+              },
+              null,
+              2,
+            );
+          }
+        })
+        .finally(() => {
+          pickupExceptionTestBtn.disabled = false;
+          pickupExceptionTestBtn.textContent = originalText;
+        });
     });
   }
 

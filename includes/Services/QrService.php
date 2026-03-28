@@ -141,6 +141,11 @@ class QrService
         ];
     }
 
+    public function send_pickup_exception_to_n8n(array $data)
+    {
+        return $this->send_pickup_exception_webhook($data);
+    }
+
     private function send_pickup_exception_webhook(array $data)
     {
         $webhook_url = defined('KERBCYCLE_PICKUP_EXCEPTION_WEBHOOK_URL')
@@ -149,7 +154,7 @@ class QrService
 
         $webhook_url = is_string($webhook_url) ? trim($webhook_url) : '';
         if ($webhook_url === '') {
-            return;
+            return new \WP_Error('pickup_exception_webhook_missing', __('Pickup exception webhook URL is not configured.', 'kerbcycle'));
         }
 
         $payload = [
@@ -172,13 +177,27 @@ class QrService
 
         if (is_wp_error($response)) {
             error_log('KerbCycle pickup_exception webhook WP_Error: ' . $response->get_error_message());
-            return;
+            return $response;
         }
 
         $status_code = (int) wp_remote_retrieve_response_code($response);
         if ($status_code < 200 || $status_code >= 300) {
-            error_log('KerbCycle pickup_exception webhook HTTP ' . $status_code . ' Body: ' . wp_remote_retrieve_body($response));
+            $body = wp_remote_retrieve_body($response);
+            error_log('KerbCycle pickup_exception webhook HTTP ' . $status_code . ' Body: ' . $body);
+            return [
+                'success'     => false,
+                'status_code' => $status_code,
+                'body'        => $body,
+                'payload'     => $payload,
+            ];
         }
+
+        return [
+            'success'     => true,
+            'status_code' => $status_code,
+            'body'        => wp_remote_retrieve_body($response),
+            'payload'     => $payload,
+        ];
     }
 
     public function bulk_release(array $codes)

@@ -43,6 +43,7 @@ class AdminAjax
         add_action('wp_ajax_kerbcycle_paginate_qr_codes', [$this, 'paginate_qr_codes']);
         add_action('wp_ajax_kerbcycle_qr_report_data', [$this, 'ajax_report_data']);
         add_action('wp_ajax_kerbcycle_delete_logs', [$this, 'delete_logs']);
+        add_action('wp_ajax_kerbcycle_test_pickup_exception', [$this, 'test_pickup_exception']);
     }
 
     public function assign_qr_code()
@@ -396,5 +397,35 @@ class AdminAjax
         $deleted = $repo->delete_by_ids($ids);
 
         wp_send_json_success(['deleted' => (int) $deleted]);
+    }
+
+    public function test_pickup_exception()
+    {
+        // TEMPORARY ADMIN TEST HOOK FOR AI / n8n INTEGRATION
+        Nonces::verify('kerbcycle_qr_nonce', 'security');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
+        }
+
+        $result = $this->qr_service->send_pickup_exception_to_n8n([
+            'qr_code'     => 'KC-TEST-1001',
+            'customer_id' => get_current_user_id(),
+            'issue'       => 'bag damaged',
+            'notes'       => 'admin test trigger',
+            'timestamp'   => gmdate('c'),
+        ]);
+
+        if (is_wp_error($result)) {
+            wp_send_json_error([
+                'message' => $result->get_error_message(),
+                'code'    => $result->get_error_code(),
+            ]);
+        }
+
+        if (!empty($result['success'])) {
+            wp_send_json_success($result);
+        }
+
+        wp_send_json_error($result);
     }
 }
