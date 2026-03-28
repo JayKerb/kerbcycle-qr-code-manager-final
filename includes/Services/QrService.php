@@ -115,6 +115,15 @@ class QrService
             return new \WP_Error('db_error', 'Failed to release QR code in database.');
         }
 
+        // Non-blocking webhook call: local DB release remains the source of truth.
+        $this->send_pickup_exception_webhook([
+            'qr_code'     => $qr_code,
+            'customer_id' => isset($row->user_id) ? (int) $row->user_id : 0,
+            'issue'       => '',
+            'notes'       => '',
+            'timestamp'   => '',
+        ]);
+
         $sms_result   = null;
         $email_result = null;
         if ($row->user_id) {
@@ -130,6 +139,46 @@ class QrService
             'sms_result'   => $sms_result,
             'email_result' => $email_result,
         ];
+    }
+
+    private function send_pickup_exception_webhook(array $data)
+    {
+        $webhook_url = defined('KERBCYCLE_PICKUP_EXCEPTION_WEBHOOK_URL')
+            ? KERBCYCLE_PICKUP_EXCEPTION_WEBHOOK_URL
+            : get_option('kerbcycle_pickup_exception_webhook_url', '');
+
+        $webhook_url = is_string($webhook_url) ? trim($webhook_url) : '';
+        if ($webhook_url === '') {
+            return;
+        }
+
+        $payload = [
+            'event'       => 'pickup_exception',
+            'qr_code'     => isset($data['qr_code']) ? (string) $data['qr_code'] : '',
+            'customer_id' => isset($data['customer_id']) ? (int) $data['customer_id'] : 0,
+            'issue'       => isset($data['issue']) ? (string) $data['issue'] : '',
+            'notes'       => isset($data['notes']) ? (string) $data['notes'] : '',
+            'timestamp'   => !empty($data['timestamp']) ? (string) $data['timestamp'] : gmdate('c'),
+        ];
+
+        $response = wp_remote_post($webhook_url, [
+            'method'  => 'POST',
+            'timeout' => 20,
+            'headers' => [
+                'Content-Type' => 'application/json',
+            ],
+            'body'    => wp_json_encode($payload),
+        ]);
+
+        if (is_wp_error($response)) {
+            error_log('KerbCycle pickup_exception webhook WP_Error: ' . $response->get_error_message());
+            return;
+        }
+
+        $status_code = (int) wp_remote_retrieve_response_code($response);
+        if ($status_code < 200 || $status_code >= 300) {
+            error_log('KerbCycle pickup_exception webhook HTTP ' . $status_code . ' Body: ' . wp_remote_retrieve_body($response));
+        }
     }
 
     public function bulk_release(array $codes)
