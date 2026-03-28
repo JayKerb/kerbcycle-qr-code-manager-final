@@ -148,9 +148,16 @@ class QrService
 
     private function send_pickup_exception_webhook(array $data)
     {
-        $webhook_url = defined('KERBCYCLE_PICKUP_EXCEPTION_WEBHOOK_URL')
-            ? KERBCYCLE_PICKUP_EXCEPTION_WEBHOOK_URL
-            : get_option('kerbcycle_pickup_exception_webhook_url', '');
+        $options = AiSettingsService::get_options();
+        $webhook_url = AiSettingsService::current_webhook_url($options);
+
+        if ($webhook_url === '' && defined('KERBCYCLE_PICKUP_EXCEPTION_WEBHOOK_URL')) {
+            $webhook_url = KERBCYCLE_PICKUP_EXCEPTION_WEBHOOK_URL;
+        }
+
+        if ($webhook_url === '') {
+            $webhook_url = get_option('kerbcycle_pickup_exception_webhook_url', '');
+        }
 
         $webhook_url = is_string($webhook_url) ? trim($webhook_url) : '';
         if ($webhook_url === '') {
@@ -168,7 +175,7 @@ class QrService
 
         $response = wp_remote_post($webhook_url, [
             'method'  => 'POST',
-            'timeout' => 20,
+            'timeout' => AiSettingsService::current_timeout($options),
             'headers' => [
                 'Content-Type' => 'application/json',
             ],
