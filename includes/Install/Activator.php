@@ -115,5 +115,31 @@ class Activator
         ) $charset_collate;";
 
         dbDelta($sql);
+
+        // Create pickup exceptions table
+        $pickup_exceptions_table = $wpdb->prefix . 'kerbcycle_pickup_exceptions';
+        $sql = "CREATE TABLE $pickup_exceptions_table (
+            id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            qr_code VARCHAR(255) DEFAULT '',
+            customer_id BIGINT(20) UNSIGNED DEFAULT 0,
+            issue VARCHAR(255) NOT NULL,
+            notes LONGTEXT,
+            submitted_at VARCHAR(50) NOT NULL,
+            webhook_sent TINYINT(1) NOT NULL DEFAULT 0,
+            webhook_status_code INT DEFAULT NULL,
+            webhook_response_body LONGTEXT,
+            ai_severity VARCHAR(100) DEFAULT '',
+            ai_category VARCHAR(100) DEFAULT '',
+            ai_summary LONGTEXT,
+            ai_recommended_action LONGTEXT,
+            created_at DATETIME NOT NULL,
+            updated_at DATETIME NOT NULL,
+            PRIMARY KEY  (id),
+            KEY created_at_idx (created_at),
+            KEY submitted_at_idx (submitted_at),
+            KEY webhook_sent_idx (webhook_sent)
+        ) $charset_collate;";
+
+        dbDelta($sql);
     }
 }
