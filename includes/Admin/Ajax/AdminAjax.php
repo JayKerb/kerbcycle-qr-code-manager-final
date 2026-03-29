@@ -11,7 +11,6 @@ use Kerbcycle\QrCode\Services\QrService;
 use Kerbcycle\QrCode\Helpers\Nonces;
 use Kerbcycle\QrCode\Data\Repositories\MessageLogRepository;
 use Kerbcycle\QrCode\Data\Repositories\ErrorLogRepository;
-use Kerbcycle\QrCode\Data\Repositories\PickupExceptionRepository;
 use Kerbcycle\QrCode\Admin\Pages\DashboardPage;
 
 /**
@@ -439,8 +438,10 @@ class AdminAjax
             'timestamp'   => $timestamp,
         ];
 
+        global $wpdb;
+        $pickup_exceptions_table = $wpdb->prefix . 'kerbcycle_pickup_exceptions';
         $now_utc_mysql = current_time('mysql', true);
-        $exception_id = PickupExceptionRepository::create([
+        $inserted = $wpdb->insert($pickup_exceptions_table, [
             'qr_code'      => $qr_code,
             'customer_id'  => $customer_id,
             'issue'        => $issue,
@@ -449,9 +450,20 @@ class AdminAjax
             'webhook_sent' => 0,
             'created_at'   => $now_utc_mysql,
             'updated_at'   => $now_utc_mysql,
+        ], [
+            '%s',
+            '%d',
+            '%s',
+            '%s',
+            '%s',
+            '%d',
+            '%s',
+            '%s',
         ]);
+        $exception_id = (int) $wpdb->insert_id;
 
-        if ($exception_id < 1) {
+        if ($inserted === false || $exception_id < 1) {
+            error_log('KerbCycle pickup exception DB insert failed: ' . $wpdb->last_error);
             wp_send_json_error(['message' => __('Failed to save pickup exception locally.', 'kerbcycle')], 500);
         }
 
@@ -472,7 +484,7 @@ class AdminAjax
         ]);
 
         if (is_wp_error($result)) {
-            PickupExceptionRepository::update_result($exception_id, [
+            $wpdb->update($pickup_exceptions_table, [
                 'webhook_sent'             => 0,
                 'webhook_status_code'      => 0,
                 'webhook_response_body'    => $result->get_error_message(),
@@ -481,6 +493,19 @@ class AdminAjax
                 'ai_summary'               => '',
                 'ai_recommended_action'    => '',
                 'updated_at'               => current_time('mysql', true),
+            ], [
+                'id' => $exception_id,
+            ], [
+                '%d',
+                '%d',
+                '%s',
+                '%s',
+                '%s',
+                '%s',
+                '%s',
+                '%s',
+            ], [
+                '%d',
             ]);
 
             // Webhook failures return partial success because local persistence already succeeded.
@@ -488,6 +513,7 @@ class AdminAjax
                 'status'      => 'partial_success',
                 'message'     => __('Pickup exception saved locally, but webhook delivery failed.', 'kerbcycle'),
                 'exception_id' => $exception_id,
+                'local_record_id' => $exception_id,
                 'local_save'  => ['success' => true, 'id' => $exception_id],
                 'webhook'     => [
                     'success' => false,
@@ -509,7 +535,7 @@ class AdminAjax
             $ai_severity = is_array($decoded_body) && isset($decoded_body['severity']) ? (string) $decoded_body['severity'] : '';
             $ai_recommended_action = is_array($decoded_body) && isset($decoded_body['recommended_action']) ? (string) $decoded_body['recommended_action'] : '';
 
-            PickupExceptionRepository::update_result($exception_id, [
+            $wpdb->update($pickup_exceptions_table, [
                 'webhook_sent'             => 1,
                 'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
                 'webhook_response_body'    => is_scalar($body) ? (string) $body : wp_json_encode($body),
@@ -518,12 +544,26 @@ class AdminAjax
                 'ai_summary'               => $ai_summary,
                 'ai_recommended_action'    => $ai_recommended_action,
                 'updated_at'               => current_time('mysql', true),
+            ], [
+                'id' => $exception_id,
+            ], [
+                '%d',
+                '%d',
+                '%s',
+                '%s',
+                '%s',
+                '%s',
+                '%s',
+                '%s',
+            ], [
+                '%d',
             ]);
 
             wp_send_json_success([
                 'status'      => 'success',
                 'message'     => __('Pickup exception saved locally and sent to webhook.', 'kerbcycle'),
                 'exception_id' => $exception_id,
+                'local_record_id' => $exception_id,
                 'local_save'  => ['success' => true, 'id' => $exception_id],
                 'webhook'     => $result,
                 'webhook_body' => $body,
@@ -535,7 +575,7 @@ class AdminAjax
         }
 
         $result_body = isset($result['body']) ? $result['body'] : '';
-        PickupExceptionRepository::update_result($exception_id, [
+        $wpdb->update($pickup_exceptions_table, [
             'webhook_sent'             => 0,
             'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
             'webhook_response_body'    => is_scalar($result_body) ? (string) $result_body : wp_json_encode($result_body),
@@ -544,12 +584,26 @@ class AdminAjax
             'ai_summary'               => '',
             'ai_recommended_action'    => '',
             'updated_at'               => current_time('mysql', true),
+        ], [
+            'id' => $exception_id,
+        ], [
+            '%d',
+            '%d',
+            '%s',
+            '%s',
+            '%s',
+            '%s',
+            '%s',
+            '%s',
+        ], [
+            '%d',
         ]);
 
         wp_send_json_success([
             'status'      => 'partial_success',
             'message'     => __('Pickup exception saved locally, but webhook delivery failed.', 'kerbcycle'),
             'exception_id' => $exception_id,
+            'local_record_id' => $exception_id,
             'local_save'  => ['success' => true, 'id' => $exception_id],
             'webhook'     => is_array($result) ? $result : ['success' => false],
             'webhook_body' => isset($result['body']) ? $result['body'] : '',
