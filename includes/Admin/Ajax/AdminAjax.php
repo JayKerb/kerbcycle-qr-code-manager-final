@@ -11,6 +11,7 @@ use Kerbcycle\QrCode\Services\QrService;
 use Kerbcycle\QrCode\Helpers\Nonces;
 use Kerbcycle\QrCode\Data\Repositories\MessageLogRepository;
 use Kerbcycle\QrCode\Data\Repositories\ErrorLogRepository;
+use Kerbcycle\QrCode\Data\Repositories\PickupExceptionRepository;
 use Kerbcycle\QrCode\Admin\Pages\DashboardPage;
 
 /**
@@ -438,6 +439,22 @@ class AdminAjax
             'timestamp'   => $timestamp,
         ];
 
+        $now_utc_mysql = current_time('mysql', true);
+        $exception_id = PickupExceptionRepository::create([
+            'qr_code'      => $qr_code,
+            'customer_id'  => $customer_id,
+            'issue'        => $issue,
+            'notes'        => $notes,
+            'submitted_at' => $timestamp,
+            'webhook_sent' => 0,
+            'created_at'   => $now_utc_mysql,
+            'updated_at'   => $now_utc_mysql,
+        ]);
+
+        if ($exception_id < 1) {
+            wp_send_json_error(['message' => __('Failed to save pickup exception locally.', 'kerbcycle')], 500);
+        }
+
         // Local save intentionally happens first; webhook delivery must not block local persistence.
         ErrorLogRepository::log([
             'type'    => 'pickup_exception',
@@ -455,16 +472,29 @@ class AdminAjax
         ]);
 
         if (is_wp_error($result)) {
+            PickupExceptionRepository::update_result($exception_id, [
+                'webhook_sent'             => 0,
+                'webhook_status_code'      => 0,
+                'webhook_response_body'    => $result->get_error_message(),
+                'ai_severity'              => '',
+                'ai_category'              => '',
+                'ai_summary'               => '',
+                'ai_recommended_action'    => '',
+                'updated_at'               => current_time('mysql', true),
+            ]);
+
             // Webhook failures return partial success because local persistence already succeeded.
             wp_send_json_success([
                 'status'      => 'partial_success',
                 'message'     => __('Pickup exception saved locally, but webhook delivery failed.', 'kerbcycle'),
-                'local_save'  => ['success' => true],
+                'exception_id' => $exception_id,
+                'local_save'  => ['success' => true, 'id' => $exception_id],
                 'webhook'     => [
                     'success' => false,
                     'message' => $result->get_error_message(),
                     'code'    => $result->get_error_code(),
                 ],
+                'ai_recommended_action' => '',
                 'ai_summary'  => '',
                 'ai_category' => '',
                 'ai_severity' => '',
@@ -474,24 +504,56 @@ class AdminAjax
         if (!empty($result['success'])) {
             $body = isset($result['body']) ? $result['body'] : '';
             $decoded_body = json_decode((string) $body, true);
+            $ai_summary = is_array($decoded_body) && isset($decoded_body['summary']) ? (string) $decoded_body['summary'] : '';
+            $ai_category = is_array($decoded_body) && isset($decoded_body['category']) ? (string) $decoded_body['category'] : '';
+            $ai_severity = is_array($decoded_body) && isset($decoded_body['severity']) ? (string) $decoded_body['severity'] : '';
+            $ai_recommended_action = is_array($decoded_body) && isset($decoded_body['recommended_action']) ? (string) $decoded_body['recommended_action'] : '';
+
+            PickupExceptionRepository::update_result($exception_id, [
+                'webhook_sent'             => 1,
+                'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
+                'webhook_response_body'    => is_scalar($body) ? (string) $body : wp_json_encode($body),
+                'ai_severity'              => $ai_severity,
+                'ai_category'              => $ai_category,
+                'ai_summary'               => $ai_summary,
+                'ai_recommended_action'    => $ai_recommended_action,
+                'updated_at'               => current_time('mysql', true),
+            ]);
+
             wp_send_json_success([
                 'status'      => 'success',
                 'message'     => __('Pickup exception saved locally and sent to webhook.', 'kerbcycle'),
-                'local_save'  => ['success' => true],
+                'exception_id' => $exception_id,
+                'local_save'  => ['success' => true, 'id' => $exception_id],
                 'webhook'     => $result,
                 'webhook_body' => $body,
-                'ai_summary'  => is_array($decoded_body) && isset($decoded_body['summary']) ? (string) $decoded_body['summary'] : '',
-                'ai_category' => is_array($decoded_body) && isset($decoded_body['category']) ? (string) $decoded_body['category'] : '',
-                'ai_severity' => is_array($decoded_body) && isset($decoded_body['severity']) ? (string) $decoded_body['severity'] : '',
+                'ai_recommended_action' => $ai_recommended_action,
+                'ai_summary'  => $ai_summary,
+                'ai_category' => $ai_category,
+                'ai_severity' => $ai_severity,
             ]);
         }
+
+        $result_body = isset($result['body']) ? $result['body'] : '';
+        PickupExceptionRepository::update_result($exception_id, [
+            'webhook_sent'             => 0,
+            'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
+            'webhook_response_body'    => is_scalar($result_body) ? (string) $result_body : wp_json_encode($result_body),
+            'ai_severity'              => '',
+            'ai_category'              => '',
+            'ai_summary'               => '',
+            'ai_recommended_action'    => '',
+            'updated_at'               => current_time('mysql', true),
+        ]);
 
         wp_send_json_success([
             'status'      => 'partial_success',
             'message'     => __('Pickup exception saved locally, but webhook delivery failed.', 'kerbcycle'),
-            'local_save'  => ['success' => true],
+            'exception_id' => $exception_id,
+            'local_save'  => ['success' => true, 'id' => $exception_id],
             'webhook'     => is_array($result) ? $result : ['success' => false],
             'webhook_body' => isset($result['body']) ? $result['body'] : '',
+            'ai_recommended_action' => '',
             'ai_summary'  => '',
             'ai_category' => '',
             'ai_severity' => '',
