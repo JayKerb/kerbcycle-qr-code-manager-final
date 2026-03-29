@@ -10,6 +10,7 @@ use Kerbcycle\QrCode\Services\ReportService;
 use Kerbcycle\QrCode\Services\QrService;
 use Kerbcycle\QrCode\Helpers\Nonces;
 use Kerbcycle\QrCode\Data\Repositories\MessageLogRepository;
+use Kerbcycle\QrCode\Data\Repositories\ErrorLogRepository;
 use Kerbcycle\QrCode\Admin\Pages\DashboardPage;
 
 /**
@@ -401,31 +402,99 @@ class AdminAjax
 
     public function test_pickup_exception()
     {
-        // TEMPORARY ADMIN TEST HOOK FOR AI / n8n INTEGRATION
         Nonces::verify('kerbcycle_qr_nonce', 'security');
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
 
+        $qr_code_raw = isset($_POST['qr_code']) ? wp_unslash($_POST['qr_code']) : '';
+        $customer_id_raw = isset($_POST['customer_id']) ? wp_unslash($_POST['customer_id']) : '';
+        $issue_raw = isset($_POST['issue']) ? wp_unslash($_POST['issue']) : '';
+        $notes_raw = isset($_POST['notes']) ? wp_unslash($_POST['notes']) : '';
+        $timestamp_raw = isset($_POST['timestamp']) ? wp_unslash($_POST['timestamp']) : '';
+
+        $qr_code = sanitize_text_field($qr_code_raw);
+        $customer_id = absint($customer_id_raw);
+        $issue = sanitize_text_field($issue_raw);
+        $notes = sanitize_textarea_field($notes_raw);
+        $timestamp = sanitize_text_field($timestamp_raw);
+        if ($timestamp === '') {
+            $timestamp = gmdate('c');
+        }
+
+        if ($issue === '') {
+            wp_send_json_error(['message' => __('Issue is required.', 'kerbcycle')], 400);
+        }
+
+        if ($qr_code === '' && $customer_id < 1) {
+            wp_send_json_error(['message' => __('Provide at least a QR Code or Customer ID.', 'kerbcycle')], 400);
+        }
+
+        $payload = [
+            'qr_code'     => $qr_code,
+            'customer_id' => $customer_id,
+            'issue'       => $issue,
+            'notes'       => $notes,
+            'timestamp'   => $timestamp,
+        ];
+
+        // Local save intentionally happens first; webhook delivery must not block local persistence.
+        ErrorLogRepository::log([
+            'type'    => 'pickup_exception',
+            'message' => wp_json_encode($payload),
+            'page'    => 'kerbcycle-qr-manager',
+            'status'  => 'saved',
+        ]);
+
         $result = $this->qr_service->send_pickup_exception_to_n8n([
-            'qr_code'     => 'KC-TEST-1001',
-            'customer_id' => get_current_user_id(),
-            'issue'       => 'bag damaged',
-            'notes'       => 'admin test trigger',
-            'timestamp'   => gmdate('c'),
+            'qr_code'     => $qr_code,
+            'customer_id' => $customer_id,
+            'issue'       => $issue,
+            'notes'       => $notes,
+            'timestamp'   => $timestamp,
         ]);
 
         if (is_wp_error($result)) {
-            wp_send_json_error([
-                'message' => $result->get_error_message(),
-                'code'    => $result->get_error_code(),
+            // Webhook failures return partial success because local persistence already succeeded.
+            wp_send_json_success([
+                'status'      => 'partial_success',
+                'message'     => __('Pickup exception saved locally, but webhook delivery failed.', 'kerbcycle'),
+                'local_save'  => ['success' => true],
+                'webhook'     => [
+                    'success' => false,
+                    'message' => $result->get_error_message(),
+                    'code'    => $result->get_error_code(),
+                ],
+                'ai_summary'  => '',
+                'ai_category' => '',
+                'ai_severity' => '',
             ]);
         }
 
         if (!empty($result['success'])) {
-            wp_send_json_success($result);
+            $body = isset($result['body']) ? $result['body'] : '';
+            $decoded_body = json_decode((string) $body, true);
+            wp_send_json_success([
+                'status'      => 'success',
+                'message'     => __('Pickup exception saved locally and sent to webhook.', 'kerbcycle'),
+                'local_save'  => ['success' => true],
+                'webhook'     => $result,
+                'webhook_body' => $body,
+                'ai_summary'  => is_array($decoded_body) && isset($decoded_body['summary']) ? (string) $decoded_body['summary'] : '',
+                'ai_category' => is_array($decoded_body) && isset($decoded_body['category']) ? (string) $decoded_body['category'] : '',
+                'ai_severity' => is_array($decoded_body) && isset($decoded_body['severity']) ? (string) $decoded_body['severity'] : '',
+            ]);
         }
 
-        wp_send_json_error($result);
+        wp_send_json_success([
+            'status'      => 'partial_success',
+            'message'     => __('Pickup exception saved locally, but webhook delivery failed.', 'kerbcycle'),
+            'local_save'  => ['success' => true],
+            'webhook'     => is_array($result) ? $result : ['success' => false],
+            'webhook_body' => isset($result['body']) ? $result['body'] : '',
+            'ai_summary'  => '',
+            'ai_category' => '',
+            'ai_severity' => '',
+        ]);
     }
 }

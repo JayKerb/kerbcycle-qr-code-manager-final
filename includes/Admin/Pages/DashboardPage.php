@@ -119,11 +119,20 @@ class DashboardPage
                         </div>
                         <p id="kerbcycle-ai-status" class="description" aria-live="polite"></p>
                         <div id="kerbcycle-ai-result" class="notice inline" style="display:none;"></div>
-                        <?php // TEMPORARY ADMIN TEST HOOK FOR AI / n8n INTEGRATION ?>
                         <div class="kerbcycle-ai-test">
-                            <h3><?php esc_html_e('AI Test (Temporary)', 'kerbcycle'); ?></h3>
-                            <button id="kerbcycle-test-pickup-exception" class="button button-primary">
-                                <?php esc_html_e('Test Pickup Exception → n8n', 'kerbcycle'); ?>
+                            <h3><?php esc_html_e('Pickup Exception', 'kerbcycle'); ?></h3>
+                            <div class="qr-select-group" style="margin-bottom:8px;">
+                                <input type="text" id="kerbcycle-pickup-exception-qr-code" placeholder="<?php esc_attr_e('QR Code', 'kerbcycle'); ?>" />
+                                <input type="number" id="kerbcycle-pickup-exception-customer-id" min="1" step="1" placeholder="<?php esc_attr_e('Customer ID', 'kerbcycle'); ?>" />
+                            </div>
+                            <div class="qr-select-group" style="margin-bottom:8px;">
+                                <input type="text" id="kerbcycle-pickup-exception-issue" placeholder="<?php esc_attr_e('Issue (required)', 'kerbcycle'); ?>" />
+                            </div>
+                            <div class="qr-select-group" style="margin-bottom:8px;">
+                                <textarea id="kerbcycle-pickup-exception-notes" rows="3" style="width:100%;" placeholder="<?php esc_attr_e('Notes', 'kerbcycle'); ?>"></textarea>
+                            </div>
+                            <button id="kerbcycle-submit-pickup-exception" class="button button-primary">
+                                <?php esc_html_e('Submit Pickup Exception', 'kerbcycle'); ?>
                             </button>
                             <pre id="kerbcycle-ai-test-result" style="margin-top:10px;"></pre>
                         </div>

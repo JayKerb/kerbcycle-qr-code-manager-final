@@ -634,10 +634,22 @@ function initKerbcycleAdmin() {
   const aiStatus = document.getElementById("kerbcycle-ai-status");
   const aiResult = document.getElementById("kerbcycle-ai-result");
   const pickupExceptionTestBtn = document.getElementById(
-    "kerbcycle-test-pickup-exception",
+    "kerbcycle-submit-pickup-exception",
   );
   const pickupExceptionTestResult = document.getElementById(
     "kerbcycle-ai-test-result",
+  );
+  const pickupExceptionQrCode = document.getElementById(
+    "kerbcycle-pickup-exception-qr-code",
+  );
+  const pickupExceptionCustomerId = document.getElementById(
+    "kerbcycle-pickup-exception-customer-id",
+  );
+  const pickupExceptionIssue = document.getElementById(
+    "kerbcycle-pickup-exception-issue",
+  );
+  const pickupExceptionNotes = document.getElementById(
+    "kerbcycle-pickup-exception-notes",
   );
 
   function renderAiList(items) {
@@ -765,14 +777,21 @@ function initKerbcycleAdmin() {
     pickupExceptionTestBtn.addEventListener("click", function () {
       const originalText = pickupExceptionTestBtn.textContent;
       pickupExceptionTestBtn.disabled = true;
-      pickupExceptionTestBtn.textContent = "Testing...";
+      pickupExceptionTestBtn.textContent = "Submitting...";
       if (pickupExceptionTestResult) {
-        pickupExceptionTestResult.textContent = "Loading AI webhook response...";
+        pickupExceptionTestResult.textContent = "Saving and sending pickup exception...";
       }
 
       const params = new URLSearchParams();
       params.append("action", "kerbcycle_test_pickup_exception");
       params.append("security", kerbcycle_ajax.nonce);
+      params.append("qr_code", pickupExceptionQrCode ? pickupExceptionQrCode.value : "");
+      params.append(
+        "customer_id",
+        pickupExceptionCustomerId ? pickupExceptionCustomerId.value : "",
+      );
+      params.append("issue", pickupExceptionIssue ? pickupExceptionIssue.value : "");
+      params.append("notes", pickupExceptionNotes ? pickupExceptionNotes.value : "");
 
       fetch(kerbcycle_ajax.ajax_url, {
         method: "POST",
@@ -784,7 +803,17 @@ function initKerbcycleAdmin() {
         .then((res) => res.json())
         .then((data) => {
           if (pickupExceptionTestResult) {
-            pickupExceptionTestResult.textContent = JSON.stringify(data, null, 2);
+            const payload = data && data.data ? data.data : {};
+            const output = {
+              status: payload.status || (data.success ? "success" : "error"),
+              message: payload.message || "",
+              local_save: payload.local_save || { success: false },
+              webhook: payload.webhook || {},
+              ai_summary: payload.ai_summary || "",
+              ai_category: payload.ai_category || "",
+              ai_severity: payload.ai_severity || "",
+            };
+            pickupExceptionTestResult.textContent = JSON.stringify(output, null, 2);
           }
         })
         .catch((error) => {
