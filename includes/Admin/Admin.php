@@ -117,6 +117,16 @@ class Admin
             [new Pages\ErrorsPage(), 'render']
         );
 
+
+        add_submenu_page(
+            'kerbcycle-qr-manager',
+            'Pickup Exceptions',
+            'Pickup Exceptions',
+            'manage_options',
+            'kerbcycle-pickup-exceptions',
+            [new Pages\PickupExceptionsPage(), 'render']
+        );
+
         add_submenu_page(
             'kerbcycle-qr-manager',
             'Settings',
