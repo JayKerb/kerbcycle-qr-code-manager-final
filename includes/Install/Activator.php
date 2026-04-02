@@ -126,6 +126,7 @@ class Activator
             notes LONGTEXT,
             submitted_at VARCHAR(50) NOT NULL,
             webhook_sent TINYINT(1) NOT NULL DEFAULT 0,
+            status VARCHAR(20) DEFAULT 'pending',
             webhook_status_code INT DEFAULT NULL,
             webhook_response_body LONGTEXT,
             ai_severity VARCHAR(100) DEFAULT '',
