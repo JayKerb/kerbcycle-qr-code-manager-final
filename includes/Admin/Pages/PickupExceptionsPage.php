@@ -28,7 +28,7 @@ class PickupExceptionsPage
         $limit = 50;
 
         $sql = $wpdb->prepare(
-            "SELECT id, submitted_at, qr_code, customer_id, issue, ai_severity, ai_category, webhook_sent, ai_recommended_action, ai_summary
+            "SELECT id, submitted_at, qr_code, customer_id, issue, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary
             FROM {$table_name}
             ORDER BY id DESC
             LIMIT %d",
@@ -41,6 +41,30 @@ class PickupExceptionsPage
             <h1><?php esc_html_e('Pickup Exceptions', 'kerbcycle'); ?></h1>
             <p><?php esc_html_e('This page shows locally stored pickup exceptions and webhook/AI outcome data.', 'kerbcycle'); ?></p>
             <?php $this->render_retry_notice(); ?>
+            <style>
+                .kerb-badge {
+                    display: inline-block;
+                    padding: 2px 8px;
+                    border-radius: 12px;
+                    font-size: 12px;
+                    font-weight: 600;
+                }
+
+                .kerb-badge-success {
+                    background: #d1fae5;
+                    color: #065f46;
+                }
+
+                .kerb-badge-error {
+                    background: #fee2e2;
+                    color: #7f1d1d;
+                }
+
+                .kerb-badge-pending {
+                    background: #fef3c7;
+                    color: #92400e;
+                }
+            </style>
 
             <table class="wp-list-table widefat fixed striped">
                 <thead>
@@ -52,7 +76,7 @@ class PickupExceptionsPage
                         <th><?php esc_html_e('Issue', 'kerbcycle'); ?></th>
                         <th><?php esc_html_e('Severity', 'kerbcycle'); ?></th>
                         <th><?php esc_html_e('Category', 'kerbcycle'); ?></th>
-                        <th><?php esc_html_e('Webhook Sent', 'kerbcycle'); ?></th>
+                        <th><?php esc_html_e('Status', 'kerbcycle'); ?></th>
                         <th><?php esc_html_e('Recommended Action', 'kerbcycle'); ?></th>
                         <th><?php esc_html_e('AI Summary', 'kerbcycle'); ?></th>
                         <th><?php esc_html_e('Actions', 'kerbcycle'); ?></th>
@@ -73,7 +97,18 @@ class PickupExceptionsPage
                             <td><?php echo esc_html($record->issue); ?></td>
                             <td><?php echo esc_html($record->ai_severity); ?></td>
                             <td><?php echo esc_html($record->ai_category); ?></td>
-                            <td><?php echo esc_html(((int) $record->webhook_sent) === 1 ? 'Yes' : 'No'); ?></td>
+                            <td>
+                                <?php
+                                $status = isset($record->status) ? (string) $record->status : (((int) $record->webhook_sent) === 1 ? 'sent' : 'failed');
+                                if ($status === 'sent') {
+                                    echo '<span class="kerb-badge kerb-badge-success">' . esc_html__('Sent', 'kerbcycle') . '</span>';
+                                } elseif ($status === 'failed') {
+                                    echo '<span class="kerb-badge kerb-badge-error">' . esc_html__('Failed', 'kerbcycle') . '</span>';
+                                } else {
+                                    echo '<span class="kerb-badge kerb-badge-pending">' . esc_html__('Pending', 'kerbcycle') . '</span>';
+                                }
+                                ?>
+                            </td>
                             <td><?php echo esc_html(wp_trim_words(wp_strip_all_tags((string) $record->ai_recommended_action), 20, '…')); ?></td>
                             <td><?php echo esc_html(wp_trim_words(wp_strip_all_tags((string) $record->ai_summary), 20, '…')); ?></td>
                             <td>
@@ -145,6 +180,7 @@ class PickupExceptionsPage
         if (is_wp_error($result)) {
             PickupExceptionRepository::update_result($exception_id, [
                 'webhook_sent'             => 0,
+                'status'                   => 'failed',
                 'webhook_status_code'      => 0,
                 'webhook_response_body'    => $result->get_error_message(),
                 'ai_severity'              => '',
@@ -167,6 +203,7 @@ class PickupExceptionsPage
 
             PickupExceptionRepository::update_result($exception_id, [
                 'webhook_sent'             => 1,
+                'status'                   => 'sent',
                 'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
                 'webhook_response_body'    => is_scalar($body) ? (string) $body : wp_json_encode($body),
                 'ai_severity'              => $ai_severity,
@@ -182,6 +219,7 @@ class PickupExceptionsPage
         $result_body = isset($result['body']) ? $result['body'] : '';
         PickupExceptionRepository::update_result($exception_id, [
             'webhook_sent'             => 0,
+            'status'                   => 'failed',
             'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
             'webhook_response_body'    => is_scalar($result_body) ? (string) $result_body : wp_json_encode($result_body),
             'ai_severity'              => '',
