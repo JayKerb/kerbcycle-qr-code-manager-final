@@ -447,6 +447,7 @@ class AdminAjax
             'notes'        => $notes,
             'submitted_at' => $timestamp,
             'webhook_sent' => 0,
+            'status'       => 'pending',
             'created_at'   => $now_utc_mysql,
             'updated_at'   => $now_utc_mysql,
         ]);
@@ -475,6 +476,7 @@ class AdminAjax
             PickupExceptionRepository::update_result($exception_id, [
                 'webhook_sent'             => 0,
                 'webhook_status_code'      => 0,
+                'status'                   => 'failed',
                 'webhook_response_body'    => $result->get_error_message(),
                 'ai_severity'              => '',
                 'ai_category'              => '',
@@ -501,17 +503,37 @@ class AdminAjax
             ]);
         }
 
-        if (!empty($result['success'])) {
+        $result_status_code = isset($result['status_code']) ? (int) $result['status_code'] : 0;
+        $is_webhook_success = is_array($result) && (
+            !empty($result['success'])
+            || !empty($result['ok'])
+            || ($result_status_code >= 200 && $result_status_code < 300)
+        );
+
+        if ($is_webhook_success) {
             $body = isset($result['body']) ? $result['body'] : '';
-            $decoded_body = json_decode((string) $body, true);
-            $ai_summary = is_array($decoded_body) && isset($decoded_body['summary']) ? (string) $decoded_body['summary'] : '';
-            $ai_category = is_array($decoded_body) && isset($decoded_body['category']) ? (string) $decoded_body['category'] : '';
-            $ai_severity = is_array($decoded_body) && isset($decoded_body['severity']) ? (string) $decoded_body['severity'] : '';
-            $ai_recommended_action = is_array($decoded_body) && isset($decoded_body['recommended_action']) ? (string) $decoded_body['recommended_action'] : '';
+            $decoded_body = is_array($body) ? $body : json_decode((string) $body, true);
+            $ai_payload = [];
+
+            if (is_array($decoded_body)) {
+                if (isset($decoded_body['result']) && is_array($decoded_body['result'])) {
+                    $ai_payload = $decoded_body['result'];
+                } elseif (isset($decoded_body['data']) && is_array($decoded_body['data'])) {
+                    $ai_payload = $decoded_body['data'];
+                } else {
+                    $ai_payload = $decoded_body;
+                }
+            }
+
+            $ai_summary = isset($ai_payload['summary']) ? (string) $ai_payload['summary'] : '';
+            $ai_category = isset($ai_payload['category']) ? (string) $ai_payload['category'] : '';
+            $ai_severity = isset($ai_payload['severity']) ? (string) $ai_payload['severity'] : '';
+            $ai_recommended_action = isset($ai_payload['recommended_action']) ? (string) $ai_payload['recommended_action'] : '';
 
             PickupExceptionRepository::update_result($exception_id, [
                 'webhook_sent'             => 1,
-                'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
+                'webhook_status_code'      => $result_status_code,
+                'status'                   => 'sent',
                 'webhook_response_body'    => is_scalar($body) ? (string) $body : wp_json_encode($body),
                 'ai_severity'              => $ai_severity,
                 'ai_category'              => $ai_category,
@@ -538,6 +560,7 @@ class AdminAjax
         PickupExceptionRepository::update_result($exception_id, [
             'webhook_sent'             => 0,
             'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
+            'status'                   => 'failed',
             'webhook_response_body'    => is_scalar($result_body) ? (string) $result_body : wp_json_encode($result_body),
             'ai_severity'              => '',
             'ai_category'              => '',

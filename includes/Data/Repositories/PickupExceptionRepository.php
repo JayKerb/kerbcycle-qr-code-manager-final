@@ -20,6 +20,7 @@ class PickupExceptionRepository
             '%s', // notes
             '%s', // submitted_at
             '%d', // webhook_sent
+            '%s', // status
             '%s', // created_at
             '%s', // updated_at
         ]);
@@ -40,7 +41,7 @@ class PickupExceptionRepository
             $table,
             $args,
             ['id' => (int) $id],
-            ['%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s'],
+            ['%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s'],
             ['%d']
         );
     }
