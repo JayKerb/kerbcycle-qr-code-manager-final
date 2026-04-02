@@ -20,6 +20,7 @@ class PickupExceptionRepository
             '%s', // notes
             '%s', // submitted_at
             '%d', // webhook_sent
+            '%s', // status
             '%s', // created_at
             '%s', // updated_at
         ]);

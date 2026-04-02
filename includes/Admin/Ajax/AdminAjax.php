@@ -447,6 +447,7 @@ class AdminAjax
             'notes'        => $notes,
             'submitted_at' => $timestamp,
             'webhook_sent' => 0,
+            'status'       => 'pending',
             'created_at'   => $now_utc_mysql,
             'updated_at'   => $now_utc_mysql,
         ]);
@@ -475,6 +476,7 @@ class AdminAjax
             PickupExceptionRepository::update_result($exception_id, [
                 'webhook_sent'             => 0,
                 'webhook_status_code'      => 0,
+                'status'                   => 'failed',
                 'webhook_response_body'    => $result->get_error_message(),
                 'ai_severity'              => '',
                 'ai_category'              => '',
@@ -512,6 +514,7 @@ class AdminAjax
             PickupExceptionRepository::update_result($exception_id, [
                 'webhook_sent'             => 1,
                 'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
+                'status'                   => 'sent',
                 'webhook_response_body'    => is_scalar($body) ? (string) $body : wp_json_encode($body),
                 'ai_severity'              => $ai_severity,
                 'ai_category'              => $ai_category,
@@ -538,6 +541,7 @@ class AdminAjax
         PickupExceptionRepository::update_result($exception_id, [
             'webhook_sent'             => 0,
             'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
+            'status'                   => 'failed',
             'webhook_response_body'    => is_scalar($result_body) ? (string) $result_body : wp_json_encode($result_body),
             'ai_severity'              => '',
             'ai_category'              => '',
