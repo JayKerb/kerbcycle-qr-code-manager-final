@@ -16,7 +16,6 @@ class PickupExceptionsPage
 {
     public function __construct()
     {
-        add_action('admin_post_kerbcycle_retry_pickup_exception', [$this, 'handle_retry_webhook']);
     }
 
     public function handle_retry_webhook()
@@ -73,17 +72,42 @@ class PickupExceptionsPage
             $this->redirect_with_notice('error', 'failed');
         }
 
-        if (!empty($result['success'])) {
-            $body = isset($result['body']) ? $result['body'] : '';
+        if (!is_array($result)) {
+            PickupExceptionRepository::update_result($exception_id, [
+                'webhook_sent'          => 0,
+                'webhook_status_code'   => 0,
+                'webhook_response_body' => __('Invalid webhook response.', 'kerbcycle'),
+                'ai_severity'           => '',
+                'ai_category'           => '',
+                'ai_summary'            => '',
+                'ai_recommended_action' => '',
+                'updated_at'            => current_time('mysql', true),
+            ]);
+            $this->redirect_with_notice('error', 'invalid_result');
+        }
+
+        $is_success = !empty($result['success']) || !empty($result['ok']);
+        $status_code = isset($result['status_code']) ? (int) $result['status_code'] : 0;
+        $body = '';
+        if (isset($result['body'])) {
+            $body = $result['body'];
+        } elseif (isset($result['raw_body'])) {
+            $body = $result['raw_body'];
+        } elseif (isset($result['response'])) {
+            $body = $result['response'];
+        }
+
+        if ($is_success) {
             $decoded_body = json_decode((string) $body, true);
-            $ai_summary = is_array($decoded_body) && isset($decoded_body['summary']) ? (string) $decoded_body['summary'] : '';
-            $ai_category = is_array($decoded_body) && isset($decoded_body['category']) ? (string) $decoded_body['category'] : '';
-            $ai_severity = is_array($decoded_body) && isset($decoded_body['severity']) ? (string) $decoded_body['severity'] : '';
-            $ai_recommended_action = is_array($decoded_body) && isset($decoded_body['recommended_action']) ? (string) $decoded_body['recommended_action'] : '';
+            $ai_result = is_array($decoded_body) && isset($decoded_body['result']) && is_array($decoded_body['result']) ? $decoded_body['result'] : $decoded_body;
+            $ai_summary = is_array($ai_result) && isset($ai_result['summary']) ? (string) $ai_result['summary'] : '';
+            $ai_category = is_array($ai_result) && isset($ai_result['category']) ? (string) $ai_result['category'] : '';
+            $ai_severity = is_array($ai_result) && isset($ai_result['severity']) ? (string) $ai_result['severity'] : '';
+            $ai_recommended_action = is_array($ai_result) && isset($ai_result['recommended_action']) ? (string) $ai_result['recommended_action'] : '';
 
             PickupExceptionRepository::update_result($exception_id, [
                 'webhook_sent'          => 1,
-                'webhook_status_code'   => isset($result['status_code']) ? (int) $result['status_code'] : 0,
+                'webhook_status_code'   => $status_code,
                 'webhook_response_body' => is_scalar($body) ? (string) $body : wp_json_encode($body),
                 'ai_severity'           => $ai_severity,
                 'ai_category'           => $ai_category,
@@ -94,11 +118,10 @@ class PickupExceptionsPage
             $this->redirect_with_notice('success', 'ok');
         }
 
-        $result_body = isset($result['body']) ? $result['body'] : '';
         PickupExceptionRepository::update_result($exception_id, [
             'webhook_sent'          => 0,
-            'webhook_status_code'   => isset($result['status_code']) ? (int) $result['status_code'] : 0,
-            'webhook_response_body' => is_scalar($result_body) ? (string) $result_body : wp_json_encode($result_body),
+            'webhook_status_code'   => $status_code,
+            'webhook_response_body' => is_scalar($body) ? (string) $body : wp_json_encode($body),
             'ai_severity'           => '',
             'ai_category'           => '',
             'ai_summary'            => '',
@@ -205,3 +228,7 @@ class PickupExceptionsPage
         <?php
     }
 }
+
+add_action('admin_post_kerbcycle_retry_pickup_exception', function () {
+    (new PickupExceptionsPage())->handle_retry_webhook();
+});
