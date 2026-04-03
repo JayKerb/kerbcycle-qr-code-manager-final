@@ -63,7 +63,7 @@ class PickupExceptionsPage
                 }
             </style>
 
-            <table class="wp-list-table widefat fixed striped">
+            <table id="kerbcycle-pickup-exceptions-table" class="wp-list-table widefat fixed striped">
                 <thead>
                     <tr>
                         <th><?php esc_html_e('ID', 'kerbcycle'); ?></th>
@@ -79,7 +79,7 @@ class PickupExceptionsPage
                         <th><?php esc_html_e('Actions', 'kerbcycle'); ?></th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="kerbcycle-pickup-exceptions-tbody">
                 <?php if (empty($records)) : ?>
                     <tr>
                         <td colspan="11"><?php esc_html_e('No pickup exceptions found.', 'kerbcycle'); ?></td>
@@ -123,7 +123,7 @@ class PickupExceptionsPage
                                         'kerbcycle_retry_pickup_exception_' . (int) $record->id
                                     );
                                     ?>
-                                    <a href="<?php echo esc_url($retry_url); ?>" class="button button-small"><?php esc_html_e('Retry Webhook', 'kerbcycle'); ?></a>
+                                    <a href="<?php echo esc_url($retry_url); ?>" class="button button-small kerbcycle-retry-webhook" data-exception-id="<?php echo esc_attr((string) (int) $record->id); ?>"><?php esc_html_e('Retry Webhook', 'kerbcycle'); ?></a>
                                 <?php else : ?>
                                     <span aria-hidden="true">—</span>
                                 <?php endif; ?>
