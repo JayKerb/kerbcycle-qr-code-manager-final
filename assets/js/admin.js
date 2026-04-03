@@ -917,6 +917,25 @@ function initKerbcycleAdmin() {
   }
 
   if (pickupExceptionsTbody) {
+    let pickupExceptionsPollingInterval = null;
+
+    function startPolling() {
+      if (pickupExceptionsPollingInterval || document.hidden) {
+        return;
+      }
+      pickupExceptionsPollingInterval = setInterval(() => {
+        refreshPickupExceptionsTable();
+      }, 5000);
+    }
+
+    function stopPolling() {
+      if (!pickupExceptionsPollingInterval) {
+        return;
+      }
+      clearInterval(pickupExceptionsPollingInterval);
+      pickupExceptionsPollingInterval = null;
+    }
+
     document.addEventListener("kerbcycle-pickup-exception-submitted", () => {
       refreshPickupExceptionsTable();
     });
@@ -966,9 +985,16 @@ function initKerbcycleAdmin() {
         });
     });
 
-    setInterval(() => {
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) {
+        stopPolling();
+        return;
+      }
       refreshPickupExceptionsTable();
-    }, 5000);
+      startPolling();
+    });
+
+    startPolling();
   }
 
   if (userField && assignedSelect) {
