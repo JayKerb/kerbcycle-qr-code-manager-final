@@ -651,6 +651,84 @@ function initKerbcycleAdmin() {
   const pickupExceptionNotes = document.getElementById(
     "kerbcycle-pickup-exception-notes",
   );
+  const pickupExceptionsTbody = document.getElementById(
+    "kerbcycle-pickup-exceptions-tbody",
+  );
+
+  function buildPickupExceptionStatusBadge(status) {
+    if (status === "sent") {
+      return '<span class="kerb-badge kerb-badge-success">Sent</span>';
+    }
+    if (status === "failed") {
+      return '<span class="kerb-badge kerb-badge-error">Failed</span>';
+    }
+    return '<span class="kerb-badge kerb-badge-pending">Pending</span>';
+  }
+
+  function trimPickupText(value, maxWords = 20) {
+    const text = String(value || "").replace(/\s+/g, " ").trim();
+    if (!text) {
+      return "";
+    }
+    const words = text.split(" ");
+    if (words.length <= maxWords) {
+      return text;
+    }
+    return `${words.slice(0, maxWords).join(" ")}…`;
+  }
+
+  function refreshPickupExceptionsTable() {
+    if (!pickupExceptionsTbody) {
+      return Promise.resolve();
+    }
+
+    const params = new URLSearchParams();
+    params.append("action", "kerbcycle_get_pickup_exceptions");
+    params.append("security", kerbcycle_ajax.nonce);
+
+    return fetch(kerbcycle_ajax.ajax_url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      },
+      body: params.toString(),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data || !data.success || !data.data || !Array.isArray(data.data.rows)) {
+          return;
+        }
+        const rows = data.data.rows;
+        if (!rows.length) {
+          pickupExceptionsTbody.innerHTML =
+            '<tr><td colspan="11">No pickup exceptions found.</td></tr>';
+          return;
+        }
+
+        pickupExceptionsTbody.innerHTML = rows
+          .map((row) => {
+            const actionHtml =
+              row.can_retry && row.retry_url
+                ? `<a href="${escapeHtml(row.retry_url)}" class="button button-small kerbcycle-retry-webhook" data-exception-id="${escapeHtml(row.id)}">Retry Webhook</a>`
+                : '<span aria-hidden="true">—</span>';
+
+            return `<tr>
+              <td>${escapeHtml(row.id)}</td>
+              <td>${escapeHtml(row.submitted_at || "")}</td>
+              <td>${escapeHtml(row.qr_code || "")}</td>
+              <td>${escapeHtml(row.customer_id || "")}</td>
+              <td>${escapeHtml(row.issue || "")}</td>
+              <td>${escapeHtml(row.ai_severity || "")}</td>
+              <td>${escapeHtml(row.ai_category || "")}</td>
+              <td>${buildPickupExceptionStatusBadge(row.status || "pending")}</td>
+              <td>${escapeHtml(trimPickupText(row.ai_recommended_action || ""))}</td>
+              <td>${escapeHtml(trimPickupText(row.ai_summary || ""))}</td>
+              <td>${actionHtml}</td>
+            </tr>`;
+          })
+          .join("");
+      });
+  }
 
   function renderAiList(items) {
     if (!Array.isArray(items) || !items.length) {
@@ -802,6 +880,9 @@ function initKerbcycleAdmin() {
       })
         .then((res) => res.json())
         .then((data) => {
+          document.dispatchEvent(
+            new CustomEvent("kerbcycle-pickup-exception-submitted", { detail: data }),
+          );
           if (pickupExceptionTestResult) {
             const payload = data && data.data ? data.data : {};
             const output = {
@@ -833,6 +914,61 @@ function initKerbcycleAdmin() {
           pickupExceptionTestBtn.textContent = originalText;
         });
     });
+  }
+
+  if (pickupExceptionsTbody) {
+    document.addEventListener("kerbcycle-pickup-exception-submitted", () => {
+      refreshPickupExceptionsTable();
+    });
+
+    pickupExceptionsTbody.addEventListener("click", function (event) {
+      const retryLink = event.target.closest(".kerbcycle-retry-webhook");
+      if (!retryLink) {
+        return;
+      }
+      event.preventDefault();
+
+      const exceptionId = retryLink.getAttribute("data-exception-id");
+      if (!exceptionId) {
+        return;
+      }
+
+      retryLink.classList.add("disabled");
+      retryLink.setAttribute("aria-disabled", "true");
+
+      const params = new URLSearchParams();
+      params.append("action", "kerbcycle_retry_pickup_exception");
+      params.append("security", kerbcycle_ajax.nonce);
+      params.append("exception_id", exceptionId);
+
+      fetch(kerbcycle_ajax.ajax_url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        },
+        body: params.toString(),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          const message =
+            data && data.data && data.data.message
+              ? data.data.message
+              : "Retry request completed.";
+          showToast(message, !(data && data.success));
+          return refreshPickupExceptionsTable();
+        })
+        .catch((error) => {
+          showToast(error.message || "Retry request failed.", true);
+        })
+        .finally(() => {
+          retryLink.classList.remove("disabled");
+          retryLink.removeAttribute("aria-disabled");
+        });
+    });
+
+    setInterval(() => {
+      refreshPickupExceptionsTable();
+    }, 5000);
   }
 
   if (userField && assignedSelect) {

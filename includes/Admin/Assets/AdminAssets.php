@@ -55,7 +55,7 @@ class AdminAssets
             return;
         }
 
-        if (!in_array($hook, ['toplevel_page_kerbcycle-qr-manager', 'kerbcycle-qr-manager_page_kerbcycle-qr-history'])) {
+        if (!in_array($hook, ['toplevel_page_kerbcycle-qr-manager', 'kerbcycle-qr-manager_page_kerbcycle-qr-history', 'qr-codes_page_kerbcycle-pickup-exceptions'])) {
             return;
         }
 

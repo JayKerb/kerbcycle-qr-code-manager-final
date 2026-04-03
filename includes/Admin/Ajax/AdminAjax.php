@@ -46,6 +46,8 @@ class AdminAjax
         add_action('wp_ajax_kerbcycle_qr_report_data', [$this, 'ajax_report_data']);
         add_action('wp_ajax_kerbcycle_delete_logs', [$this, 'delete_logs']);
         add_action('wp_ajax_kerbcycle_test_pickup_exception', [$this, 'test_pickup_exception']);
+        add_action('wp_ajax_kerbcycle_get_pickup_exceptions', [$this, 'get_pickup_exceptions']);
+        add_action('wp_ajax_kerbcycle_retry_pickup_exception', [$this, 'retry_pickup_exception']);
     }
 
     public function assign_qr_code()
@@ -581,5 +583,148 @@ class AdminAjax
             'ai_category' => '',
             'ai_severity' => '',
         ]);
+    }
+
+    public function get_pickup_exceptions()
+    {
+        Nonces::verify('kerbcycle_qr_nonce', 'security');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'kerbcycle_pickup_exceptions';
+        $limit = 50;
+        $sql = $wpdb->prepare(
+            "SELECT id, submitted_at, qr_code, customer_id, issue, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary
+            FROM {$table_name}
+            ORDER BY id DESC
+            LIMIT %d",
+            $limit
+        );
+        $records = $wpdb->get_results($sql);
+        $rows = [];
+
+        foreach ($records as $record) {
+            $status = isset($record->status) ? (string) $record->status : (((int) $record->webhook_sent) === 1 ? 'sent' : 'failed');
+            $retry_url = '';
+            if (((int) $record->webhook_sent) === 0) {
+                $retry_url = wp_nonce_url(
+                    add_query_arg(
+                        [
+                            'page' => 'kerbcycle-pickup-exceptions',
+                            'kerbcycle_action' => 'retry_pickup_exception',
+                            'exception_id' => (int) $record->id,
+                        ],
+                        admin_url('admin.php')
+                    ),
+                    'kerbcycle_retry_pickup_exception_' . (int) $record->id
+                );
+            }
+
+            $rows[] = [
+                'id' => (int) $record->id,
+                'submitted_at' => isset($record->submitted_at) ? (string) $record->submitted_at : '',
+                'qr_code' => isset($record->qr_code) ? (string) $record->qr_code : '',
+                'customer_id' => isset($record->customer_id) ? (string) $record->customer_id : '',
+                'issue' => isset($record->issue) ? (string) $record->issue : '',
+                'status' => $status,
+                'ai_severity' => isset($record->ai_severity) ? (string) $record->ai_severity : '',
+                'ai_category' => isset($record->ai_category) ? (string) $record->ai_category : '',
+                'ai_recommended_action' => isset($record->ai_recommended_action) ? (string) $record->ai_recommended_action : '',
+                'ai_summary' => isset($record->ai_summary) ? (string) $record->ai_summary : '',
+                'retry_url' => $retry_url,
+                'can_retry' => ((int) $record->webhook_sent) === 0,
+            ];
+        }
+
+        wp_send_json_success(['rows' => $rows]);
+    }
+
+    public function retry_pickup_exception()
+    {
+        Nonces::verify('kerbcycle_qr_nonce', 'security');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
+        }
+
+        $exception_id = isset($_POST['exception_id']) ? absint(wp_unslash($_POST['exception_id'])) : 0;
+        if ($exception_id < 1) {
+            wp_send_json_error(['message' => __('Invalid pickup exception ID.', 'kerbcycle')], 400);
+        }
+
+        global $wpdb;
+        $table_name = $wpdb->prefix . 'kerbcycle_pickup_exceptions';
+        $record = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table_name} WHERE id = %d", $exception_id));
+
+        if (!$record) {
+            wp_send_json_error(['message' => __('Pickup exception record not found.', 'kerbcycle')], 404);
+        }
+
+        if ((int) $record->webhook_sent === 1) {
+            wp_send_json_error(['message' => __('This pickup exception is not eligible for retry.', 'kerbcycle')], 400);
+        }
+
+        $result = $this->qr_service->send_pickup_exception_to_n8n([
+            'qr_code'     => (string) $record->qr_code,
+            'customer_id' => (int) $record->customer_id,
+            'issue'       => (string) $record->issue,
+            'notes'       => (string) $record->notes,
+            'timestamp'   => !empty($record->submitted_at) ? (string) $record->submitted_at : '',
+        ]);
+
+        if (is_wp_error($result)) {
+            PickupExceptionRepository::update_result($exception_id, [
+                'webhook_sent'             => 0,
+                'webhook_status_code'      => 0,
+                'status'                   => 'failed',
+                'webhook_response_body'    => $result->get_error_message(),
+                'ai_severity'              => '',
+                'ai_category'              => '',
+                'ai_summary'               => '',
+                'ai_recommended_action'    => '',
+                'updated_at'               => current_time('mysql', true),
+            ]);
+
+            wp_send_json_error(['message' => __('Retry failed. The record remains saved locally.', 'kerbcycle')], 500);
+        }
+
+        if (!empty($result['success'])) {
+            $body = isset($result['body']) ? $result['body'] : '';
+            $decoded_body = json_decode((string) $body, true);
+            $ai_summary = is_array($decoded_body) && isset($decoded_body['summary']) ? (string) $decoded_body['summary'] : '';
+            $ai_category = is_array($decoded_body) && isset($decoded_body['category']) ? (string) $decoded_body['category'] : '';
+            $ai_severity = is_array($decoded_body) && isset($decoded_body['severity']) ? (string) $decoded_body['severity'] : '';
+            $ai_recommended_action = is_array($decoded_body) && isset($decoded_body['recommended_action']) ? (string) $decoded_body['recommended_action'] : '';
+
+            PickupExceptionRepository::update_result($exception_id, [
+                'webhook_sent'             => 1,
+                'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
+                'status'                   => 'sent',
+                'webhook_response_body'    => is_scalar($body) ? (string) $body : wp_json_encode($body),
+                'ai_severity'              => $ai_severity,
+                'ai_category'              => $ai_category,
+                'ai_summary'               => $ai_summary,
+                'ai_recommended_action'    => $ai_recommended_action,
+                'updated_at'               => current_time('mysql', true),
+            ]);
+
+            wp_send_json_success(['message' => __('Pickup exception resent successfully.', 'kerbcycle')]);
+        }
+
+        $result_body = isset($result['body']) ? $result['body'] : '';
+        PickupExceptionRepository::update_result($exception_id, [
+            'webhook_sent'             => 0,
+            'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
+            'status'                   => 'failed',
+            'webhook_response_body'    => is_scalar($result_body) ? (string) $result_body : wp_json_encode($result_body),
+            'ai_severity'              => '',
+            'ai_category'              => '',
+            'ai_summary'               => '',
+            'ai_recommended_action'    => '',
+            'updated_at'               => current_time('mysql', true),
+        ]);
+
+        wp_send_json_error(['message' => __('Retry failed. The record remains saved locally.', 'kerbcycle')], 500);
     }
 }
