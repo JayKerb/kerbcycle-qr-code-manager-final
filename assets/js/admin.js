@@ -677,6 +677,16 @@ function initKerbcycleAdmin() {
     return `${words.slice(0, maxWords).join(" ")}…`;
   }
 
+  function pickupDetailText(value) {
+    const text = String(value || "").trim();
+    return text ? escapeHtml(text).replace(/\n/g, "<br>") : "—";
+  }
+
+  function pickupRawText(value) {
+    const text = String(value || "").trim();
+    return text ? escapeHtml(text) : "—";
+  }
+
   function refreshPickupExceptionsTable() {
     if (!pickupExceptionsTbody) {
       return Promise.resolve();
@@ -710,9 +720,9 @@ function initKerbcycleAdmin() {
             const actionHtml =
               row.can_retry && row.retry_url
                 ? `<a href="${escapeHtml(row.retry_url)}" class="button button-small kerbcycle-retry-webhook" data-exception-id="${escapeHtml(row.id)}">Retry Webhook</a>`
-                : '<span aria-hidden="true">—</span>';
+                : "";
 
-            return `<tr>
+            return `<tr data-exception-id="${escapeHtml(row.id)}">
               <td>${escapeHtml(row.id)}</td>
               <td>${escapeHtml(row.submitted_at || "")}</td>
               <td>${escapeHtml(row.qr_code || "")}</td>
@@ -723,7 +733,27 @@ function initKerbcycleAdmin() {
               <td>${buildPickupExceptionStatusBadge(row.status || "pending")}</td>
               <td>${escapeHtml(trimPickupText(row.ai_recommended_action || ""))}</td>
               <td>${escapeHtml(trimPickupText(row.ai_summary || ""))}</td>
-              <td>${actionHtml}</td>
+              <td>
+                <button type="button" class="button button-small kerbcycle-view-details" data-exception-id="${escapeHtml(row.id)}" aria-expanded="false">View Details</button>
+                ${actionHtml}
+              </td>
+            </tr>
+            <tr class="kerbcycle-pickup-details-row" data-exception-id="${escapeHtml(row.id)}" style="display:none;">
+              <td colspan="11">
+                <div class="kerbcycle-pickup-details-content">
+                  <p><strong>Issue:</strong><br>${pickupDetailText(row.issue)}</p>
+                  <p><strong>Notes:</strong><br>${pickupDetailText(row.notes)}</p>
+                  <p><strong>AI Summary:</strong><br>${pickupDetailText(row.ai_summary)}</p>
+                  <p><strong>Recommended Action:</strong><br>${pickupDetailText(row.ai_recommended_action)}</p>
+                  <p><strong>Webhook Status Code:</strong> ${pickupDetailText(row.webhook_status_code)}</p>
+                  <p><strong>Webhook Response Body:</strong></p>
+                  <pre>${pickupRawText(row.webhook_response_body)}</pre>
+                  <p><strong>Submitted At:</strong> ${pickupDetailText(row.submitted_at)}</p>
+                  <p><strong>Updated At:</strong> ${pickupDetailText(row.updated_at)}</p>
+                  <p><strong>Customer ID:</strong> ${pickupDetailText(row.customer_id)}</p>
+                  <p><strong>QR Code:</strong> ${pickupDetailText(row.qr_code)}</p>
+                </div>
+              </td>
             </tr>`;
           })
           .join("");
@@ -941,6 +971,26 @@ function initKerbcycleAdmin() {
     });
 
     pickupExceptionsTbody.addEventListener("click", function (event) {
+      const detailsButton = event.target.closest(".kerbcycle-view-details");
+      if (detailsButton) {
+        event.preventDefault();
+        const exceptionId = detailsButton.getAttribute("data-exception-id");
+        if (!exceptionId) {
+          return;
+        }
+        const detailsRow = pickupExceptionsTbody.querySelector(
+          `.kerbcycle-pickup-details-row[data-exception-id="${exceptionId}"]`,
+        );
+        if (!detailsRow) {
+          return;
+        }
+        const isOpen = detailsRow.style.display !== "none";
+        detailsRow.style.display = isOpen ? "none" : "table-row";
+        detailsButton.setAttribute("aria-expanded", isOpen ? "false" : "true");
+        detailsButton.textContent = isOpen ? "View Details" : "Hide Details";
+        return;
+      }
+
       const retryLink = event.target.closest(".kerbcycle-retry-webhook");
       if (!retryLink) {
         return;

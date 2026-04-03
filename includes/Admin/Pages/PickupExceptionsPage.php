@@ -28,7 +28,7 @@ class PickupExceptionsPage
         $limit = 50;
 
         $sql = $wpdb->prepare(
-            "SELECT id, submitted_at, qr_code, customer_id, issue, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary
+            "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body
             FROM {$table_name}
             ORDER BY id DESC
             LIMIT %d",
@@ -61,6 +61,22 @@ class PickupExceptionsPage
                     background: #fef3c7;
                     color: #92400e;
                 }
+                .kerbcycle-pickup-details-row {
+                    display: none;
+                }
+                .kerbcycle-pickup-details-content {
+                    padding: 8px 12px;
+                }
+                .kerbcycle-pickup-details-content p {
+                    margin: 0 0 8px;
+                }
+                .kerbcycle-pickup-details-content pre {
+                    margin: 0 0 8px;
+                    max-height: 240px;
+                    overflow: auto;
+                    white-space: pre-wrap;
+                    word-break: break-word;
+                }
             </style>
 
             <table id="kerbcycle-pickup-exceptions-table" class="wp-list-table widefat fixed striped">
@@ -86,7 +102,7 @@ class PickupExceptionsPage
                     </tr>
                 <?php else : ?>
                     <?php foreach ($records as $record) : ?>
-                        <tr>
+                        <tr data-exception-id="<?php echo esc_attr((string) (int) $record->id); ?>">
                             <td><?php echo esc_html($record->id); ?></td>
                             <td><?php echo esc_html($record->submitted_at); ?></td>
                             <td><?php echo esc_html($record->qr_code); ?></td>
@@ -109,6 +125,7 @@ class PickupExceptionsPage
                             <td><?php echo esc_html(wp_trim_words(wp_strip_all_tags((string) $record->ai_recommended_action), 20, '…')); ?></td>
                             <td><?php echo esc_html(wp_trim_words(wp_strip_all_tags((string) $record->ai_summary), 20, '…')); ?></td>
                             <td>
+                                <button type="button" class="button button-small kerbcycle-view-details" data-exception-id="<?php echo esc_attr((string) (int) $record->id); ?>" aria-expanded="false"><?php esc_html_e('View Details', 'kerbcycle'); ?></button>
                                 <?php if (((int) $record->webhook_sent) === 0) : ?>
                                     <?php
                                     $retry_url = wp_nonce_url(
@@ -124,9 +141,24 @@ class PickupExceptionsPage
                                     );
                                     ?>
                                     <a href="<?php echo esc_url($retry_url); ?>" class="button button-small kerbcycle-retry-webhook" data-exception-id="<?php echo esc_attr((string) (int) $record->id); ?>"><?php esc_html_e('Retry Webhook', 'kerbcycle'); ?></a>
-                                <?php else : ?>
-                                    <span aria-hidden="true">—</span>
                                 <?php endif; ?>
+                            </td>
+                        </tr>
+                        <tr class="kerbcycle-pickup-details-row" data-exception-id="<?php echo esc_attr((string) (int) $record->id); ?>">
+                            <td colspan="11">
+                                <div class="kerbcycle-pickup-details-content">
+                                    <p><strong><?php esc_html_e('Issue', 'kerbcycle'); ?>:</strong><br><?php echo nl2br(esc_html((string) $record->issue)); ?></p>
+                                    <p><strong><?php esc_html_e('Notes', 'kerbcycle'); ?>:</strong><br><?php echo nl2br(esc_html((string) $record->notes)); ?></p>
+                                    <p><strong><?php esc_html_e('AI Summary', 'kerbcycle'); ?>:</strong><br><?php echo nl2br(esc_html((string) $record->ai_summary)); ?></p>
+                                    <p><strong><?php esc_html_e('Recommended Action', 'kerbcycle'); ?>:</strong><br><?php echo nl2br(esc_html((string) $record->ai_recommended_action)); ?></p>
+                                    <p><strong><?php esc_html_e('Webhook Status Code', 'kerbcycle'); ?>:</strong> <?php echo esc_html(isset($record->webhook_status_code) && $record->webhook_status_code !== null ? (string) $record->webhook_status_code : ''); ?></p>
+                                    <p><strong><?php esc_html_e('Webhook Response Body', 'kerbcycle'); ?>:</strong></p>
+                                    <pre><?php echo esc_html((string) $record->webhook_response_body); ?></pre>
+                                    <p><strong><?php esc_html_e('Submitted At', 'kerbcycle'); ?>:</strong> <?php echo esc_html((string) $record->submitted_at); ?></p>
+                                    <p><strong><?php esc_html_e('Updated At', 'kerbcycle'); ?>:</strong> <?php echo esc_html((string) $record->updated_at); ?></p>
+                                    <p><strong><?php esc_html_e('Customer ID', 'kerbcycle'); ?>:</strong> <?php echo esc_html((string) $record->customer_id); ?></p>
+                                    <p><strong><?php esc_html_e('QR Code', 'kerbcycle'); ?>:</strong> <?php echo esc_html((string) $record->qr_code); ?></p>
+                                </div>
                             </td>
                         </tr>
                     <?php endforeach; ?>

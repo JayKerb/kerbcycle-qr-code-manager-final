@@ -596,7 +596,7 @@ class AdminAjax
         $table_name = $wpdb->prefix . 'kerbcycle_pickup_exceptions';
         $limit = 50;
         $sql = $wpdb->prepare(
-            "SELECT id, submitted_at, qr_code, customer_id, issue, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary
+            "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body
             FROM {$table_name}
             ORDER BY id DESC
             LIMIT %d",
@@ -625,14 +625,18 @@ class AdminAjax
             $rows[] = [
                 'id' => (int) $record->id,
                 'submitted_at' => isset($record->submitted_at) ? (string) $record->submitted_at : '',
+                'updated_at' => isset($record->updated_at) ? (string) $record->updated_at : '',
                 'qr_code' => isset($record->qr_code) ? (string) $record->qr_code : '',
                 'customer_id' => isset($record->customer_id) ? (string) $record->customer_id : '',
                 'issue' => isset($record->issue) ? (string) $record->issue : '',
+                'notes' => isset($record->notes) ? (string) $record->notes : '',
                 'status' => $status,
                 'ai_severity' => isset($record->ai_severity) ? (string) $record->ai_severity : '',
                 'ai_category' => isset($record->ai_category) ? (string) $record->ai_category : '',
                 'ai_recommended_action' => isset($record->ai_recommended_action) ? (string) $record->ai_recommended_action : '',
                 'ai_summary' => isset($record->ai_summary) ? (string) $record->ai_summary : '',
+                'webhook_status_code' => isset($record->webhook_status_code) ? (string) $record->webhook_status_code : '',
+                'webhook_response_body' => isset($record->webhook_response_body) ? (string) $record->webhook_response_body : '',
                 'retry_url' => $retry_url,
                 'can_retry' => ((int) $record->webhook_sent) === 0,
             ];
