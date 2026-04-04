@@ -129,6 +129,8 @@ class Activator
             status VARCHAR(20) DEFAULT 'pending',
             webhook_status_code INT DEFAULT NULL,
             webhook_response_body LONGTEXT,
+            retry_count INT NOT NULL DEFAULT 0,
+            last_retry_at DATETIME NULL,
             ai_severity VARCHAR(100) DEFAULT '',
             ai_category VARCHAR(100) DEFAULT '',
             ai_summary LONGTEXT,
