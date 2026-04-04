@@ -226,10 +226,58 @@ function initDashboardScanner() {
   const sendEmailCheckbox = document.getElementById("send-email");
   const sendSmsCheckbox = document.getElementById("send-sms");
   const sendReminderCheckbox = document.getElementById("send-reminder");
+  const scannerReportExceptionBtn = document.getElementById(
+    "kerbcycle-scanner-report-exception-btn",
+  );
+  const scannerExceptionFormWrap = document.getElementById(
+    "kerbcycle-scanner-exception-form-wrap",
+  );
+  const scannerExceptionQrCodeField = document.getElementById(
+    "kerbcycle-scanner-exception-qr-code",
+  );
+  const scannerExceptionCustomerIdField = document.getElementById(
+    "kerbcycle-scanner-exception-customer-id",
+  );
+  const scannerExceptionIssueField = document.getElementById(
+    "kerbcycle-scanner-exception-issue",
+  );
+  const scannerExceptionNotesField = document.getElementById(
+    "kerbcycle-scanner-exception-notes",
+  );
+  const scannerSubmitExceptionBtn = document.getElementById(
+    "kerbcycle-scanner-submit-exception",
+  );
+  const scannerExceptionStatus = document.getElementById(
+    "kerbcycle-scanner-exception-status",
+  );
   let scanner = null;
   let lastScannedCode = "";
   let addInProgress = false;
   let assignInProgress = false;
+  let exceptionSubmitInProgress = false;
+
+  function setScannerExceptionStatus(message, type = "success") {
+    if (!scannerExceptionStatus) {
+      return;
+    }
+    scannerExceptionStatus.style.display = "block";
+    scannerExceptionStatus.style.color =
+      type === "error" ? "#b32d2e" : "#1d2327";
+    scannerExceptionStatus.textContent = message;
+  }
+
+  function syncScannerExceptionContext() {
+    if (scannerExceptionQrCodeField && lastScannedCode) {
+      scannerExceptionQrCodeField.value = lastScannedCode;
+    }
+    if (
+      scannerExceptionCustomerIdField &&
+      dashboardCustomerField &&
+      dashboardCustomerField.value
+    ) {
+      scannerExceptionCustomerIdField.value = dashboardCustomerField.value;
+    }
+  }
 
   function updateAddButtonState() {
     if (!addFromScannerBtn) {
@@ -281,6 +329,7 @@ function initDashboardScanner() {
   if (dashboardCustomerField) {
     dashboardCustomerField.addEventListener("change", () => {
       updateAssignButtonState();
+      syncScannerExceptionContext();
     });
     if (
       dashboardCustomerField._searchable &&
@@ -291,6 +340,110 @@ function initDashboardScanner() {
         updateAssignButtonState,
       );
     }
+  }
+
+  syncScannerExceptionContext();
+
+  if (scannerReportExceptionBtn && scannerExceptionFormWrap) {
+    scannerReportExceptionBtn.addEventListener("click", () => {
+      const isOpen = scannerExceptionFormWrap.style.display !== "none";
+      if (isOpen) {
+        scannerExceptionFormWrap.style.display = "none";
+        scannerReportExceptionBtn.textContent = "Report Exception";
+        return;
+      }
+      syncScannerExceptionContext();
+      scannerExceptionFormWrap.style.display = "block";
+      scannerReportExceptionBtn.textContent = "Hide Exception Form";
+      if (scannerExceptionIssueField) {
+        scannerExceptionIssueField.focus();
+      }
+    });
+  }
+
+  if (scannerSubmitExceptionBtn) {
+    scannerSubmitExceptionBtn.addEventListener("click", () => {
+      if (exceptionSubmitInProgress) {
+        return;
+      }
+
+      const issue = scannerExceptionIssueField
+        ? scannerExceptionIssueField.value.trim()
+        : "";
+      if (!issue) {
+        setScannerExceptionStatus("Issue is required.", "error");
+        return;
+      }
+
+      exceptionSubmitInProgress = true;
+      scannerSubmitExceptionBtn.disabled = true;
+      setScannerExceptionStatus("Saving and sending pickup exception...");
+
+      const params = new URLSearchParams();
+      params.append("action", "kerbcycle_test_pickup_exception");
+      params.append("security", kerbcycle_ajax.nonce);
+      params.append(
+        "qr_code",
+        scannerExceptionQrCodeField ? scannerExceptionQrCodeField.value : "",
+      );
+      params.append(
+        "customer_id",
+        scannerExceptionCustomerIdField
+          ? scannerExceptionCustomerIdField.value
+          : "",
+      );
+      params.append("issue", issue);
+      params.append(
+        "notes",
+        scannerExceptionNotesField ? scannerExceptionNotesField.value : "",
+      );
+
+      fetch(kerbcycle_ajax.ajax_url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        },
+        body: params.toString(),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          const payload = data && data.data ? data.data : {};
+          if (data && data.success) {
+            setScannerExceptionStatus(
+              payload.message || "Pickup exception saved and submitted.",
+              "success",
+            );
+            if (scannerExceptionIssueField) {
+              scannerExceptionIssueField.value = "";
+            }
+            if (scannerExceptionNotesField) {
+              scannerExceptionNotesField.value = "";
+            }
+            document.dispatchEvent(
+              new CustomEvent("kerbcycle-pickup-exception-submitted", {
+                detail: data,
+              }),
+            );
+            return;
+          }
+          setScannerExceptionStatus(
+            payload.message || "Unable to submit pickup exception.",
+            "error",
+          );
+        })
+        .catch((error) => {
+          setScannerExceptionStatus(
+            error && error.message
+              ? error.message
+              : "Unable to submit pickup exception.",
+            "error",
+          );
+        })
+        .finally(() => {
+          exceptionSubmitInProgress = false;
+          scannerSubmitExceptionBtn.disabled = false;
+        });
+    });
   }
 
   function pauseActiveScanner() {
@@ -660,6 +813,7 @@ function initDashboardScanner() {
     const onScanSuccess = (decodedText) => {
       pauseActiveScanner();
       lastScannedCode = decodedText || "";
+      syncScannerExceptionContext();
       updateAddButtonState();
       updateAssignButtonState();
       const safeCode = escapeHtml(decodedText || "");

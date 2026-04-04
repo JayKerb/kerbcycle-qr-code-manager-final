@@ -109,6 +109,36 @@ class DashboardPage
                     ?>
                 <?php endif; ?>
                 <div id="scan-result" class="updated"></div>
+                <div id="kerbcycle-scanner-exception-panel" class="postbox" style="margin-top:12px;">
+                    <h2 class="hndle"><?php esc_html_e('Pickup Exception', 'kerbcycle'); ?></h2>
+                    <div class="inside">
+                        <p class="description"><?php esc_html_e('Report a real pickup exception from the current scan context.', 'kerbcycle'); ?></p>
+                        <button id="kerbcycle-scanner-report-exception-btn" class="button">
+                            <?php esc_html_e('Report Exception', 'kerbcycle'); ?>
+                        </button>
+                        <div id="kerbcycle-scanner-exception-form-wrap" style="display:none; margin-top:10px;">
+                            <div class="qr-select-group" style="margin-bottom:8px;">
+                                <input type="text" id="kerbcycle-scanner-exception-qr-code" placeholder="<?php esc_attr_e('QR Code', 'kerbcycle'); ?>" />
+                                <input type="number" id="kerbcycle-scanner-exception-customer-id" min="1" step="1" placeholder="<?php esc_attr_e('Customer ID', 'kerbcycle'); ?>" />
+                            </div>
+                            <div class="qr-select-group" style="margin-bottom:8px;">
+                                <input type="text" id="kerbcycle-scanner-exception-issue" placeholder="<?php esc_attr_e('Issue (required)', 'kerbcycle'); ?>" />
+                            </div>
+                            <div class="qr-select-group" style="margin-bottom:8px;">
+                                <textarea id="kerbcycle-scanner-exception-notes" rows="3" style="width:100%;" placeholder="<?php esc_attr_e('Notes', 'kerbcycle'); ?>"></textarea>
+                            </div>
+                            <button id="kerbcycle-scanner-submit-exception" class="button button-primary">
+                                <?php esc_html_e('Submit Pickup Exception', 'kerbcycle'); ?>
+                            </button>
+                            <p id="kerbcycle-scanner-exception-status" class="description" style="margin-top:8px;"></p>
+                            <p class="description" style="margin-top:4px;">
+                                <a href="<?php echo esc_url(admin_url('admin.php?page=kerbcycle-pickup-exceptions')); ?>">
+                                    <?php esc_html_e('View Pickup Exceptions', 'kerbcycle'); ?>
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
                 <div id="kerbcycle-ai-panel" class="postbox">
                     <h2 class="hndle"><?php esc_html_e('AI Assistant (Beta)', 'kerbcycle'); ?></h2>
                     <div class="inside">
