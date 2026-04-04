@@ -63,6 +63,15 @@ class Shortcodes
             <div class="kerbcycle-scanner-actions">
                 <button id="assign-qr-btn" class="button button-primary">Assign QR Code</button>
                 <button id="reset-scan-btn" class="button button-primary"><?php esc_html_e('Scan Reset', 'kerbcycle'); ?></button>
+                <button id="report-exception-btn" class="button"><?php esc_html_e('Report Exception', 'kerbcycle'); ?></button>
+            </div>
+            <div id="scanner-exception-form-wrap" style="display:none; margin-top:12px;">
+                <input type="text" id="scanner-exception-qr-code" placeholder="<?php esc_attr_e('QR Code', 'kerbcycle'); ?>" style="width:100%; margin-bottom:8px;" />
+                <input type="number" id="scanner-exception-customer-id" min="1" step="1" placeholder="<?php esc_attr_e('Customer ID', 'kerbcycle'); ?>" style="width:100%; margin-bottom:8px;" />
+                <input type="text" id="scanner-exception-issue" placeholder="<?php esc_attr_e('Issue (required)', 'kerbcycle'); ?>" style="width:100%; margin-bottom:8px;" />
+                <textarea id="scanner-exception-notes" rows="3" placeholder="<?php esc_attr_e('Notes', 'kerbcycle'); ?>" style="width:100%; margin-bottom:8px;"></textarea>
+                <button id="scanner-submit-exception" class="button button-primary"><?php esc_html_e('Submit Exception', 'kerbcycle'); ?></button>
+                <div id="scanner-exception-status" class="updated" style="display:none; margin-top:10px;"></div>
             </div>
             <div id="reader" style="width: 100%; max-width: 400px; margin-top: 20px;"></div>
             <div id="scan-result" class="updated" style="display: none;"></div>

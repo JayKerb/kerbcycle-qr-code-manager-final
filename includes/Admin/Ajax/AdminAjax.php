@@ -406,7 +406,7 @@ class AdminAjax
     public function test_pickup_exception()
     {
         Nonces::verify('kerbcycle_qr_nonce', 'security');
-        if (!current_user_can('manage_options')) {
+        if (!is_user_logged_in()) {
             wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
         \Kerbcycle\QrCode\Install\Activator::activate();

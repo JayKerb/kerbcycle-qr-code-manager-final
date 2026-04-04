@@ -590,6 +590,16 @@ function initKerbcycleScanner() {
   const scanResult = document.getElementById("scan-result");
   const assignBtn = document.getElementById("assign-qr-btn");
   const resetBtn = document.getElementById("reset-scan-btn");
+  const reportExceptionBtn = document.getElementById("report-exception-btn");
+  const exceptionFormWrap = document.getElementById("scanner-exception-form-wrap");
+  const exceptionQrField = document.getElementById("scanner-exception-qr-code");
+  const exceptionCustomerField = document.getElementById(
+    "scanner-exception-customer-id",
+  );
+  const exceptionIssueField = document.getElementById("scanner-exception-issue");
+  const exceptionNotesField = document.getElementById("scanner-exception-notes");
+  const submitExceptionBtn = document.getElementById("scanner-submit-exception");
+  const exceptionStatus = document.getElementById("scanner-exception-status");
   const customerIdField = document.getElementById("customer-id");
   let scannedCode = "";
 
@@ -915,6 +925,115 @@ function initKerbcycleScanner() {
           // Always attempt to reactivate the scanner after handling the
           // assignment request, even when the server returns an error.
           activateScanner({ showError: true });
+        });
+    });
+  }
+
+  function setExceptionStatus(type, html) {
+    if (!exceptionStatus) return;
+    exceptionStatus.style.display = "block";
+    exceptionStatus.classList.remove("error", "updated");
+    if (type === "error") {
+      exceptionStatus.classList.add("error");
+    } else {
+      exceptionStatus.classList.add("updated");
+    }
+    exceptionStatus.innerHTML = html;
+  }
+
+  function prefillExceptionFields() {
+    if (exceptionQrField) {
+      exceptionQrField.value = scannedCode || "";
+    }
+    if (exceptionCustomerField && customerIdField) {
+      exceptionCustomerField.value = customerIdField.value || "";
+    }
+  }
+
+  if (reportExceptionBtn && exceptionFormWrap) {
+    reportExceptionBtn.addEventListener("click", () => {
+      const isHidden = exceptionFormWrap.style.display === "none";
+      exceptionFormWrap.style.display = isHidden ? "block" : "none";
+      if (isHidden) {
+        prefillExceptionFields();
+      }
+    });
+  }
+
+  if (submitExceptionBtn) {
+    submitExceptionBtn.addEventListener("click", () => {
+      const qrCode = exceptionQrField ? exceptionQrField.value.trim() : "";
+      const customerId = exceptionCustomerField
+        ? exceptionCustomerField.value.trim()
+        : "";
+      const issue = exceptionIssueField ? exceptionIssueField.value.trim() : "";
+      const notes = exceptionNotesField ? exceptionNotesField.value.trim() : "";
+
+      if (!issue) {
+        setExceptionStatus("error", "<strong>❌ Issue is required.</strong>");
+        return;
+      }
+
+      if (!qrCode && !customerId) {
+        setExceptionStatus(
+          "error",
+          "<strong>❌ Provide at least a QR Code or Customer ID.</strong>",
+        );
+        return;
+      }
+
+      submitExceptionBtn.disabled = true;
+      submitExceptionBtn.setAttribute("aria-busy", "true");
+      setExceptionStatus("success", "Saving and sending pickup exception...");
+
+      const params = new URLSearchParams();
+      params.append("action", "kerbcycle_test_pickup_exception");
+      params.append("security", kerbcycle_ajax.nonce);
+      params.append("qr_code", qrCode);
+      params.append("customer_id", customerId);
+      params.append("issue", issue);
+      params.append("notes", notes);
+
+      fetch(kerbcycle_ajax.ajax_url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        },
+        body: params.toString(),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data && data.success && data.data) {
+            const payload = data.data;
+            const isFullSuccess = payload.status === "success";
+            const msg = payload.message || "Pickup exception submitted.";
+            setExceptionStatus(
+              isFullSuccess ? "success" : "error",
+              `<strong>${isFullSuccess ? "✅" : "⚠️"} ${escapeHtml(msg)}</strong>`,
+            );
+            if (exceptionIssueField) {
+              exceptionIssueField.value = "";
+            }
+            if (exceptionNotesField) {
+              exceptionNotesField.value = "";
+            }
+          } else {
+            const msg =
+              data && data.data && data.data.message
+                ? data.data.message
+                : "Unable to submit pickup exception.";
+            setExceptionStatus("error", `<strong>❌ ${escapeHtml(msg)}</strong>`);
+          }
+        })
+        .catch((error) => {
+          setExceptionStatus(
+            "error",
+            `<strong>❌ Unable to submit pickup exception.</strong><br>${escapeHtml(String(error))}`,
+          );
+        })
+        .finally(() => {
+          submitExceptionBtn.disabled = false;
+          submitExceptionBtn.removeAttribute("aria-busy");
         });
     });
   }
