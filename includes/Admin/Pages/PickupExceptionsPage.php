@@ -19,6 +19,7 @@ class PickupExceptionsPage
         if (!current_user_can('manage_options')) {
             return;
         }
+        \Kerbcycle\QrCode\Install\Activator::activate();
 
         $this->handle_retry_request();
 
@@ -26,20 +27,41 @@ class PickupExceptionsPage
 
         $table_name = $wpdb->prefix . 'kerbcycle_pickup_exceptions';
         $limit = 50;
-
-        $sql = $wpdb->prepare(
-            "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body
-            FROM {$table_name}
-            ORDER BY id DESC
-            LIMIT %d",
-            $limit
-        );
+        $status_filter = isset($_GET['status_filter']) ? sanitize_key(wp_unslash($_GET['status_filter'])) : '';
+        if ($status_filter === 'failed') {
+            $sql = $wpdb->prepare(
+                "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body, retry_count, last_retry_at
+                FROM {$table_name}
+                WHERE status = %s
+                ORDER BY id DESC
+                LIMIT %d",
+                'failed',
+                $limit
+            );
+        } else {
+            $sql = $wpdb->prepare(
+                "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body, retry_count, last_retry_at
+                FROM {$table_name}
+                ORDER BY id DESC
+                LIMIT %d",
+                $limit
+            );
+        }
 
         $records = $wpdb->get_results($sql);
         ?>
         <div class="wrap">
             <h1><?php esc_html_e('Pickup Exceptions', 'kerbcycle'); ?></h1>
             <p><?php esc_html_e('This page shows locally stored pickup exceptions and webhook/AI outcome data.', 'kerbcycle'); ?></p>
+            <p>
+                <?php
+                $all_url = add_query_arg(['page' => 'kerbcycle-pickup-exceptions'], admin_url('admin.php'));
+                $failed_url = add_query_arg(['page' => 'kerbcycle-pickup-exceptions', 'status_filter' => 'failed'], admin_url('admin.php'));
+                ?>
+                <a href="<?php echo esc_url($all_url); ?>" class="<?php echo esc_attr($status_filter === 'failed' ? '' : 'current'); ?>"><?php esc_html_e('All', 'kerbcycle'); ?></a>
+                |
+                <a href="<?php echo esc_url($failed_url); ?>" class="<?php echo esc_attr($status_filter === 'failed' ? 'current' : ''); ?>"><?php esc_html_e('Failed Only', 'kerbcycle'); ?></a>
+            </p>
             <?php $this->render_retry_notice(); ?>
             <style>
                 .kerb-badge {
@@ -90,6 +112,8 @@ class PickupExceptionsPage
                         <th><?php esc_html_e('Severity', 'kerbcycle'); ?></th>
                         <th><?php esc_html_e('Category', 'kerbcycle'); ?></th>
                         <th><?php esc_html_e('Status', 'kerbcycle'); ?></th>
+                        <th><?php esc_html_e('Retry Count', 'kerbcycle'); ?></th>
+                        <th><?php esc_html_e('Last Retry', 'kerbcycle'); ?></th>
                         <th><?php esc_html_e('Recommended Action', 'kerbcycle'); ?></th>
                         <th><?php esc_html_e('AI Summary', 'kerbcycle'); ?></th>
                         <th><?php esc_html_e('Actions', 'kerbcycle'); ?></th>
@@ -98,7 +122,7 @@ class PickupExceptionsPage
                 <tbody id="kerbcycle-pickup-exceptions-tbody">
                 <?php if (empty($records)) : ?>
                     <tr>
-                        <td colspan="11"><?php esc_html_e('No pickup exceptions found.', 'kerbcycle'); ?></td>
+                        <td colspan="13"><?php esc_html_e('No pickup exceptions found.', 'kerbcycle'); ?></td>
                     </tr>
                 <?php else : ?>
                     <?php foreach ($records as $record) : ?>
@@ -122,19 +146,25 @@ class PickupExceptionsPage
                                 }
                                 ?>
                             </td>
+                            <td><?php echo esc_html((string) (isset($record->retry_count) ? (int) $record->retry_count : 0)); ?></td>
+                            <td><?php echo esc_html(!empty($record->last_retry_at) ? (string) $record->last_retry_at : '—'); ?></td>
                             <td><?php echo esc_html(wp_trim_words(wp_strip_all_tags((string) $record->ai_recommended_action), 20, '…')); ?></td>
                             <td><?php echo esc_html(wp_trim_words(wp_strip_all_tags((string) $record->ai_summary), 20, '…')); ?></td>
                             <td>
                                 <button type="button" class="button button-small kerbcycle-view-details" data-exception-id="<?php echo esc_attr((string) (int) $record->id); ?>" aria-expanded="false"><?php esc_html_e('View Details', 'kerbcycle'); ?></button>
                                 <?php if (((int) $record->webhook_sent) === 0) : ?>
                                     <?php
+                                    $retry_args = [
+                                        'page' => 'kerbcycle-pickup-exceptions',
+                                        'kerbcycle_action' => 'retry_pickup_exception',
+                                        'exception_id' => (int) $record->id,
+                                    ];
+                                    if ($status_filter === 'failed') {
+                                        $retry_args['status_filter'] = 'failed';
+                                    }
                                     $retry_url = wp_nonce_url(
                                         add_query_arg(
-                                            [
-                                                'page' => 'kerbcycle-pickup-exceptions',
-                                                'kerbcycle_action' => 'retry_pickup_exception',
-                                                'exception_id' => (int) $record->id,
-                                            ],
+                                            $retry_args,
                                             admin_url('admin.php')
                                         ),
                                         'kerbcycle_retry_pickup_exception_' . (int) $record->id
@@ -145,7 +175,7 @@ class PickupExceptionsPage
                             </td>
                         </tr>
                         <tr class="kerbcycle-pickup-details-row" data-exception-id="<?php echo esc_attr((string) (int) $record->id); ?>">
-                            <td colspan="11">
+                            <td colspan="13">
                                 <div class="kerbcycle-pickup-details-content">
                                     <p><strong><?php esc_html_e('Issue', 'kerbcycle'); ?>:</strong><br><?php echo nl2br(esc_html((string) $record->issue)); ?></p>
                                     <p><strong><?php esc_html_e('Notes', 'kerbcycle'); ?>:</strong><br><?php echo nl2br(esc_html((string) $record->notes)); ?></p>
@@ -156,6 +186,8 @@ class PickupExceptionsPage
                                     <pre><?php echo esc_html((string) $record->webhook_response_body); ?></pre>
                                     <p><strong><?php esc_html_e('Submitted At', 'kerbcycle'); ?>:</strong> <?php echo esc_html((string) $record->submitted_at); ?></p>
                                     <p><strong><?php esc_html_e('Updated At', 'kerbcycle'); ?>:</strong> <?php echo esc_html((string) $record->updated_at); ?></p>
+                                    <p><strong><?php esc_html_e('Retry Count', 'kerbcycle'); ?>:</strong> <?php echo esc_html((string) (isset($record->retry_count) ? (int) $record->retry_count : 0)); ?></p>
+                                    <p><strong><?php esc_html_e('Last Retry', 'kerbcycle'); ?>:</strong> <?php echo esc_html(!empty($record->last_retry_at) ? (string) $record->last_retry_at : '—'); ?></p>
                                     <p><strong><?php esc_html_e('Customer ID', 'kerbcycle'); ?>:</strong> <?php echo esc_html((string) $record->customer_id); ?></p>
                                     <p><strong><?php esc_html_e('QR Code', 'kerbcycle'); ?>:</strong> <?php echo esc_html((string) $record->qr_code); ?></p>
                                 </div>
@@ -197,6 +229,13 @@ class PickupExceptionsPage
         if ((int) $record->webhook_sent === 1) {
             $this->redirect_with_retry_notice('error', __('This pickup exception is not eligible for retry.', 'kerbcycle'));
         }
+
+        $retry_timestamp = current_time('mysql', true);
+        PickupExceptionRepository::update_result($exception_id, [
+            'retry_count' => ((int) $record->retry_count) + 1,
+            'last_retry_at' => $retry_timestamp,
+            'updated_at' => $retry_timestamp,
+        ]);
 
         $result = (new QrService())->send_pickup_exception_to_n8n([
             'qr_code'     => (string) $record->qr_code,
@@ -271,6 +310,9 @@ class PickupExceptionsPage
             ],
             admin_url('admin.php')
         );
+        if (isset($_GET['status_filter']) && sanitize_key(wp_unslash($_GET['status_filter'])) === 'failed') {
+            $redirect_url = add_query_arg('status_filter', 'failed', $redirect_url);
+        }
 
         wp_safe_redirect($redirect_url);
         exit;

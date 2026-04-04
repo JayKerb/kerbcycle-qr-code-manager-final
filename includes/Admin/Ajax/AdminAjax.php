@@ -409,6 +409,7 @@ class AdminAjax
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
+        \Kerbcycle\QrCode\Install\Activator::activate();
 
         $qr_code_raw = isset($_POST['qr_code']) ? wp_unslash($_POST['qr_code']) : '';
         $customer_id_raw = isset($_POST['customer_id']) ? wp_unslash($_POST['customer_id']) : '';
@@ -450,6 +451,8 @@ class AdminAjax
             'submitted_at' => $timestamp,
             'webhook_sent' => 0,
             'status'       => 'pending',
+            'retry_count'  => 0,
+            'last_retry_at' => null,
             'created_at'   => $now_utc_mysql,
             'updated_at'   => $now_utc_mysql,
         ]);
@@ -591,17 +594,31 @@ class AdminAjax
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
+        \Kerbcycle\QrCode\Install\Activator::activate();
 
         global $wpdb;
         $table_name = $wpdb->prefix . 'kerbcycle_pickup_exceptions';
         $limit = 50;
-        $sql = $wpdb->prepare(
-            "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body
-            FROM {$table_name}
-            ORDER BY id DESC
-            LIMIT %d",
-            $limit
-        );
+        $status_filter = isset($_POST['status_filter']) ? sanitize_key(wp_unslash($_POST['status_filter'])) : '';
+        if ($status_filter === 'failed') {
+            $sql = $wpdb->prepare(
+                "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body, retry_count, last_retry_at
+                FROM {$table_name}
+                WHERE status = %s
+                ORDER BY id DESC
+                LIMIT %d",
+                'failed',
+                $limit
+            );
+        } else {
+            $sql = $wpdb->prepare(
+                "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body, retry_count, last_retry_at
+                FROM {$table_name}
+                ORDER BY id DESC
+                LIMIT %d",
+                $limit
+            );
+        }
         $records = $wpdb->get_results($sql);
         $rows = [];
 
@@ -609,13 +626,17 @@ class AdminAjax
             $status = isset($record->status) ? (string) $record->status : (((int) $record->webhook_sent) === 1 ? 'sent' : 'failed');
             $retry_url = '';
             if (((int) $record->webhook_sent) === 0) {
+                $retry_args = [
+                    'page' => 'kerbcycle-pickup-exceptions',
+                    'kerbcycle_action' => 'retry_pickup_exception',
+                    'exception_id' => (int) $record->id,
+                ];
+                if ($status_filter === 'failed') {
+                    $retry_args['status_filter'] = 'failed';
+                }
                 $retry_url = wp_nonce_url(
                     add_query_arg(
-                        [
-                            'page' => 'kerbcycle-pickup-exceptions',
-                            'kerbcycle_action' => 'retry_pickup_exception',
-                            'exception_id' => (int) $record->id,
-                        ],
+                        $retry_args,
                         admin_url('admin.php')
                     ),
                     'kerbcycle_retry_pickup_exception_' . (int) $record->id
@@ -637,6 +658,8 @@ class AdminAjax
                 'ai_summary' => isset($record->ai_summary) ? (string) $record->ai_summary : '',
                 'webhook_status_code' => isset($record->webhook_status_code) ? (string) $record->webhook_status_code : '',
                 'webhook_response_body' => isset($record->webhook_response_body) ? (string) $record->webhook_response_body : '',
+                'retry_count' => isset($record->retry_count) ? (int) $record->retry_count : 0,
+                'last_retry_at' => isset($record->last_retry_at) ? (string) $record->last_retry_at : '',
                 'retry_url' => $retry_url,
                 'can_retry' => ((int) $record->webhook_sent) === 0,
             ];
@@ -651,6 +674,7 @@ class AdminAjax
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
+        \Kerbcycle\QrCode\Install\Activator::activate();
 
         $exception_id = isset($_POST['exception_id']) ? absint(wp_unslash($_POST['exception_id'])) : 0;
         if ($exception_id < 1) {
@@ -668,6 +692,13 @@ class AdminAjax
         if ((int) $record->webhook_sent === 1) {
             wp_send_json_error(['message' => __('This pickup exception is not eligible for retry.', 'kerbcycle')], 400);
         }
+
+        $retry_timestamp = current_time('mysql', true);
+        PickupExceptionRepository::update_result($exception_id, [
+            'retry_count' => ((int) $record->retry_count) + 1,
+            'last_retry_at' => $retry_timestamp,
+            'updated_at' => $retry_timestamp,
+        ]);
 
         $result = $this->qr_service->send_pickup_exception_to_n8n([
             'qr_code'     => (string) $record->qr_code,

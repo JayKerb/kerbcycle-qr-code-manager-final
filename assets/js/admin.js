@@ -695,6 +695,12 @@ function initKerbcycleAdmin() {
     const params = new URLSearchParams();
     params.append("action", "kerbcycle_get_pickup_exceptions");
     params.append("security", kerbcycle_ajax.nonce);
+    const pickupStatusFilter = new URLSearchParams(window.location.search).get(
+      "status_filter",
+    );
+    if (pickupStatusFilter === "failed") {
+      params.append("status_filter", "failed");
+    }
 
     return fetch(kerbcycle_ajax.ajax_url, {
       method: "POST",
@@ -711,7 +717,7 @@ function initKerbcycleAdmin() {
         const rows = data.data.rows;
         if (!rows.length) {
           pickupExceptionsTbody.innerHTML =
-            '<tr><td colspan="11">No pickup exceptions found.</td></tr>';
+            '<tr><td colspan="13">No pickup exceptions found.</td></tr>';
           return;
         }
 
@@ -731,6 +737,8 @@ function initKerbcycleAdmin() {
               <td>${escapeHtml(row.ai_severity || "")}</td>
               <td>${escapeHtml(row.ai_category || "")}</td>
               <td>${buildPickupExceptionStatusBadge(row.status || "pending")}</td>
+              <td>${escapeHtml(Number.isFinite(Number(row.retry_count)) ? String(Number(row.retry_count)) : "0")}</td>
+              <td>${escapeHtml(row.last_retry_at || "—")}</td>
               <td>${escapeHtml(trimPickupText(row.ai_recommended_action || ""))}</td>
               <td>${escapeHtml(trimPickupText(row.ai_summary || ""))}</td>
               <td>
@@ -739,7 +747,7 @@ function initKerbcycleAdmin() {
               </td>
             </tr>
             <tr class="kerbcycle-pickup-details-row" data-exception-id="${escapeHtml(row.id)}" style="display:none;">
-              <td colspan="11">
+              <td colspan="13">
                 <div class="kerbcycle-pickup-details-content">
                   <p><strong>Issue:</strong><br>${pickupDetailText(row.issue)}</p>
                   <p><strong>Notes:</strong><br>${pickupDetailText(row.notes)}</p>
@@ -750,6 +758,8 @@ function initKerbcycleAdmin() {
                   <pre>${pickupRawText(row.webhook_response_body)}</pre>
                   <p><strong>Submitted At:</strong> ${pickupDetailText(row.submitted_at)}</p>
                   <p><strong>Updated At:</strong> ${pickupDetailText(row.updated_at)}</p>
+                  <p><strong>Retry Count:</strong> ${pickupDetailText(Number.isFinite(Number(row.retry_count)) ? String(Number(row.retry_count)) : "0")}</p>
+                  <p><strong>Last Retry:</strong> ${pickupDetailText(row.last_retry_at || "—")}</p>
                   <p><strong>Customer ID:</strong> ${pickupDetailText(row.customer_id)}</p>
                   <p><strong>QR Code:</strong> ${pickupDetailText(row.qr_code)}</p>
                 </div>
