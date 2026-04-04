@@ -948,6 +948,7 @@ function initKerbcycleAdmin() {
 
   if (pickupExceptionsTbody) {
     let pickupExceptionsPollingInterval = null;
+    const expandedPickupExceptionIds = new Set();
 
     function startPolling() {
       if (pickupExceptionsPollingInterval || document.hidden) {
@@ -988,6 +989,11 @@ function initKerbcycleAdmin() {
         detailsRow.style.display = isOpen ? "none" : "table-row";
         detailsButton.setAttribute("aria-expanded", isOpen ? "false" : "true");
         detailsButton.textContent = isOpen ? "View Details" : "Hide Details";
+        if (isOpen) {
+          expandedPickupExceptionIds.delete(exceptionId);
+        } else {
+          expandedPickupExceptionIds.add(exceptionId);
+        }
         return;
       }
 
@@ -1043,6 +1049,39 @@ function initKerbcycleAdmin() {
       refreshPickupExceptionsTable();
       startPolling();
     });
+
+    const originalRefreshPickupExceptionsTable = refreshPickupExceptionsTable;
+    refreshPickupExceptionsTable = function () {
+      return originalRefreshPickupExceptionsTable().then(() => {
+        if (!pickupExceptionsTbody) {
+          return;
+        }
+        const visibleIds = new Set(
+          Array.from(
+            pickupExceptionsTbody.querySelectorAll('tr[data-exception-id]'),
+            (row) => row.getAttribute("data-exception-id"),
+          ).filter(Boolean),
+        );
+        Array.from(expandedPickupExceptionIds).forEach((id) => {
+          if (!visibleIds.has(id)) {
+            expandedPickupExceptionIds.delete(id);
+            return;
+          }
+          const detailsRow = pickupExceptionsTbody.querySelector(
+            `.kerbcycle-pickup-details-row[data-exception-id="${id}"]`,
+          );
+          const detailsButton = pickupExceptionsTbody.querySelector(
+            `.kerbcycle-view-details[data-exception-id="${id}"]`,
+          );
+          if (!detailsRow || !detailsButton) {
+            return;
+          }
+          detailsRow.style.display = "table-row";
+          detailsButton.setAttribute("aria-expanded", "true");
+          detailsButton.textContent = "Hide Details";
+        });
+      });
+    };
 
     startPolling();
   }
