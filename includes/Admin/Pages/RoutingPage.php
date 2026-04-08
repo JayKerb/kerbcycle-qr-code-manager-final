@@ -394,6 +394,9 @@ class RoutingPage
     public function ajax_test()
     {
         check_ajax_referer('kc_osrm_test');
+        if (!current_user_can('manage_options')) {
+            wp_send_json(['ok' => false, 'error' => __('Unauthorized', 'kerbcycle')], 403);
+        }
 
         $options = OsrmService::get_options();
         $endpoint = OsrmService::current_endpoint($options);
