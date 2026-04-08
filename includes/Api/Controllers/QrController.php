@@ -32,12 +32,20 @@ class QrController
      */
     public function handle_qr_code_scan(WP_REST_Request $request)
     {
-        if (!current_user_can('edit_posts')) {
+        if (!current_user_can('manage_options')) {
             return new \WP_Error('rest_forbidden', __('Unauthorized', 'kerbcycle'), ['status' => 403]);
         }
 
         $qr_code = sanitize_text_field($request->get_param('qr_code'));
         $user_id = intval($request->get_param('user_id'));
+
+        if ($qr_code === '') {
+            return new \WP_Error('invalid_qr_code', __('QR code is required.', 'kerbcycle'), ['status' => 400]);
+        }
+
+        if ($user_id < 1 || !get_userdata($user_id)) {
+            return new \WP_Error('invalid_user', __('Invalid customer selected.', 'kerbcycle'), ['status' => 400]);
+        }
 
         $nonce_check = Nonces::verify('kerbcycle_qr_nonce', 'nonce', $request);
         if (is_wp_error($nonce_check)) {
@@ -85,6 +93,10 @@ class QrController
      */
     public function get_qr_status(WP_REST_Request $request)
     {
+        if (!current_user_can('manage_options')) {
+            return new \WP_Error('rest_forbidden', __('Unauthorized', 'kerbcycle'), ['status' => 403]);
+        }
+
         global $wpdb;
         $qr_code = sanitize_text_field($request['qr_code']);
         $table   = $wpdb->prefix . 'kerbcycle_qr_codes';
