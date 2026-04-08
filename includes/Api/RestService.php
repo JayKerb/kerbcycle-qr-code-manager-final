@@ -46,7 +46,7 @@ class RestService
             'methods'  => 'GET',
             'callback' => [new Controllers\QrController(), 'get_qr_status'],
             'permission_callback' => function () {
-                return is_user_logged_in();
+                return current_user_can('edit_posts');
             },
         ]);
 

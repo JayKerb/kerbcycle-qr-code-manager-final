@@ -293,6 +293,17 @@ class AdminAjax
             wp_send_json_error(['message' => __('No file uploaded.', 'kerbcycle')]);
         }
 
+        $file_name = isset($_FILES['import_file']['name']) ? sanitize_file_name(wp_unslash($_FILES['import_file']['name'])) : '';
+        $extension = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+        if ($extension !== 'csv') {
+            wp_send_json_error(['message' => __('Only CSV files are allowed.', 'kerbcycle')]);
+        }
+
+        $file_size = isset($_FILES['import_file']['size']) ? (int) $_FILES['import_file']['size'] : 0;
+        if ($file_size < 1 || $file_size > 5 * MB_IN_BYTES) {
+            wp_send_json_error(['message' => __('Invalid file size.', 'kerbcycle')]);
+        }
+
         $handle = fopen($_FILES['import_file']['tmp_name'], 'r');
         if (!$handle) {
             wp_send_json_error(['message' => __('Could not read uploaded file.', 'kerbcycle')]);
@@ -406,7 +417,7 @@ class AdminAjax
     public function test_pickup_exception()
     {
         Nonces::verify('kerbcycle_qr_nonce', 'security');
-        if (!is_user_logged_in()) {
+        if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
         \Kerbcycle\QrCode\Install\Activator::activate();
