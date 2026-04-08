@@ -14,6 +14,8 @@ if (!defined('ABSPATH')) {
  */
 class PickupExceptionsPage
 {
+    private const RETRY_LOCK_TTL = 120;
+
     public function render()
     {
         if (!current_user_can('manage_options')) {
@@ -230,6 +232,10 @@ class PickupExceptionsPage
             $this->redirect_with_retry_notice('error', __('This pickup exception is not eligible for retry.', 'kerbcycle'));
         }
 
+        if (!$this->acquire_retry_lock($exception_id)) {
+            $this->redirect_with_retry_notice('error', __('Retry already in progress for this pickup exception.', 'kerbcycle'));
+        }
+
         $retry_timestamp = current_time('mysql', true);
         PickupExceptionRepository::update_result($exception_id, [
             'retry_count' => ((int) $record->retry_count) + 1,
@@ -257,7 +263,7 @@ class PickupExceptionsPage
                 'ai_recommended_action'    => '',
                 'updated_at'               => current_time('mysql', true),
             ]);
-
+            $this->release_retry_lock($exception_id);
             $this->redirect_with_retry_notice('error', __('Retry failed. The record remains saved locally.', 'kerbcycle'));
         }
 
@@ -280,7 +286,7 @@ class PickupExceptionsPage
                 'ai_recommended_action'    => $ai_recommended_action,
                 'updated_at'               => current_time('mysql', true),
             ]);
-
+            $this->release_retry_lock($exception_id);
             $this->redirect_with_retry_notice('success', __('Pickup exception resent successfully.', 'kerbcycle'));
         }
 
@@ -296,8 +302,29 @@ class PickupExceptionsPage
             'ai_recommended_action'    => '',
             'updated_at'               => current_time('mysql', true),
         ]);
-
+        $this->release_retry_lock($exception_id);
         $this->redirect_with_retry_notice('error', __('Retry failed. The record remains saved locally.', 'kerbcycle'));
+    }
+
+    private function retry_lock_key($exception_id)
+    {
+        return 'kerbcycle_pickup_retry_lock_' . (int) $exception_id;
+    }
+
+    private function acquire_retry_lock($exception_id)
+    {
+        $key = $this->retry_lock_key($exception_id);
+        $now = time();
+        $expires_at = (int) get_option($key, 0);
+        if ($expires_at > 0 && $expires_at <= $now) {
+            delete_option($key);
+        }
+        return add_option($key, (string) ($now + self::RETRY_LOCK_TTL), '', 'no');
+    }
+
+    private function release_retry_lock($exception_id)
+    {
+        delete_option($this->retry_lock_key($exception_id));
     }
 
     private function redirect_with_retry_notice($status, $message)

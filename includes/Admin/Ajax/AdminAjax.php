@@ -24,6 +24,7 @@ use Kerbcycle\QrCode\Admin\Pages\DashboardPage;
 class AdminAjax
 {
     private $qr_service;
+    private const RETRY_LOCK_TTL = 120;
 
     /**
      * Initialize the class and set its properties.
@@ -704,6 +705,10 @@ class AdminAjax
             wp_send_json_error(['message' => __('This pickup exception is not eligible for retry.', 'kerbcycle')], 400);
         }
 
+        if (!$this->acquire_retry_lock($exception_id)) {
+            wp_send_json_error(['message' => __('Retry already in progress for this pickup exception.', 'kerbcycle')], 409);
+        }
+
         $retry_timestamp = current_time('mysql', true);
         PickupExceptionRepository::update_result($exception_id, [
             'retry_count' => ((int) $record->retry_count) + 1,
@@ -731,7 +736,7 @@ class AdminAjax
                 'ai_recommended_action'    => '',
                 'updated_at'               => current_time('mysql', true),
             ]);
-
+            $this->release_retry_lock($exception_id);
             wp_send_json_error(['message' => __('Retry failed. The record remains saved locally.', 'kerbcycle')], 500);
         }
 
@@ -754,7 +759,7 @@ class AdminAjax
                 'ai_recommended_action'    => $ai_recommended_action,
                 'updated_at'               => current_time('mysql', true),
             ]);
-
+            $this->release_retry_lock($exception_id);
             wp_send_json_success(['message' => __('Pickup exception resent successfully.', 'kerbcycle')]);
         }
 
@@ -770,7 +775,28 @@ class AdminAjax
             'ai_recommended_action'    => '',
             'updated_at'               => current_time('mysql', true),
         ]);
-
+        $this->release_retry_lock($exception_id);
         wp_send_json_error(['message' => __('Retry failed. The record remains saved locally.', 'kerbcycle')], 500);
+    }
+
+    private function retry_lock_key($exception_id)
+    {
+        return 'kerbcycle_pickup_retry_lock_' . (int) $exception_id;
+    }
+
+    private function acquire_retry_lock($exception_id)
+    {
+        $key = $this->retry_lock_key($exception_id);
+        $now = time();
+        $expires_at = (int) get_option($key, 0);
+        if ($expires_at > 0 && $expires_at <= $now) {
+            delete_option($key);
+        }
+        return add_option($key, (string) ($now + self::RETRY_LOCK_TTL), '', 'no');
+    }
+
+    private function release_retry_lock($exception_id)
+    {
+        delete_option($this->retry_lock_key($exception_id));
     }
 }
