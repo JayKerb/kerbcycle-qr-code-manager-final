@@ -41,6 +41,11 @@ class QrService
 
     public function assign($qr_code, $user_id, $send_email, $send_sms, $send_reminder)
     {
+        $user_id = (int) $user_id;
+        if ($user_id < 1 || !get_userdata($user_id)) {
+            return new \WP_Error('invalid_customer', __('Invalid customer selected.', 'kerbcycle'));
+        }
+
         $existing = $this->repository->find_by_qr_code($qr_code);
         if ($existing && isset($existing->status) && $existing->status === 'assigned') {
             if ((int) $existing->user_id === (int) $user_id) {
@@ -83,6 +88,22 @@ class QrService
         if ($result === false) {
             return new \WP_Error('db_error', 'Failed to assign QR code in database.');
         }
+        if ($result === 0) {
+            $latest = $this->repository->find_by_qr_code($qr_code);
+            if ($latest && isset($latest->status) && $latest->status === 'assigned') {
+                if ((int) $latest->user_id === $user_id) {
+                    return new \WP_Error(
+                        'qr_code_already_assigned',
+                        __('This QR code is already assigned to the selected customer.', 'kerbcycle')
+                    );
+                }
+                return new \WP_Error(
+                    'qr_code_already_assigned',
+                    __('This QR code was assigned by another request. Refresh and try again.', 'kerbcycle')
+                );
+            }
+            return new \WP_Error('db_error', 'Failed to assign QR code in database.');
+        }
 
         $sms_result   = null;
         $email_result = null;
@@ -107,6 +128,9 @@ class QrService
         $row = $this->repository->find_by_qr_code($qr_code);
         if (!$row) {
             return new \WP_Error('not_found', 'QR code not found.');
+        }
+        if (!isset($row->status) || $row->status !== 'assigned') {
+            return new \WP_Error('invalid_state', __('QR code is not currently assigned.', 'kerbcycle'));
         }
 
         $result = $this->repository->release_latest_assigned($qr_code);
