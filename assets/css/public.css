@@ -90,7 +90,10 @@
   padding: 10px 14px;
   background: #0b5;
   color: #fff;
-  font: 600 14px/1 system-ui, Arial, sans-serif;
+  font:
+    600 14px/1 system-ui,
+    Arial,
+    sans-serif;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
   opacity: 0.96;
 }
