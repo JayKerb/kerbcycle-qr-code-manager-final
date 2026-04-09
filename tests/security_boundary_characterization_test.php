@@ -230,11 +230,23 @@ namespace {
         return 'uuid-test';
     }
 
-    function wp_enqueue_style($handle) {}
-    function wp_enqueue_script($handle) {}
-    function wp_add_inline_script($handle, $data, $position = 'after') {}
-    function wp_json_encode($value) { return json_encode($value); }
-    function get_current_user_id() { return $GLOBALS['kc_current_role'] === 'anonymous' ? 0 : 1; }
+    function wp_enqueue_style($handle)
+    {
+    }
+    function wp_enqueue_script($handle)
+    {
+    }
+    function wp_add_inline_script($handle, $data, $position = 'after')
+    {
+    }
+    function wp_json_encode($value)
+    {
+        return json_encode($value);
+    }
+    function get_current_user_id()
+    {
+        return $GLOBALS['kc_current_role'] === 'anonymous' ? 0 : 1;
+    }
 
     function assert_true($condition, string $message)
     {
@@ -258,7 +270,7 @@ namespace {
     }
 
     // Minimal $wpdb double used by constructors and QR table renderer.
-    $GLOBALS['wpdb'] = new class {
+    $GLOBALS['wpdb'] = new class () {
         public $prefix = 'wp_';
 
         public function get_results($sql)
