@@ -591,14 +591,22 @@ function initKerbcycleScanner() {
   const assignBtn = document.getElementById("assign-qr-btn");
   const resetBtn = document.getElementById("reset-scan-btn");
   const reportExceptionBtn = document.getElementById("report-exception-btn");
-  const exceptionFormWrap = document.getElementById("scanner-exception-form-wrap");
+  const exceptionFormWrap = document.getElementById(
+    "scanner-exception-form-wrap",
+  );
   const exceptionQrField = document.getElementById("scanner-exception-qr-code");
   const exceptionCustomerField = document.getElementById(
     "scanner-exception-customer-id",
   );
-  const exceptionIssueField = document.getElementById("scanner-exception-issue");
-  const exceptionNotesField = document.getElementById("scanner-exception-notes");
-  const submitExceptionBtn = document.getElementById("scanner-submit-exception");
+  const exceptionIssueField = document.getElementById(
+    "scanner-exception-issue",
+  );
+  const exceptionNotesField = document.getElementById(
+    "scanner-exception-notes",
+  );
+  const submitExceptionBtn = document.getElementById(
+    "scanner-submit-exception",
+  );
   const exceptionStatus = document.getElementById("scanner-exception-status");
   const customerIdField = document.getElementById("customer-id");
   let scannedCode = "";
@@ -1022,7 +1030,10 @@ function initKerbcycleScanner() {
               data && data.data && data.data.message
                 ? data.data.message
                 : "Unable to submit pickup exception.";
-            setExceptionStatus("error", `<strong>❌ ${escapeHtml(msg)}</strong>`);
+            setExceptionStatus(
+              "error",
+              `<strong>❌ ${escapeHtml(msg)}</strong>`,
+            );
           }
         })
         .catch((error) => {
