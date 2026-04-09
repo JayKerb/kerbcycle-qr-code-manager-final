@@ -25,6 +25,7 @@ class AdminAjax
 {
     private $qr_service;
     private const RETRY_LOCK_TTL = 120;
+    private const PICKUP_DEDUPE_TTL = 45;
 
     /**
      * Initialize the class and set its properties.
@@ -446,6 +447,22 @@ class AdminAjax
             wp_send_json_error(['message' => __('Provide at least a QR Code or Customer ID.', 'kerbcycle')], 400);
         }
 
+        $dedupe_key = $this->pickup_dedupe_option_key($qr_code, $customer_id, $issue, $notes);
+        $duplicate_id = $this->pickup_dedupe_active_record_id($dedupe_key);
+        if ($duplicate_id > 0) {
+            wp_send_json_success([
+                'status'      => 'duplicate_suppressed',
+                'message'     => __('Duplicate pickup exception suppressed. Existing record retained.', 'kerbcycle'),
+                'exception_id' => $duplicate_id,
+                'local_save'  => ['success' => true, 'id' => $duplicate_id],
+                'webhook'     => ['success' => true, 'duplicate' => true],
+                'ai_recommended_action' => '',
+                'ai_summary'  => '',
+                'ai_category' => '',
+                'ai_severity' => '',
+            ]);
+        }
+
         $payload = [
             'qr_code'     => $qr_code,
             'customer_id' => $customer_id,
@@ -472,6 +489,7 @@ class AdminAjax
         if ($exception_id < 1) {
             wp_send_json_error(['message' => __('Failed to save pickup exception locally.', 'kerbcycle')], 500);
         }
+        $this->store_pickup_dedupe_record($dedupe_key, $exception_id);
 
         // Local save intentionally happens first; webhook delivery must not block local persistence.
         ErrorLogRepository::log([
@@ -782,6 +800,47 @@ class AdminAjax
     private function retry_lock_key($exception_id)
     {
         return 'kerbcycle_pickup_retry_lock_' . (int) $exception_id;
+    }
+
+    private function pickup_dedupe_option_key($qr_code, $customer_id, $issue, $notes)
+    {
+        $parts = [
+            strtolower(trim((string) $qr_code)),
+            (string) (int) $customer_id,
+            strtolower(trim((string) $issue)),
+            strtolower(trim((string) $notes)),
+        ];
+        return 'kerbcycle_pickup_dedupe_' . md5(implode('|', $parts));
+    }
+
+    private function pickup_dedupe_active_record_id($key)
+    {
+        $raw = get_option($key, '');
+        if (!is_string($raw) || $raw === '') {
+            return 0;
+        }
+
+        $parts = explode(':', $raw, 2);
+        if (count($parts) !== 2) {
+            delete_option($key);
+            return 0;
+        }
+
+        $record_id = (int) $parts[0];
+        $expires = (int) $parts[1];
+        $now = time();
+        if ($record_id < 1 || $expires < $now) {
+            delete_option($key);
+            return 0;
+        }
+
+        return $record_id;
+    }
+
+    private function store_pickup_dedupe_record($key, $record_id)
+    {
+        $expires = time() + self::PICKUP_DEDUPE_TTL;
+        update_option($key, (int) $record_id . ':' . (int) $expires, false);
     }
 
     private function acquire_retry_lock($exception_id)

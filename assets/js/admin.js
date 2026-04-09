@@ -666,7 +666,9 @@ function initKerbcycleAdmin() {
   }
 
   function trimPickupText(value, maxWords = 20) {
-    const text = String(value || "").replace(/\s+/g, " ").trim();
+    const text = String(value || "")
+      .replace(/\s+/g, " ")
+      .trim();
     if (!text) {
       return "";
     }
@@ -711,7 +713,12 @@ function initKerbcycleAdmin() {
     })
       .then((res) => res.json())
       .then((data) => {
-        if (!data || !data.success || !data.data || !Array.isArray(data.data.rows)) {
+        if (
+          !data ||
+          !data.success ||
+          !data.data ||
+          !Array.isArray(data.data.rows)
+        ) {
           return;
         }
         const rows = data.data.rows;
@@ -786,7 +793,7 @@ function initKerbcycleAdmin() {
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;")
-      .replaceAll("\"", "&quot;")
+      .replaceAll('"', "&quot;")
       .replaceAll("'", "&#039;");
   }
 
@@ -801,7 +808,10 @@ function initKerbcycleAdmin() {
 
   function callAiAction(action) {
     if (!kerbcycle_ajax.rest_url || !kerbcycle_ajax.rest_nonce) {
-      setAiResult("<p>AI endpoint is not configured in admin assets.</p>", "notice-error");
+      setAiResult(
+        "<p>AI endpoint is not configured in admin assets.</p>",
+        "notice-error",
+      );
       return;
     }
 
@@ -847,7 +857,10 @@ function initKerbcycleAdmin() {
                 )
             : [];
           const totalExceptions = Array.isArray(data.source?.groups)
-            ? data.source.groups.reduce((sum, group) => sum + (group.count || 0), 0)
+            ? data.source.groups.reduce(
+                (sum, group) => sum + (group.count || 0),
+                0,
+              )
             : 0;
 
           setAiResult(
@@ -872,7 +885,10 @@ function initKerbcycleAdmin() {
       })
       .catch((error) => {
         console.error("AI request failed:", error);
-        setAiResult(`<p>${escapeHtml(error.message || "AI request failed.")}</p>`, "notice-error");
+        setAiResult(
+          `<p>${escapeHtml(error.message || "AI request failed.")}</p>`,
+          "notice-error",
+        );
         if (aiStatus) {
           aiStatus.textContent = "AI request failed.";
         }
@@ -897,19 +913,29 @@ function initKerbcycleAdmin() {
       pickupExceptionTestBtn.disabled = true;
       pickupExceptionTestBtn.textContent = "Submitting...";
       if (pickupExceptionTestResult) {
-        pickupExceptionTestResult.textContent = "Saving and sending pickup exception...";
+        pickupExceptionTestResult.textContent =
+          "Saving and sending pickup exception...";
       }
 
       const params = new URLSearchParams();
       params.append("action", "kerbcycle_test_pickup_exception");
       params.append("security", kerbcycle_ajax.nonce);
-      params.append("qr_code", pickupExceptionQrCode ? pickupExceptionQrCode.value : "");
+      params.append(
+        "qr_code",
+        pickupExceptionQrCode ? pickupExceptionQrCode.value : "",
+      );
       params.append(
         "customer_id",
         pickupExceptionCustomerId ? pickupExceptionCustomerId.value : "",
       );
-      params.append("issue", pickupExceptionIssue ? pickupExceptionIssue.value : "");
-      params.append("notes", pickupExceptionNotes ? pickupExceptionNotes.value : "");
+      params.append(
+        "issue",
+        pickupExceptionIssue ? pickupExceptionIssue.value : "",
+      );
+      params.append(
+        "notes",
+        pickupExceptionNotes ? pickupExceptionNotes.value : "",
+      );
 
       fetch(kerbcycle_ajax.ajax_url, {
         method: "POST",
@@ -921,7 +947,9 @@ function initKerbcycleAdmin() {
         .then((res) => res.json())
         .then((data) => {
           document.dispatchEvent(
-            new CustomEvent("kerbcycle-pickup-exception-submitted", { detail: data }),
+            new CustomEvent("kerbcycle-pickup-exception-submitted", {
+              detail: data,
+            }),
           );
           if (pickupExceptionTestResult) {
             const payload = data && data.data ? data.data : {};
@@ -934,7 +962,11 @@ function initKerbcycleAdmin() {
               ai_category: payload.ai_category || "",
               ai_severity: payload.ai_severity || "",
             };
-            pickupExceptionTestResult.textContent = JSON.stringify(output, null, 2);
+            pickupExceptionTestResult.textContent = JSON.stringify(
+              output,
+              null,
+              2,
+            );
           }
         })
         .catch((error) => {
@@ -1068,7 +1100,7 @@ function initKerbcycleAdmin() {
         }
         const visibleIds = new Set(
           Array.from(
-            pickupExceptionsTbody.querySelectorAll('tr[data-exception-id]'),
+            pickupExceptionsTbody.querySelectorAll("tr[data-exception-id]"),
             (row) => row.getAttribute("data-exception-id"),
           ).filter(Boolean),
         );
