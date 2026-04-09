@@ -56,9 +56,9 @@ class AiSettingsPage
             <form method="post" action="options.php">
                 <?php
                 settings_fields(self::OPTION_KEY);
-                do_settings_sections(self::OPTION_KEY);
-                submit_button(__('Save AI Settings', 'kerbcycle'));
-                ?>
+        do_settings_sections(self::OPTION_KEY);
+        submit_button(__('Save AI Settings', 'kerbcycle'));
+        ?>
             </form>
 
             <h2><?php esc_html_e('Active webhook', 'kerbcycle'); ?></h2>
