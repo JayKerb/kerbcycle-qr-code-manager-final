@@ -7,6 +7,7 @@ if (!defined('ABSPATH')) {
 }
 
 use Kerbcycle\QrCode\Data\Repositories\QrCodeRepository;
+use Kerbcycle\QrCode\Data\Repositories\ErrorLogRepository;
 use Kerbcycle\QrCode\Services\EmailService;
 use Kerbcycle\QrCode\Services\SmsService;
 
@@ -77,6 +78,13 @@ class QrService
         }
 
         if (!$latest || !isset($latest->status) || $latest->status !== 'available') {
+            $this->log_qr_state_event(
+                'qr_assign',
+                'invalid_state',
+                'QR code is not available for assignment.',
+                $qr_code,
+                ['customer_id' => $user_id]
+            );
             return new \WP_Error('qr_code_not_available', __('QR code is not available for assignment.', 'kerbcycle'));
         }
 
@@ -131,14 +139,33 @@ class QrService
 
         $assigned_count = $this->repository->count_by_status($qr_code, 'assigned');
         if ($assigned_count < 1) {
+            $this->log_qr_state_event(
+                'qr_release',
+                'invalid_state',
+                'QR code is not currently assigned.',
+                $qr_code
+            );
             return new \WP_Error('invalid_state', __('QR code is not currently assigned.', 'kerbcycle'));
         }
         if ($assigned_count > 1) {
+            $this->log_qr_state_event(
+                'qr_release',
+                'conflicting_state',
+                'QR code assignment state is ambiguous.',
+                $qr_code,
+                ['assigned_count' => (int) $assigned_count]
+            );
             return new \WP_Error('conflicting_state', __('QR code assignment state is ambiguous. Resolve duplicates before release.', 'kerbcycle'));
         }
 
         $row = $this->repository->find_latest_by_status($qr_code, 'assigned');
         if (!$row || !isset($row->status) || $row->status !== 'assigned') {
+            $this->log_qr_state_event(
+                'qr_release',
+                'invalid_state',
+                'Assigned row missing or invalid during release.',
+                $qr_code
+            );
             return new \WP_Error('invalid_state', __('QR code is not currently assigned.', 'kerbcycle'));
         }
 
@@ -261,5 +288,36 @@ class QrService
     public function get_assigned_by_user($user_id)
     {
         return $this->repository->get_assigned_codes_by_user($user_id);
+    }
+
+    /**
+     * Log QR state conflict/invalid-state events for diagnosis.
+     *
+     * @param string $action
+     * @param string $status
+     * @param string $reason
+     * @param string $qr_code
+     * @param array  $context
+     *
+     * @return void
+     */
+    private function log_qr_state_event($action, $status, $reason, $qr_code, array $context = [])
+    {
+        $payload = [
+            'timestamp'     => gmdate('c'),
+            'actor_user_id' => function_exists('get_current_user_id') ? (int) get_current_user_id() : 0,
+            'action'        => $action,
+            'status'        => $status,
+            'qr_code'       => (string) $qr_code,
+            'reason'        => $reason,
+            'context'       => $context,
+        ];
+
+        ErrorLogRepository::log([
+            'type'    => 'qr_state',
+            'message' => wp_json_encode($payload),
+            'page'    => 'kerbcycle-qr-manager',
+            'status'  => $status,
+        ]);
     }
 }
