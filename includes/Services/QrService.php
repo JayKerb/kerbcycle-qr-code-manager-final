@@ -46,9 +46,11 @@ class QrService
             return new \WP_Error('invalid_customer', __('Invalid customer selected.', 'kerbcycle'));
         }
 
-        $existing = $this->repository->find_by_qr_code($qr_code);
-        if ($existing && isset($existing->status) && $existing->status === 'assigned') {
-            if ((int) $existing->user_id === (int) $user_id) {
+        $latest = $this->repository->find_by_qr_code($qr_code);
+        $assigned_count = $this->repository->count_by_status($qr_code, 'assigned');
+        if ($assigned_count > 0) {
+            $active_assigned = $this->repository->find_latest_by_status($qr_code, 'assigned');
+            if ($active_assigned && (int) $active_assigned->user_id === (int) $user_id) {
                 return new \WP_Error(
                     'qr_code_already_assigned',
                     __('This QR code is already assigned to the selected customer.', 'kerbcycle')
@@ -57,41 +59,38 @@ class QrService
 
             $message = __('This QR code is already assigned. Release it before assigning it to another customer.', 'kerbcycle');
 
-            if (!empty($existing->display_name)) {
+            if ($active_assigned && !empty($active_assigned->display_name)) {
                 /* translators: %s is the customer's display name. */
                 $message = sprintf(
                     __('This QR code is already assigned to %s. Release it before assigning it to another customer.', 'kerbcycle'),
-                    $existing->display_name
+                    $active_assigned->display_name
                 );
-            } elseif (!empty($existing->user_id)) {
+            } elseif ($active_assigned && !empty($active_assigned->user_id)) {
                 /* translators: %d is the customer's ID. */
                 $message = sprintf(
                     __('This QR code is already assigned to customer #%d. Release it before assigning it to another customer.', 'kerbcycle'),
-                    (int) $existing->user_id
+                    (int) $active_assigned->user_id
                 );
             }
 
             return new \WP_Error('qr_code_already_assigned', $message);
         }
 
+        if (!$latest || !isset($latest->status) || $latest->status !== 'available') {
+            return new \WP_Error('qr_code_not_available', __('QR code is not available for assignment.', 'kerbcycle'));
+        }
+
         $user = get_userdata($user_id);
         $name = $user ? $user->display_name : '';
-
-        if ($existing && isset($existing->status) && $existing->status === 'available') {
-            $result = $this->repository->update_available_to_assigned($qr_code, $user_id, $name);
-        } elseif ($this->repository->available_exists($qr_code)) {
-            $result = $this->repository->update_available_to_assigned($qr_code, $user_id, $name);
-        } else {
-            $result = $this->repository->insert_assigned($qr_code, $user_id, $name);
-        }
+        $result = $this->repository->update_available_to_assigned($qr_code, $user_id, $name);
 
         if ($result === false) {
             return new \WP_Error('db_error', 'Failed to assign QR code in database.');
         }
         if ($result === 0) {
-            $latest = $this->repository->find_by_qr_code($qr_code);
-            if ($latest && isset($latest->status) && $latest->status === 'assigned') {
-                if ((int) $latest->user_id === $user_id) {
+            $latest_after_update = $this->repository->find_by_qr_code($qr_code);
+            if ($latest_after_update && isset($latest_after_update->status) && $latest_after_update->status === 'assigned') {
+                if ((int) $latest_after_update->user_id === $user_id) {
                     return new \WP_Error(
                         'qr_code_already_assigned',
                         __('This QR code is already assigned to the selected customer.', 'kerbcycle')
@@ -125,11 +124,21 @@ class QrService
 
     public function release($qr_code, $send_email, $send_sms)
     {
-        $row = $this->repository->find_by_qr_code($qr_code);
-        if (!$row) {
+        $latest = $this->repository->find_by_qr_code($qr_code);
+        if (!$latest) {
             return new \WP_Error('not_found', 'QR code not found.');
         }
-        if (!isset($row->status) || $row->status !== 'assigned') {
+
+        $assigned_count = $this->repository->count_by_status($qr_code, 'assigned');
+        if ($assigned_count < 1) {
+            return new \WP_Error('invalid_state', __('QR code is not currently assigned.', 'kerbcycle'));
+        }
+        if ($assigned_count > 1) {
+            return new \WP_Error('conflicting_state', __('QR code assignment state is ambiguous. Resolve duplicates before release.', 'kerbcycle'));
+        }
+
+        $row = $this->repository->find_latest_by_status($qr_code, 'assigned');
+        if (!$row || !isset($row->status) || $row->status !== 'assigned') {
             return new \WP_Error('invalid_state', __('QR code is not currently assigned.', 'kerbcycle'));
         }
 

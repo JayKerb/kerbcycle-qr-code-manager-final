@@ -47,6 +47,11 @@ class QrCodeRepository
     public function update_available_to_assigned($qr_code, $user_id, $display_name)
     {
         global $wpdb;
+        $row = $this->find_latest_by_status($qr_code, 'available');
+        if (!$row || empty($row->id)) {
+            return 0;
+        }
+
         $result = $wpdb->update(
             $this->table,
             [
@@ -56,11 +61,11 @@ class QrCodeRepository
                 'assigned_at' => current_time('mysql')
             ],
             [
-                'qr_code' => $qr_code,
+                'id'      => (int) $row->id,
                 'status'  => 'available'
             ],
             ['%d', '%s', '%s', '%s'],
-            ['%s', '%s']
+            ['%d', '%s']
         );
 
         if ($result !== false) {
@@ -95,12 +100,7 @@ class QrCodeRepository
     public function release_latest_assigned($qr_code)
     {
         global $wpdb;
-        $row = $wpdb->get_row(
-            $wpdb->prepare(
-                "SELECT id, user_id FROM $this->table WHERE qr_code = %s AND status = 'assigned' ORDER BY id DESC LIMIT 1",
-                $qr_code
-            )
-        );
+        $row = $this->find_latest_by_status($qr_code, 'assigned');
 
         if ($row) {
             $result = $wpdb->update(
@@ -111,9 +111,12 @@ class QrCodeRepository
                     'assigned_at'  => null,
                     'display_name' => null,
                 ],
-                ['id' => $row->id],
+                [
+                    'id' => (int) $row->id,
+                    'status' => 'assigned',
+                ],
                 ['%d', '%s', '%s', '%s'],
-                ['%d']
+                ['%d', '%s']
             );
 
             if ($result !== false) {
@@ -215,11 +218,31 @@ class QrCodeRepository
     public function available_exists($qr_code)
     {
         global $wpdb;
-        $count = $wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM $this->table WHERE qr_code = %s AND status = 'available'",
-            $qr_code
-        ));
-        return $count > 0;
+        return $this->count_by_status($qr_code, 'available') > 0;
+    }
+
+    public function find_latest_by_status($qr_code, $status)
+    {
+        global $wpdb;
+        return $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM $this->table WHERE qr_code = %s AND status = %s ORDER BY id DESC LIMIT 1",
+                $qr_code,
+                $status
+            )
+        );
+    }
+
+    public function count_by_status($qr_code, $status)
+    {
+        global $wpdb;
+        return (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM $this->table WHERE qr_code = %s AND status = %s",
+                $qr_code,
+                $status
+            )
+        );
     }
 
     public function list_available()

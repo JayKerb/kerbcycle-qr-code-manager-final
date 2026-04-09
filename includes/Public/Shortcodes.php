@@ -34,6 +34,16 @@ class Shortcodes
      */
     public function generate_frontend_scanner()
     {
+        if (!current_user_can('manage_options')) {
+            ob_start();
+            ?>
+            <div class="kerbcycle-qr-scanner-container kc-compact">
+                <p><?php esc_html_e('QR scanner is available to authorized staff only.', 'kerbcycle'); ?></p>
+            </div>
+            <?php
+            return ob_get_clean();
+        }
+
         ob_start();
         ?>
         <div class="kerbcycle-qr-scanner-container kc-compact">
@@ -87,6 +97,16 @@ class Shortcodes
      */
     public function generate_qr_table()
     {
+        if (!current_user_can('manage_options')) {
+            ob_start();
+            ?>
+            <div class="kerbcycle-qr-scanner-container kc-compact">
+                <p><?php esc_html_e('QR table is available to authorized staff only.', 'kerbcycle'); ?></p>
+            </div>
+            <?php
+            return ob_get_clean();
+        }
+
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
         $codes = $wpdb->get_results(
