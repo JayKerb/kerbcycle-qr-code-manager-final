@@ -1,0 +1,121 @@
+<?php
+
+namespace Kerbcycle\QrCode\Admin\Assets;
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+use Kerbcycle\QrCode\Services\ReportService;
+
+/**
+ * The admin assets.
+ *
+ * @since      1.0.0
+ * @package    Kerbcycle\QrCode
+ * @subpackage Kerbcycle\QrCode\Admin\Assets
+ */
+class AdminAssets
+{
+    /**
+     * Initialize the class and set its properties.
+     *
+     * @since    1.0.0
+     */
+    public function __construct()
+    {
+        add_action('admin_enqueue_scripts', [$this, 'enqueue_scripts']);
+    }
+
+    /**
+     * Enqueue the admin scripts.
+     *
+     * @since    1.0.0
+     */
+    public function enqueue_scripts($hook)
+    {
+        if ($hook === 'qr-codes_page_kerbcycle-qr-reports') {
+            wp_enqueue_script('chartjs', 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js', [], '3.9.1', true);
+            wp_enqueue_script(
+                'kerbcycle-qr-reports',
+                KERBCYCLE_QR_URL . 'assets/js/qr-reports.js',
+                ['chartjs'],
+                '1.0',
+                true
+            );
+
+            $report_data = (new ReportService())->get_report_data();
+
+            // Use wp_add_inline_script to make data available to the chart script
+            wp_add_inline_script(
+                'chartjs',
+                'const kerbcycleReportData = ' . wp_json_encode($report_data) . ';',
+                'after'
+            );
+            return;
+        }
+
+        if (!in_array($hook, ['toplevel_page_kerbcycle-qr-manager', 'kerbcycle-qr-manager_page_kerbcycle-qr-history', 'qr-codes_page_kerbcycle-pickup-exceptions'])) {
+            return;
+        }
+
+        $scanner_enabled      = (bool) get_option('kerbcycle_qr_enable_scanner', 1);
+        $drag_drop_disabled   = (bool) get_option('kerbcycle_qr_disable_drag_drop', 0);
+
+        wp_enqueue_style(
+            'kerbcycle-qr-admin-css',
+            KERBCYCLE_QR_URL . 'assets/css/admin.css',
+            [],
+            filemtime(KERBCYCLE_QR_PATH . 'assets/css/admin.css')
+        );
+
+        $deps = [];
+        if (!$drag_drop_disabled) {
+            $deps[] = 'jquery-ui-sortable';
+        }
+
+        // Enqueue the main admin script
+        wp_enqueue_script(
+            'kerbcycle-qr-admin-js',
+            KERBCYCLE_QR_URL . 'assets/js/admin.js',
+            $deps,
+            filemtime(KERBCYCLE_QR_PATH . 'assets/js/admin.js'),
+            true
+        );
+
+        wp_localize_script('kerbcycle-qr-admin-js', 'kerbcycle_ajax', [
+            'ajax_url'          => admin_url('admin-ajax.php'),
+            'nonce'             => wp_create_nonce('kerbcycle_qr_nonce'),
+            'rest_url'          => rest_url('kerbcycle/v1/ai'),
+            'rest_nonce'        => wp_create_nonce('wp_rest'),
+            'scanner_enabled'   => $scanner_enabled,
+            'drag_drop_disabled' => $drag_drop_disabled,
+        ]);
+
+        if ($scanner_enabled) {
+            wp_enqueue_script(
+                'zxing-browser',
+                'https://unpkg.com/@zxing/browser@latest',
+                [],
+                null,
+                true
+            );
+
+            wp_enqueue_script(
+                'jsqr',
+                'https://unpkg.com/jsqr/dist/jsQR.js',
+                [],
+                null,
+                true
+            );
+
+            wp_enqueue_script(
+                'kerbcycle-dashboard-scanner-js',
+                KERBCYCLE_QR_URL . 'assets/js/dashboard-scanner.js',
+                ['zxing-browser', 'jsqr', 'kerbcycle-qr-admin-js'],
+                filemtime(KERBCYCLE_QR_PATH . 'assets/js/dashboard-scanner.js'),
+                true
+            );
+        }
+    }
+}
