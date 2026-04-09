@@ -299,7 +299,9 @@ namespace {
                 if (!$rows) {
                     return null;
                 }
-                usort($rows, static function ($a, $b) { return (int) $b['id'] <=> (int) $a['id']; });
+                usort($rows, static function ($a, $b) {
+                    return (int) $b['id'] <=> (int) $a['id'];
+                });
                 return (object) $rows[0];
             }
 
@@ -312,7 +314,9 @@ namespace {
                 if (!$rows) {
                     return null;
                 }
-                usort($rows, static function ($a, $b) { return (int) $b['id'] <=> (int) $a['id']; });
+                usort($rows, static function ($a, $b) {
+                    return (int) $b['id'] <=> (int) $a['id'];
+                });
                 return (object) $rows[0];
             }
 
