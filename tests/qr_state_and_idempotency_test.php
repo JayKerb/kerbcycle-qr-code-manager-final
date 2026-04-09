@@ -290,11 +290,12 @@ namespace {
 
         public function get_row($query)
         {
-            if (preg_match("/FROM\s+(\w+)\s+WHERE\s+qr_code\s*=\s*'([^']+)'\s+AND\s+status\s*=\s*'assigned'\s+ORDER BY id DESC LIMIT 1/i", $query, $m)) {
+            if (preg_match("/FROM\s+(\w+)\s+WHERE\s+qr_code\s*=\s*'([^']+)'\s+AND\s+status\s*=\s*'([^']+)'\s+ORDER BY id DESC LIMIT 1/i", $query, $m)) {
                 $table = $m[1];
                 $code = stripslashes($m[2]);
-                $rows = array_values(array_filter($this->tables[$table] ?? [], static function ($r) use ($code) {
-                    return ($r['qr_code'] ?? '') === $code && ($r['status'] ?? '') === 'assigned';
+                $status = stripslashes($m[3]);
+                $rows = array_values(array_filter($this->tables[$table] ?? [], static function ($r) use ($code, $status) {
+                    return ($r['qr_code'] ?? '') === $code && ($r['status'] ?? '') === $status;
                 }));
                 if (!$rows) {
                     return null;
@@ -336,12 +337,13 @@ namespace {
 
         public function get_var($query)
         {
-            if (preg_match("/FROM\s+(\w+)\s+WHERE\s+qr_code\s*=\s*'([^']+)'\s+AND\s+status\s*=\s*'available'/i", $query, $m)) {
+            if (preg_match("/SELECT\s+COUNT\(\*\)\s+FROM\s+(\w+)\s+WHERE\s+qr_code\s*=\s*'([^']+)'\s+AND\s+status\s*=\s*'([^']+)'/i", $query, $m)) {
                 $table = $m[1];
                 $code = stripslashes($m[2]);
+                $status = stripslashes($m[3]);
                 $count = 0;
                 foreach ($this->tables[$table] ?? [] as $row) {
-                    if (($row['qr_code'] ?? '') === $code && ($row['status'] ?? '') === 'available') {
+                    if (($row['qr_code'] ?? '') === $code && ($row['status'] ?? '') === $status) {
                         $count++;
                     }
                 }
@@ -413,7 +415,7 @@ namespace {
     assert_true(is_wp_error($release_non_assigned), 'Releasing available QR should fail');
     assert_equals('invalid_state', $release_non_assigned->get_error_code(), 'Expected invalid_state code');
 
-    // ---- Test 4: parallel assignment characterization (sequential approximation) ----
+    // ---- Test 4: duplicate/near-duplicate assignment attempts keep canonical state ----
     $repo->insert_available('QR-RACE-1');
     $first_assign = $service->assign('QR-RACE-1', 101, false, false, false);
     $second_assign = $service->assign('QR-RACE-1', 202, false, false, false);
@@ -423,9 +425,24 @@ namespace {
     $race_rows = array_values(array_filter($GLOBALS['wpdb']->tables['wp_kerbcycle_qr_codes'], static function ($row) {
         return ($row['qr_code'] ?? '') === 'QR-RACE-1';
     }));
-    assert_equals(1, count($race_rows), 'Characterization: sequential approximation currently leaves one QR row');
+    assert_equals(1, count($race_rows), 'Duplicate assignment attempts should keep one canonical QR row');
 
-    // ---- Test 5: pickup exception duplicate submission characterization ----
+    // ---- Test 5: unknown QR assignment is explicitly rejected ----
+    $unknown_assign = $service->assign('QR-UNKNOWN-1', 101, false, false, false);
+    assert_true(is_wp_error($unknown_assign), 'Unknown QR assignment should fail safely');
+    assert_equals('qr_code_not_available', $unknown_assign->get_error_code(), 'Unknown QR assignment should return qr_code_not_available');
+
+    // ---- Test 6: release affects current assigned record only ----
+    $repo->insert_available('QR-REL-1');
+    $assign_for_release = $service->assign('QR-REL-1', 101, false, false, false);
+    assert_true(!is_wp_error($assign_for_release), 'Release setup assignment should succeed');
+    $release_result = $service->release('QR-REL-1', false, false);
+    assert_true(!is_wp_error($release_result), 'Release from assigned state should succeed');
+    $released_row = $repo->find_by_qr_code('QR-REL-1');
+    assert_equals('available', $released_row->status, 'Released QR should return to available');
+    assert_true(!isset($released_row->user_id) || $released_row->user_id === null, 'Released QR should clear user_id');
+
+    // ---- Test 7: pickup exception duplicate submission characterization ----
     $GLOBALS['kc_current_role'] = 'administrator';
     $GLOBALS['kc_webhook_call_count'] = 0;
 
