@@ -124,8 +124,29 @@ namespace {
 
     function get_option($key, $default = false)
     {
+        $runtime = $GLOBALS['kc_runtime_options'] ?? [];
+        if (array_key_exists($key, $runtime)) {
+            return $runtime[$key];
+        }
         $options = $GLOBALS['kc_mock_options'] ?? [];
         return array_key_exists($key, $options) ? $options[$key] : $default;
+    }
+
+    function update_option($key, $value, $autoload = null)
+    {
+        if (!isset($GLOBALS['kc_runtime_options']) || !is_array($GLOBALS['kc_runtime_options'])) {
+            $GLOBALS['kc_runtime_options'] = [];
+        }
+        $GLOBALS['kc_runtime_options'][$key] = $value;
+        return true;
+    }
+
+    function delete_option($key)
+    {
+        if (isset($GLOBALS['kc_runtime_options'][$key])) {
+            unset($GLOBALS['kc_runtime_options'][$key]);
+        }
+        return true;
     }
 
     function wp_create_nonce($action)
@@ -364,6 +385,7 @@ namespace {
             'timeout' => 20,
         ],
     ];
+    $GLOBALS['kc_runtime_options'] = [];
 
     require_once __DIR__ . '/../includes/Autoloader.php';
     \Kerbcycle\QrCode\Autoloader::run();
@@ -431,11 +453,12 @@ namespace {
         $ajax->test_pickup_exception();
     } catch (TestAjaxResponse $response_two) {
         assert_true($response_two->success, 'Second duplicate submission should complete with JSON success envelope');
+        assert_equals('duplicate_suppressed', $response_two->data['status'], 'Second duplicate submission should be suppressed');
     }
 
     $exception_rows = $GLOBALS['wpdb']->tables['wp_kerbcycle_pickup_exceptions'];
-    assert_equals(2, count($exception_rows), 'Characterization: duplicate submissions currently create two rows');
-    assert_equals(2, (int) $GLOBALS['kc_webhook_call_count'], 'Characterization: duplicate submissions currently trigger two webhook attempts');
+    assert_equals(1, count($exception_rows), 'Duplicate submissions should create a single effective row');
+    assert_equals(1, (int) $GLOBALS['kc_webhook_call_count'], 'Duplicate submissions should trigger a single webhook attempt');
 
     echo "qr_state_and_idempotency tests passed\n";
 }

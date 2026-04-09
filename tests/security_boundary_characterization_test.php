@@ -359,12 +359,12 @@ namespace {
     $table_html = $shortcodes->generate_qr_table();
 
     // Characterization assertions: capture current anonymous-visible output.
-    assert_contains('Select Customer', $scanner_html, 'Scanner shortcode should render customer selector text for anonymous users');
-    assert_contains('Alice Customer', $scanner_html, 'Scanner shortcode currently exposes user display name to anonymous users');
+    assert_contains('authorized staff only', $scanner_html, 'Scanner shortcode should render safe unauthorized message');
+    assert_true(strpos($scanner_html, 'Alice Customer') === false, 'Scanner shortcode should not expose user display names to anonymous users');
 
-    assert_contains('QR-EXPOSED-1', $table_html, 'QR table shortcode currently exposes QR code row to anonymous users');
-    assert_contains('Alice Customer', $table_html, 'QR table shortcode currently exposes assigned display name to anonymous users');
-    assert_contains('Assigned', $table_html, 'QR table shortcode currently exposes assignment status to anonymous users');
+    assert_contains('authorized staff only', $table_html, 'QR table shortcode should render safe unauthorized message');
+    assert_true(strpos($table_html, 'QR-EXPOSED-1') === false, 'QR table shortcode should not expose QR rows to anonymous users');
+    assert_true(strpos($table_html, 'Alice Customer') === false, 'QR table shortcode should not expose assigned display names to anonymous users');
 
     echo "security_boundary_characterization tests passed\n";
 }
