@@ -46,11 +46,9 @@
     }
 
     var storedStart = readStoredDefaultStart();
-    var start =
-      parseLatLon(storedStart) ||
+    var start = parseLatLon(storedStart) ||
       parseLatLon(cfg.start) ||
-      parseLatLon(KC_OSRM.defaultStart) ||
-      [40.73, -73.99];
+      parseLatLon(KC_OSRM.defaultStart) || [40.73, -73.99];
     var end = parseLatLon(cfg.end) || [40.78, -73.97];
 
     var parent = el.parentNode;
@@ -74,7 +72,8 @@
       btn.type = "button";
       btn.textContent = label;
       btn.className =
-        "button " + (priority === "primary" ? "button-primary" : "button-secondary");
+        "button " +
+        (priority === "primary" ? "button-primary" : "button-secondary");
       return btn;
     }
 
@@ -181,7 +180,10 @@
     var geocodeDelayMs = 1100;
 
     function pickVoice() {
-      if (!window.speechSynthesis || typeof window.speechSynthesis.getVoices !== "function") {
+      if (
+        !window.speechSynthesis ||
+        typeof window.speechSynthesis.getVoices !== "function"
+      ) {
         return null;
       }
       var voices = window.speechSynthesis.getVoices() || [];
@@ -195,7 +197,10 @@
           var voice = voices[j];
           var name = voice && voice.name ? voice.name : "";
           var lang = voice && voice.lang ? voice.lang : "";
-          if ((name && name.indexOf(target) !== -1) || (lang && lang === target)) {
+          if (
+            (name && name.indexOf(target) !== -1) ||
+            (lang && lang === target)
+          ) {
             return voice;
           }
         }
@@ -236,7 +241,10 @@
         } else {
           utterance.lang = "en-US";
         }
-        if (window.speechSynthesis && typeof window.speechSynthesis.cancel === "function") {
+        if (
+          window.speechSynthesis &&
+          typeof window.speechSynthesis.cancel === "function"
+        ) {
           window.speechSynthesis.cancel();
           window.speechSynthesis.speak(utterance);
           return true;
@@ -329,10 +337,16 @@
       ) {
         if (typeof window.speechSynthesis.addEventListener === "function") {
           var handleVoicesReady = function handleVoicesReady() {
-            window.speechSynthesis.removeEventListener("voiceschanged", handleVoicesReady);
+            window.speechSynthesis.removeEventListener(
+              "voiceschanged",
+              handleVoicesReady,
+            );
             refreshPreferredVoice();
           };
-          window.speechSynthesis.addEventListener("voiceschanged", handleVoicesReady);
+          window.speechSynthesis.addEventListener(
+            "voiceschanged",
+            handleVoicesReady,
+          );
         } else {
           var originalHandler = window.speechSynthesis.onvoiceschanged;
           window.speechSynthesis.onvoiceschanged = function (event) {
@@ -356,7 +370,10 @@
     if (window.speechSynthesis) {
       refreshPreferredVoice();
       if (typeof window.speechSynthesis.addEventListener === "function") {
-        window.speechSynthesis.addEventListener("voiceschanged", refreshPreferredVoice);
+        window.speechSynthesis.addEventListener(
+          "voiceschanged",
+          refreshPreferredVoice,
+        );
       } else {
         var oldHandler = window.speechSynthesis.onvoiceschanged;
         window.speechSynthesis.onvoiceschanged = function (event) {
@@ -371,7 +388,9 @@
     function nativeAvailable() {
       var cap =
         (typeof window !== "undefined" && window.Capacitor) ||
-        (typeof window !== "undefined" && window.capacitorExports && window.capacitorExports.Capacitor);
+        (typeof window !== "undefined" &&
+          window.capacitorExports &&
+          window.capacitorExports.Capacitor);
       if (!cap) {
         return false;
       }
@@ -442,8 +461,8 @@
               typeof entry.name === "string"
                 ? entry.name
                 : typeof entry.latLng.name === "string"
-                ? entry.latLng.name
-                : "";
+                  ? entry.latLng.name
+                  : "";
           } else if (
             typeof entry.lat === "number" &&
             typeof entry.lng === "number"
@@ -527,20 +546,22 @@
         applied = true;
       } else if (waypoints.length === 1) {
         var existing = waypoints[0];
-        setWaypointsLatLngs([
-          { latLng: here, name: "" },
-          existing,
-        ]);
+        setWaypointsLatLngs([{ latLng: here, name: "" }, existing]);
         routingControl.route();
         applied = true;
       } else {
         var currentStart = waypoints[0];
-        if (currentStart && currentStart.latLng && typeof here.distanceTo === "function") {
+        if (
+          currentStart &&
+          currentStart.latLng &&
+          typeof here.distanceTo === "function"
+        ) {
           var dist = here.distanceTo(currentStart.latLng);
           if (isFinite(dist) && dist > 50) {
             waypoints[0] = {
               latLng: here,
-              name: typeof currentStart.name === "string" ? currentStart.name : "",
+              name:
+                typeof currentStart.name === "string" ? currentStart.name : "",
             };
             setWaypointsLatLngs(waypoints);
             routingControl.route();
@@ -559,7 +580,9 @@
       }
       var count = importErrors.length;
       errorReportBtn.textContent =
-        count > 0 ? errorButtonBaseLabel + " (" + count + ")" : errorButtonBaseLabel;
+        count > 0
+          ? errorButtonBaseLabel + " (" + count + ")"
+          : errorButtonBaseLabel;
       errorReportBtn.disabled = count === 0;
       errorReportBtn.title = count
         ? "Download a report of " + count + " failed item(s)."
@@ -609,8 +632,6 @@
       setStatus("Downloaded import error report.", "success");
     }
 
-    
-
     async function geocodeAndAdd(item) {
       var address = item && item.value ? item.value : item;
       var displayLabel =
@@ -624,7 +645,8 @@
         return false;
       }
       try {
-        var base = (KC_OSRM && KC_OSRM.geocodeUrl) || "https://photon.komoot.io/api";
+        var base =
+          (KC_OSRM && KC_OSRM.geocodeUrl) || "https://photon.komoot.io/api";
         var url = base;
         if (url.indexOf("?") === -1) {
           url += "?";
@@ -690,8 +712,8 @@
           success === addresses.length
             ? "success"
             : success > 0
-            ? "warn"
-            : "error";
+              ? "warn"
+              : "error";
         setStatus(message, type);
       })();
     }
@@ -720,7 +742,10 @@
     }
 
     function normHeader(header) {
-      return String(header || "").trim().toLowerCase().replace(/[^a-z]/g, "");
+      return String(header || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z]/g, "");
     }
 
     function sniffDelimiter(headerLine) {
@@ -842,7 +867,7 @@
       if (idxAddr === -1 && (idxLat === -1 || idxLon === -1)) {
         setStatus(
           'CSV needs an "address" column OR both "lat" and "lon" columns.',
-          "error"
+          "error",
         );
         updateErrorReportButton();
         return;
@@ -937,7 +962,11 @@
         }
       }
 
-      if (data && data.type === "FeatureCollection" && Array.isArray(data.features)) {
+      if (
+        data &&
+        data.type === "FeatureCollection" &&
+        Array.isArray(data.features)
+      ) {
         data.features.forEach(function (feature, index) {
           if (!feature || !feature.geometry) {
             recordImportError({
@@ -950,7 +979,8 @@
           if (geom.type === "Point") {
             var coords = geom.coordinates || [];
             var ll =
-              toLatLngMaybe(coords[1], coords[0]) || toLatLngMaybe(coords[0], coords[1]);
+              toLatLngMaybe(coords[1], coords[0]) ||
+              toLatLngMaybe(coords[0], coords[1]);
             if (ll) {
               addStopAt(ll);
               added += 1;
@@ -960,11 +990,15 @@
                 reason: "Invalid coordinates",
               });
             }
-          } else if (geom.type === "LineString" && Array.isArray(geom.coordinates)) {
+          } else if (
+            geom.type === "LineString" &&
+            Array.isArray(geom.coordinates)
+          ) {
             for (var i = 0; i < geom.coordinates.length; i++) {
               var pair = geom.coordinates[i] || [];
               var llLine =
-                toLatLngMaybe(pair[1], pair[0]) || toLatLngMaybe(pair[0], pair[1]);
+                toLatLngMaybe(pair[1], pair[0]) ||
+                toLatLngMaybe(pair[0], pair[1]);
               if (llLine) {
                 addStopAt(llLine);
                 added += 1;
@@ -1003,10 +1037,10 @@
               wp.lon != null
                 ? wp.lon
                 : wp.lng != null
-                ? wp.lng
-                : wp.long != null
-                ? wp.long
-                : wp.longitude;
+                  ? wp.lng
+                  : wp.long != null
+                    ? wp.long
+                    : wp.longitude;
             var ll = toLatLngMaybe(latVal, lonVal);
             if (ll) {
               addStopAt(ll);
@@ -1057,10 +1091,10 @@
               item.lon != null
                 ? item.lon
                 : item.lng != null
-                ? item.lng
-                : item.long != null
-                ? item.long
-                : item.longitude;
+                  ? item.lng
+                  : item.long != null
+                    ? item.long
+                    : item.longitude;
             var llObj = toLatLngMaybe(latValue, lonValue);
             if (llObj) {
               addStopAt(llObj);
@@ -1094,7 +1128,7 @@
 
       setStatus(
         "JSON format not recognized. Expect GeoJSON, {waypoints: []}, or an array.",
-        "error"
+        "error",
       );
       updateErrorReportButton();
     }
@@ -1148,7 +1182,9 @@
             } else if (type === "arrive") {
               text = "Arrive at destination";
             } else {
-              text = (modifier ? "Turn " + modifier : "Continue") + (name ? " onto " + name : "");
+              text =
+                (modifier ? "Turn " + modifier : "Continue") +
+                (name ? " onto " + name : "");
             }
             stepQueue.push({
               lat: loc[1],
@@ -1188,7 +1224,10 @@
       var sLat2 = toRad(b.lat);
       var h =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(sLat1) * Math.cos(sLat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        Math.cos(sLat1) *
+          Math.cos(sLat2) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
       return 2 * R * Math.asin(Math.sqrt(h));
     }
 
@@ -1298,7 +1337,7 @@
         function (err) {
           console.warn("Geo error", err);
         },
-        { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
+        { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 },
       );
     }
 
@@ -1490,7 +1529,8 @@
       if (typeof index === "number" && index >= 0 && index <= wps.length) {
         wps.splice(index, 0, waypoint);
       } else {
-        var insertAt = wps.length <= 1 ? wps.length : Math.max(1, wps.length - 1);
+        var insertAt =
+          wps.length <= 1 ? wps.length : Math.max(1, wps.length - 1);
         wps.splice(insertAt, 0, waypoint);
       }
 
@@ -1586,7 +1626,9 @@
         })
         .then(function (data) {
           if (!data || data.code !== "Ok" || !data.waypoints) {
-            throw new Error(data && data.message ? data.message : "Unexpected response");
+            throw new Error(
+              data && data.message ? data.message : "Unexpected response",
+            );
           }
 
           var ordered = new Array(data.waypoints.length);
@@ -1600,7 +1642,11 @@
           });
 
           var cleaned = ordered.filter(function (item) {
-            return item && typeof item.lat === "number" && typeof item.lng === "number";
+            return (
+              item &&
+              typeof item.lat === "number" &&
+              typeof item.lng === "number"
+            );
           });
 
           if (!cleaned.length) {
@@ -1657,7 +1703,7 @@
             csvCell(""),
             csvCell(lat),
             csvCell(lon),
-          ].join(",")
+          ].join(","),
         );
       }
 
@@ -1667,7 +1713,9 @@
       var a = document.createElement("a");
       a.href = url;
       a.download =
-        "kerbcycle-stops-" + new Date().toISOString().replace(/[:.]/g, "-") + ".csv";
+        "kerbcycle-stops-" +
+        new Date().toISOString().replace(/[:.]/g, "-") +
+        ".csv";
       document.body.appendChild(a);
       a.click();
       setTimeout(function () {
@@ -1676,7 +1724,7 @@
       }, 0);
       setStatus(
         "Exported " + stops.length + " stop(s) to CSV (Start/Finish excluded).",
-        "success"
+        "success",
       );
     }
 
@@ -1728,7 +1776,7 @@
         box.style.boxShadow = "0 1px 3px rgba(0,0,0,.12)";
         box.style.maxWidth = "340px";
         box.innerHTML =
-          '' +
+          "" +
           '<div style="font-weight:600;margin-bottom:6px">Paste addresses (one per line)</div>' +
           '<textarea data-kc="paste-input" style="width:320px;height:120px"></textarea>' +
           '<div style="margin-top:6px;display:flex;gap:6px">' +
@@ -1778,7 +1826,7 @@
                     encodeURIComponent(query),
                   {
                     headers: { Accept: "application/json" },
-                  }
+                  },
                 );
                 var arr = await response.json();
                 if (arr && arr[0]) {
@@ -1851,7 +1899,7 @@
         if (cleared) {
           setStatus(
             "Per-user default cleared. Reload to use shortcode/site default.",
-            ""
+            "",
           );
         } else {
           setStatus("Unable to access browser storage.", "error");
@@ -1897,9 +1945,15 @@
     try {
       map = L.map(el).setView(start, cfg.zoom || 12);
       window._kcMap = map;
-      L.tileLayer(KC_OSRM.tileUrl, { attribution: KC_OSRM.tileAttrib }).addTo(map);
+      L.tileLayer(KC_OSRM.tileUrl, { attribution: KC_OSRM.tileAttrib }).addTo(
+        map,
+      );
 
-      if (L.Control && L.Control.Geocoder && typeof L.Control.geocoder === "function") {
+      if (
+        L.Control &&
+        L.Control.Geocoder &&
+        typeof L.Control.geocoder === "function"
+      ) {
         geocoderControl = L.Control.geocoder({
           defaultMarkGeocode: false,
           geocoder: L.Control.Geocoder.nominatim({
@@ -1972,7 +2026,7 @@
         }
 
         var altWrap = container.querySelector(
-          ".leaflet-routing-alternatives-container"
+          ".leaflet-routing-alternatives-container",
         );
         if (altWrap) {
           altWrap.innerHTML = "";
@@ -1994,7 +2048,7 @@
         }
 
         var customHost = document.querySelector(
-          ".kc-steps, #kc-steps, .kc-steps-list"
+          ".kc-steps, #kc-steps, .kc-steps-list",
         );
         if (customHost) {
           customHost.innerHTML = "";
@@ -2061,7 +2115,6 @@
           map.invalidateSize();
         }, 50);
       });
-
     } catch (err) {
       showMsg(el, "Map init error: " + err.message);
       return;

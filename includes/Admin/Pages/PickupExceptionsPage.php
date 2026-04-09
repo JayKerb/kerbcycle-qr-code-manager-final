@@ -58,8 +58,8 @@ class PickupExceptionsPage
             <p>
                 <?php
                 $all_url = add_query_arg(['page' => 'kerbcycle-pickup-exceptions'], admin_url('admin.php'));
-                $failed_url = add_query_arg(['page' => 'kerbcycle-pickup-exceptions', 'status_filter' => 'failed'], admin_url('admin.php'));
-                ?>
+        $failed_url = add_query_arg(['page' => 'kerbcycle-pickup-exceptions', 'status_filter' => 'failed'], admin_url('admin.php'));
+        ?>
                 <a href="<?php echo esc_url($all_url); ?>" class="<?php echo esc_attr($status_filter === 'failed' ? '' : 'current'); ?>"><?php esc_html_e('All', 'kerbcycle'); ?></a>
                 |
                 <a href="<?php echo esc_url($failed_url); ?>" class="<?php echo esc_attr($status_filter === 'failed' ? 'current' : ''); ?>"><?php esc_html_e('Failed Only', 'kerbcycle'); ?></a>
@@ -138,15 +138,15 @@ class PickupExceptionsPage
                             <td><?php echo esc_html($record->ai_category); ?></td>
                             <td>
                                 <?php
-                                $status = isset($record->status) ? (string) $record->status : (((int) $record->webhook_sent) === 1 ? 'sent' : 'failed');
-                                if ($status === 'sent') {
-                                    echo '<span class="kerb-badge kerb-badge-success">Sent</span>';
-                                } elseif ($status === 'failed') {
-                                    echo '<span class="kerb-badge kerb-badge-error">Failed</span>';
-                                } else {
-                                    echo '<span class="kerb-badge kerb-badge-pending">Pending</span>';
-                                }
-                                ?>
+                        $status = isset($record->status) ? (string) $record->status : (((int) $record->webhook_sent) === 1 ? 'sent' : 'failed');
+                        if ($status === 'sent') {
+                            echo '<span class="kerb-badge kerb-badge-success">Sent</span>';
+                        } elseif ($status === 'failed') {
+                            echo '<span class="kerb-badge kerb-badge-error">Failed</span>';
+                        } else {
+                            echo '<span class="kerb-badge kerb-badge-pending">Pending</span>';
+                        }
+                        ?>
                             </td>
                             <td><?php echo esc_html((string) (isset($record->retry_count) ? (int) $record->retry_count : 0)); ?></td>
                             <td><?php echo esc_html(!empty($record->last_retry_at) ? (string) $record->last_retry_at : '—'); ?></td>
@@ -156,11 +156,11 @@ class PickupExceptionsPage
                                 <button type="button" class="button button-small kerbcycle-view-details" data-exception-id="<?php echo esc_attr((string) (int) $record->id); ?>" aria-expanded="false"><?php esc_html_e('View Details', 'kerbcycle'); ?></button>
                                 <?php if (((int) $record->webhook_sent) === 0) : ?>
                                     <?php
-                                    $retry_args = [
-                                        'page' => 'kerbcycle-pickup-exceptions',
-                                        'kerbcycle_action' => 'retry_pickup_exception',
-                                        'exception_id' => (int) $record->id,
-                                    ];
+                            $retry_args = [
+                                'page' => 'kerbcycle-pickup-exceptions',
+                                'kerbcycle_action' => 'retry_pickup_exception',
+                                'exception_id' => (int) $record->id,
+                            ];
                                     if ($status_filter === 'failed') {
                                         $retry_args['status_filter'] = 'failed';
                                     }
