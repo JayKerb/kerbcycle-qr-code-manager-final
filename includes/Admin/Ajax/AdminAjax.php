@@ -8,6 +8,7 @@ if (!defined('ABSPATH')) {
 
 use Kerbcycle\QrCode\Services\ReportService;
 use Kerbcycle\QrCode\Services\QrService;
+use Kerbcycle\QrCode\Helpers\Capabilities;
 use Kerbcycle\QrCode\Helpers\Nonces;
 use Kerbcycle\QrCode\Data\Repositories\MessageLogRepository;
 use Kerbcycle\QrCode\Data\Repositories\ErrorLogRepository;
@@ -55,7 +56,7 @@ class AdminAjax
     public function assign_qr_code()
     {
         Nonces::verify('kerbcycle_qr_nonce', 'security');
-        if (!current_user_can('manage_options')) {
+        if (!Capabilities::can(Capabilities::manage_operations())) {
             wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
 
@@ -116,7 +117,7 @@ class AdminAjax
     public function release_qr_code()
     {
         Nonces::verify('kerbcycle_qr_nonce', 'security');
-        if (!current_user_can('manage_options')) {
+        if (!Capabilities::can(Capabilities::manage_operations())) {
             wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
 

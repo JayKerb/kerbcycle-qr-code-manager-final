@@ -6,6 +6,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+use Kerbcycle\QrCode\Helpers\Capabilities;
+
 /**
  * The public-facing functionality of the plugin.
  *
@@ -34,7 +36,7 @@ class Shortcodes
      */
     public function generate_frontend_scanner()
     {
-        if (!current_user_can('manage_options')) {
+        if (!Capabilities::can(Capabilities::manage_operations())) {
             ob_start();
             ?>
             <div class="kerbcycle-qr-scanner-container kc-compact">
@@ -97,7 +99,7 @@ class Shortcodes
      */
     public function generate_qr_table()
     {
-        if (!current_user_can('manage_options')) {
+        if (!Capabilities::can(Capabilities::manage_operations())) {
             ob_start();
             ?>
             <div class="kerbcycle-qr-scanner-container kc-compact">
