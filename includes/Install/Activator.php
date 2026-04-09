@@ -26,6 +26,8 @@ class Activator
      */
     public static function activate()
     {
+        self::grant_capabilities();
+
         global $wpdb;
 
         // Create QR codes table
@@ -144,5 +146,28 @@ class Activator
         ) $charset_collate;";
 
         dbDelta($sql);
+    }
+
+    /**
+     * Grant KerbCycle capabilities to administrators.
+     *
+     * @return void
+     */
+    private static function grant_capabilities()
+    {
+        $administrator = get_role('administrator');
+        if (!$administrator) {
+            return;
+        }
+
+        $caps = [
+            \Kerbcycle\QrCode\Helpers\Capabilities::manage_operations(),
+            \Kerbcycle\QrCode\Helpers\Capabilities::manage_settings(),
+            \Kerbcycle\QrCode\Helpers\Capabilities::view_logs(),
+        ];
+
+        foreach ($caps as $capability) {
+            $administrator->add_cap($capability);
+        }
     }
 }

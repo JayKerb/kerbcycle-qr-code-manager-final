@@ -1,0 +1,37 @@
+# .deepsource.toml
+version = 1
+
+exclude_patterns = [
+  "node_modules/**",
+  "vendor/**",
+  "dist/**",
+  "build/**",
+  "coverage/**",
+  "**/*.min.js"
+]
+
+test_patterns = [
+  "tests/**",
+  "**/*.{spec,test}.*"
+]
+
+[[analyzers]]
+name = "javascript"
+enabled = true
+
+[[analyzers]]
+name = "php"
+enabled = true
+
+[[analyzers]]
+name = "secrets"
+enabled = true
+
+# Optional formatters (run only if you want auto-format in DeepSource)
+[[transformers]]
+name = "prettier"
+enabled = true
+
+[[transformers]]
+name = "php-cs-fixer"
+enabled = true

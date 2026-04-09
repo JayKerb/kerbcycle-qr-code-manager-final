@@ -8,6 +8,7 @@ if (!defined('ABSPATH')) {
 
 use Kerbcycle\QrCode\Services\ReportService;
 use Kerbcycle\QrCode\Services\QrService;
+use Kerbcycle\QrCode\Helpers\Capabilities;
 use Kerbcycle\QrCode\Helpers\Nonces;
 use Kerbcycle\QrCode\Data\Repositories\MessageLogRepository;
 use Kerbcycle\QrCode\Data\Repositories\ErrorLogRepository;
@@ -25,6 +26,7 @@ class AdminAjax
 {
     private $qr_service;
     private const RETRY_LOCK_TTL = 120;
+    private const PICKUP_DEDUPE_TTL = 45;
 
     /**
      * Initialize the class and set its properties.
@@ -54,7 +56,7 @@ class AdminAjax
     public function assign_qr_code()
     {
         Nonces::verify('kerbcycle_qr_nonce', 'security');
-        if (!current_user_can('manage_options')) {
+        if (!Capabilities::can(Capabilities::manage_operations())) {
             wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
 
@@ -67,8 +69,17 @@ class AdminAjax
         $result = $this->qr_service->assign($qr_code, $user_id, $send_email, $send_sms, $send_reminder);
 
         if (is_wp_error($result)) {
+            $this->log_action('qr_assign', 'failed', $result->get_error_message(), [
+                'qr_code'     => $qr_code,
+                'customer_id' => $user_id,
+                'error_code'  => $result->get_error_code(),
+            ]);
             wp_send_json_error(['message' => $result->get_error_message()]);
         } else {
+            $this->log_action('qr_assign', 'success', __('QR code assigned successfully', 'kerbcycle'), [
+                'qr_code'     => $qr_code,
+                'customer_id' => $user_id,
+            ]);
             $response = [
                 'message' => 'QR code assigned successfully',
                 'qr_code' => $qr_code,
@@ -115,7 +126,7 @@ class AdminAjax
     public function release_qr_code()
     {
         Nonces::verify('kerbcycle_qr_nonce', 'security');
-        if (!current_user_can('manage_options')) {
+        if (!Capabilities::can(Capabilities::manage_operations())) {
             wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
 
@@ -126,8 +137,15 @@ class AdminAjax
         $result = $this->qr_service->release($qr_code, $send_email, $send_sms);
 
         if (is_wp_error($result)) {
+            $this->log_action('qr_release', 'failed', $result->get_error_message(), [
+                'qr_code'    => $qr_code,
+                'error_code' => $result->get_error_code(),
+            ]);
             wp_send_json_error(['message' => $result->get_error_message()]);
         } else {
+            $this->log_action('qr_release', 'success', __('QR code released successfully', 'kerbcycle'), [
+                'qr_code' => $qr_code,
+            ]);
             $response = ['message' => 'QR code released successfully'];
             if ($send_email) {
                 $response['email_sent'] = ($result['email_result'] === true);
@@ -446,6 +464,28 @@ class AdminAjax
             wp_send_json_error(['message' => __('Provide at least a QR Code or Customer ID.', 'kerbcycle')], 400);
         }
 
+        $dedupe_key = $this->pickup_dedupe_option_key($qr_code, $customer_id, $issue, $notes);
+        $duplicate_id = $this->pickup_dedupe_active_record_id($dedupe_key);
+        if ($duplicate_id > 0) {
+            $this->log_action('pickup_exception_submit', 'suppressed', __('Duplicate pickup exception suppressed.', 'kerbcycle'), [
+                'exception_id' => $duplicate_id,
+                'qr_code'      => $qr_code,
+                'customer_id'  => $customer_id,
+                'issue'        => $issue,
+            ], 'pickup_exception');
+            wp_send_json_success([
+                'status'      => 'duplicate_suppressed',
+                'message'     => __('Duplicate pickup exception suppressed. Existing record retained.', 'kerbcycle'),
+                'exception_id' => $duplicate_id,
+                'local_save'  => ['success' => true, 'id' => $duplicate_id],
+                'webhook'     => ['success' => true, 'duplicate' => true],
+                'ai_recommended_action' => '',
+                'ai_summary'  => '',
+                'ai_category' => '',
+                'ai_severity' => '',
+            ]);
+        }
+
         $payload = [
             'qr_code'     => $qr_code,
             'customer_id' => $customer_id,
@@ -470,16 +510,20 @@ class AdminAjax
         ]);
 
         if ($exception_id < 1) {
+            $this->log_action('pickup_exception_submit', 'failed', __('Failed to save pickup exception locally.', 'kerbcycle'), [
+                'qr_code'     => $qr_code,
+                'customer_id' => $customer_id,
+                'issue'       => $issue,
+            ], 'pickup_exception');
             wp_send_json_error(['message' => __('Failed to save pickup exception locally.', 'kerbcycle')], 500);
         }
-
-        // Local save intentionally happens first; webhook delivery must not block local persistence.
-        ErrorLogRepository::log([
-            'type'    => 'pickup_exception',
-            'message' => wp_json_encode($payload),
-            'page'    => 'kerbcycle-qr-manager',
-            'status'  => 'saved',
-        ]);
+        $this->store_pickup_dedupe_record($dedupe_key, $exception_id);
+        $this->log_action('pickup_exception_submit', 'success', __('Pickup exception saved locally.', 'kerbcycle'), [
+            'exception_id' => $exception_id,
+            'qr_code'      => $qr_code,
+            'customer_id'  => $customer_id,
+            'issue'        => $issue,
+        ], 'pickup_exception');
 
         $result = $this->qr_service->send_pickup_exception_to_n8n([
             'qr_code'     => $qr_code,
@@ -490,6 +534,13 @@ class AdminAjax
         ]);
 
         if (is_wp_error($result)) {
+            $this->log_action('pickup_exception_submit', 'failed', __('Webhook delivery failed after local save.', 'kerbcycle'), [
+                'exception_id' => $exception_id,
+                'qr_code'      => $qr_code,
+                'customer_id'  => $customer_id,
+                'issue'        => $issue,
+                'error_code'   => $result->get_error_code(),
+            ], 'pickup_exception');
             PickupExceptionRepository::update_result($exception_id, [
                 'webhook_sent'             => 0,
                 'webhook_status_code'      => 0,
@@ -574,6 +625,13 @@ class AdminAjax
         }
 
         $result_body = isset($result['body']) ? $result['body'] : '';
+        $this->log_action('pickup_exception_submit', 'failed', __('Webhook returned non-success response.', 'kerbcycle'), [
+            'exception_id' => $exception_id,
+            'qr_code'      => $qr_code,
+            'customer_id'  => $customer_id,
+            'issue'        => $issue,
+            'status_code'  => isset($result['status_code']) ? (int) $result['status_code'] : 0,
+        ], 'pickup_exception');
         PickupExceptionRepository::update_result($exception_id, [
             'webhook_sent'             => 0,
             'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
@@ -690,6 +748,9 @@ class AdminAjax
 
         $exception_id = isset($_POST['exception_id']) ? absint(wp_unslash($_POST['exception_id'])) : 0;
         if ($exception_id < 1) {
+            $this->log_action('pickup_exception_retry', 'failed', __('Invalid pickup exception ID.', 'kerbcycle'), [
+                'exception_id' => $exception_id,
+            ], 'pickup_exception');
             wp_send_json_error(['message' => __('Invalid pickup exception ID.', 'kerbcycle')], 400);
         }
 
@@ -698,14 +759,23 @@ class AdminAjax
         $record = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table_name} WHERE id = %d", $exception_id));
 
         if (!$record) {
+            $this->log_action('pickup_exception_retry', 'failed', __('Pickup exception record not found.', 'kerbcycle'), [
+                'exception_id' => $exception_id,
+            ], 'pickup_exception');
             wp_send_json_error(['message' => __('Pickup exception record not found.', 'kerbcycle')], 404);
         }
 
         if ((int) $record->webhook_sent === 1) {
+            $this->log_action('pickup_exception_retry', 'invalid_state', __('Pickup exception is not eligible for retry.', 'kerbcycle'), [
+                'exception_id' => $exception_id,
+            ], 'pickup_exception');
             wp_send_json_error(['message' => __('This pickup exception is not eligible for retry.', 'kerbcycle')], 400);
         }
 
         if (!$this->acquire_retry_lock($exception_id)) {
+            $this->log_action('pickup_exception_retry', 'suppressed', __('Retry already in progress for this pickup exception.', 'kerbcycle'), [
+                'exception_id' => $exception_id,
+            ], 'pickup_exception');
             wp_send_json_error(['message' => __('Retry already in progress for this pickup exception.', 'kerbcycle')], 409);
         }
 
@@ -725,6 +795,10 @@ class AdminAjax
         ]);
 
         if (is_wp_error($result)) {
+            $this->log_action('pickup_exception_retry', 'failed', __('Retry webhook failed.', 'kerbcycle'), [
+                'exception_id' => $exception_id,
+                'error_code'   => $result->get_error_code(),
+            ], 'pickup_exception');
             PickupExceptionRepository::update_result($exception_id, [
                 'webhook_sent'             => 0,
                 'webhook_status_code'      => 0,
@@ -760,10 +834,18 @@ class AdminAjax
                 'updated_at'               => current_time('mysql', true),
             ]);
             $this->release_retry_lock($exception_id);
+            $this->log_action('pickup_exception_retry', 'success', __('Pickup exception resent successfully.', 'kerbcycle'), [
+                'exception_id' => $exception_id,
+                'status_code'  => isset($result['status_code']) ? (int) $result['status_code'] : 0,
+            ], 'pickup_exception');
             wp_send_json_success(['message' => __('Pickup exception resent successfully.', 'kerbcycle')]);
         }
 
         $result_body = isset($result['body']) ? $result['body'] : '';
+        $this->log_action('pickup_exception_retry', 'failed', __('Retry webhook returned non-success response.', 'kerbcycle'), [
+            'exception_id' => $exception_id,
+            'status_code'  => isset($result['status_code']) ? (int) $result['status_code'] : 0,
+        ], 'pickup_exception');
         PickupExceptionRepository::update_result($exception_id, [
             'webhook_sent'             => 0,
             'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
@@ -784,6 +866,47 @@ class AdminAjax
         return 'kerbcycle_pickup_retry_lock_' . (int) $exception_id;
     }
 
+    private function pickup_dedupe_option_key($qr_code, $customer_id, $issue, $notes)
+    {
+        $parts = [
+            strtolower(trim((string) $qr_code)),
+            (string) (int) $customer_id,
+            strtolower(trim((string) $issue)),
+            strtolower(trim((string) $notes)),
+        ];
+        return 'kerbcycle_pickup_dedupe_' . md5(implode('|', $parts));
+    }
+
+    private function pickup_dedupe_active_record_id($key)
+    {
+        $raw = get_option($key, '');
+        if (!is_string($raw) || $raw === '') {
+            return 0;
+        }
+
+        $parts = explode(':', $raw, 2);
+        if (count($parts) !== 2) {
+            delete_option($key);
+            return 0;
+        }
+
+        $record_id = (int) $parts[0];
+        $expires = (int) $parts[1];
+        $now = time();
+        if ($record_id < 1 || $expires < $now) {
+            delete_option($key);
+            return 0;
+        }
+
+        return $record_id;
+    }
+
+    private function store_pickup_dedupe_record($key, $record_id)
+    {
+        $expires = time() + self::PICKUP_DEDUPE_TTL;
+        update_option($key, (int) $record_id . ':' . (int) $expires, false);
+    }
+
     private function acquire_retry_lock($exception_id)
     {
         $key = $this->retry_lock_key($exception_id);
@@ -798,5 +921,35 @@ class AdminAjax
     private function release_retry_lock($exception_id)
     {
         delete_option($this->retry_lock_key($exception_id));
+    }
+
+    /**
+     * Write a compact structured audit event.
+     *
+     * @param string $action
+     * @param string $status
+     * @param string $message
+     * @param array  $context
+     * @param string $type
+     *
+     * @return void
+     */
+    private function log_action($action, $status, $message, array $context = [], $type = 'qr_operation')
+    {
+        $payload = [
+            'timestamp'     => gmdate('c'),
+            'actor_user_id' => function_exists('get_current_user_id') ? (int) get_current_user_id() : 0,
+            'action'        => (string) $action,
+            'status'        => (string) $status,
+            'message'       => (string) $message,
+            'context'       => $context,
+        ];
+
+        ErrorLogRepository::log([
+            'type'    => $type,
+            'message' => wp_json_encode($payload),
+            'page'    => 'kerbcycle-qr-manager',
+            'status'  => $status,
+        ]);
     }
 }

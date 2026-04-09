@@ -6,6 +6,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+use Kerbcycle\QrCode\Helpers\Capabilities;
+
 /**
  * The public-facing functionality of the plugin.
  *
@@ -34,6 +36,16 @@ class Shortcodes
      */
     public function generate_frontend_scanner()
     {
+        if (!Capabilities::can(Capabilities::manage_operations())) {
+            ob_start();
+            ?>
+            <div class="kerbcycle-qr-scanner-container kc-compact">
+                <p><?php esc_html_e('QR scanner is available to authorized staff only.', 'kerbcycle'); ?></p>
+            </div>
+            <?php
+            return ob_get_clean();
+        }
+
         ob_start();
         ?>
         <div class="kerbcycle-qr-scanner-container kc-compact">
@@ -87,6 +99,16 @@ class Shortcodes
      */
     public function generate_qr_table()
     {
+        if (!Capabilities::can(Capabilities::manage_operations())) {
+            ob_start();
+            ?>
+            <div class="kerbcycle-qr-scanner-container kc-compact">
+                <p><?php esc_html_e('QR table is available to authorized staff only.', 'kerbcycle'); ?></p>
+            </div>
+            <?php
+            return ob_get_clean();
+        }
+
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
         $codes = $wpdb->get_results(
