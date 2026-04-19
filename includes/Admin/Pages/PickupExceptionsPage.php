@@ -32,7 +32,7 @@ class PickupExceptionsPage
         $status_filter = isset($_GET['status_filter']) ? sanitize_key(wp_unslash($_GET['status_filter'])) : '';
         if ($status_filter === 'failed') {
             $sql = $wpdb->prepare(
-                "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body, retry_count, last_retry_at
+                "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, source, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body, retry_count, last_retry_at
                 FROM {$table_name}
                 WHERE status = %s
                 ORDER BY id DESC
@@ -42,7 +42,7 @@ class PickupExceptionsPage
             );
         } else {
             $sql = $wpdb->prepare(
-                "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body, retry_count, last_retry_at
+                "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, source, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body, retry_count, last_retry_at
                 FROM {$table_name}
                 ORDER BY id DESC
                 LIMIT %d",
@@ -111,6 +111,7 @@ class PickupExceptionsPage
                         <th><?php esc_html_e('QR Code', 'kerbcycle'); ?></th>
                         <th><?php esc_html_e('Customer ID', 'kerbcycle'); ?></th>
                         <th><?php esc_html_e('Issue', 'kerbcycle'); ?></th>
+                        <th><?php esc_html_e('Source', 'kerbcycle'); ?></th>
                         <th><?php esc_html_e('Severity', 'kerbcycle'); ?></th>
                         <th><?php esc_html_e('Category', 'kerbcycle'); ?></th>
                         <th><?php esc_html_e('Status', 'kerbcycle'); ?></th>
@@ -124,7 +125,7 @@ class PickupExceptionsPage
                 <tbody id="kerbcycle-pickup-exceptions-tbody">
                 <?php if (empty($records)) : ?>
                     <tr>
-                        <td colspan="13"><?php esc_html_e('No pickup exceptions found.', 'kerbcycle'); ?></td>
+                        <td colspan="14"><?php esc_html_e('No pickup exceptions found.', 'kerbcycle'); ?></td>
                     </tr>
                 <?php else : ?>
                     <?php foreach ($records as $record) : ?>
@@ -134,6 +135,7 @@ class PickupExceptionsPage
                             <td><?php echo esc_html($record->qr_code); ?></td>
                             <td><?php echo esc_html($record->customer_id); ?></td>
                             <td><?php echo esc_html($record->issue); ?></td>
+                            <td><?php echo esc_html(!empty($record->source) ? (string) $record->source : '—'); ?></td>
                             <td><?php echo esc_html($record->ai_severity); ?></td>
                             <td><?php echo esc_html($record->ai_category); ?></td>
                             <td>
@@ -177,7 +179,7 @@ class PickupExceptionsPage
                             </td>
                         </tr>
                         <tr class="kerbcycle-pickup-details-row" data-exception-id="<?php echo esc_attr((string) (int) $record->id); ?>">
-                            <td colspan="13">
+                            <td colspan="14">
                                 <div class="kerbcycle-pickup-details-content">
                                     <p><strong><?php esc_html_e('Issue', 'kerbcycle'); ?>:</strong><br><?php echo nl2br(esc_html((string) $record->issue)); ?></p>
                                     <p><strong><?php esc_html_e('Notes', 'kerbcycle'); ?>:</strong><br><?php echo nl2br(esc_html((string) $record->notes)); ?></p>
@@ -192,6 +194,7 @@ class PickupExceptionsPage
                                     <p><strong><?php esc_html_e('Last Retry', 'kerbcycle'); ?>:</strong> <?php echo esc_html(!empty($record->last_retry_at) ? (string) $record->last_retry_at : '—'); ?></p>
                                     <p><strong><?php esc_html_e('Customer ID', 'kerbcycle'); ?>:</strong> <?php echo esc_html((string) $record->customer_id); ?></p>
                                     <p><strong><?php esc_html_e('QR Code', 'kerbcycle'); ?>:</strong> <?php echo esc_html((string) $record->qr_code); ?></p>
+                                    <p><strong><?php esc_html_e('Source', 'kerbcycle'); ?>:</strong> <?php echo esc_html(!empty($record->source) ? (string) $record->source : '—'); ?></p>
                                 </div>
                             </td>
                         </tr>

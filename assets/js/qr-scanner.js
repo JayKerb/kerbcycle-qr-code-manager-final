@@ -1001,6 +1001,7 @@ function initKerbcycleScanner() {
       params.append("customer_id", customerId);
       params.append("issue", issue);
       params.append("notes", notes);
+      params.append("source", "scanner");
 
       fetch(kerbcycle_ajax.ajax_url, {
         method: "POST",

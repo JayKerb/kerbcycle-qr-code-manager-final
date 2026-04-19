@@ -397,6 +397,7 @@ function initDashboardScanner() {
         "notes",
         scannerExceptionNotesField ? scannerExceptionNotesField.value : "",
       );
+      params.append("source", "scanner");
 
       fetch(kerbcycle_ajax.ajax_url, {
         method: "POST",
