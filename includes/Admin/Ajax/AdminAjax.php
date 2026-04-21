@@ -49,6 +49,7 @@ class AdminAjax
         add_action('wp_ajax_kerbcycle_qr_report_data', [$this, 'ajax_report_data']);
         add_action('wp_ajax_kerbcycle_delete_logs', [$this, 'delete_logs']);
         add_action('wp_ajax_kerbcycle_test_pickup_exception', [$this, 'test_pickup_exception']);
+        add_action('wp_ajax_kerbcycle_submit_scanner_pickup_exception', [$this, 'submit_scanner_pickup_exception']);
         add_action('wp_ajax_kerbcycle_get_pickup_exceptions', [$this, 'get_pickup_exceptions']);
         add_action('wp_ajax_kerbcycle_retry_pickup_exception', [$this, 'retry_pickup_exception']);
     }
@@ -439,6 +440,20 @@ class AdminAjax
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
+        $this->handle_pickup_exception_submission('admin');
+    }
+
+    public function submit_scanner_pickup_exception()
+    {
+        Nonces::verify('kerbcycle_qr_nonce', 'security');
+        if (!Capabilities::can(Capabilities::manage_operations())) {
+            wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
+        }
+        $this->handle_pickup_exception_submission('scanner');
+    }
+
+    private function handle_pickup_exception_submission($source)
+    {
         \Kerbcycle\QrCode\Install\Activator::activate();
 
         $qr_code_raw = isset($_POST['qr_code']) ? wp_unslash($_POST['qr_code']) : '';
@@ -452,8 +467,8 @@ class AdminAjax
         $issue = sanitize_text_field($issue_raw);
         $notes = sanitize_textarea_field($notes_raw);
         $timestamp = sanitize_text_field($timestamp_raw);
-        // This admin-side handler must not trust client-posted source.
-        $source = 'admin';
+        // Server-side source is fixed by handler context; do not trust client-posted source.
+        $source = $source === 'scanner' ? 'scanner' : 'admin';
         if ($timestamp === '') {
             $timestamp = gmdate('c');
         }

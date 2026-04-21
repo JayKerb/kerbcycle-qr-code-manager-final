@@ -995,7 +995,7 @@ function initKerbcycleScanner() {
       setExceptionStatus("success", "Saving and sending pickup exception...");
 
       const params = new URLSearchParams();
-      params.append("action", "kerbcycle_test_pickup_exception");
+      params.append("action", "kerbcycle_submit_scanner_pickup_exception");
       params.append("security", kerbcycle_ajax.nonce);
       params.append("qr_code", qrCode);
       params.append("customer_id", customerId);
