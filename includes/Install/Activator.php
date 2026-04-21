@@ -157,18 +157,30 @@ class Activator
     private static function grant_capabilities()
     {
         $administrator = get_role('administrator');
-        if (!$administrator) {
-            return;
-        }
-
         $caps = [
             \Kerbcycle\QrCode\Helpers\Capabilities::manage_operations(),
             \Kerbcycle\QrCode\Helpers\Capabilities::manage_settings(),
             \Kerbcycle\QrCode\Helpers\Capabilities::view_logs(),
         ];
 
-        foreach ($caps as $capability) {
-            $administrator->add_cap($capability);
+        if ($administrator) {
+            foreach ($caps as $capability) {
+                $administrator->add_cap($capability);
+            }
+        }
+
+        $operator_caps = [
+            'read' => true,
+            \Kerbcycle\QrCode\Helpers\Capabilities::manage_operations() => true,
+        ];
+
+        add_role('kerbcycle_operator', __('KerbCycle Operator', 'kerbcycle'), $operator_caps);
+
+        $operator = get_role('kerbcycle_operator');
+        if ($operator) {
+            foreach (array_keys($operator_caps) as $capability) {
+                $operator->add_cap($capability);
+            }
         }
     }
 }
