@@ -724,7 +724,7 @@ function initKerbcycleAdmin() {
         const rows = data.data.rows;
         if (!rows.length) {
           pickupExceptionsTbody.innerHTML =
-            '<tr><td colspan="13">No pickup exceptions found.</td></tr>';
+            '<tr><td colspan="14">No pickup exceptions found.</td></tr>';
           return;
         }
 
@@ -741,6 +741,7 @@ function initKerbcycleAdmin() {
               <td>${escapeHtml(row.qr_code || "")}</td>
               <td>${escapeHtml(row.customer_id || "")}</td>
               <td>${escapeHtml(row.issue || "")}</td>
+              <td>${escapeHtml(row.source || "—")}</td>
               <td>${escapeHtml(row.ai_severity || "")}</td>
               <td>${escapeHtml(row.ai_category || "")}</td>
               <td>${buildPickupExceptionStatusBadge(row.status || "pending")}</td>
@@ -754,7 +755,7 @@ function initKerbcycleAdmin() {
               </td>
             </tr>
             <tr class="kerbcycle-pickup-details-row" data-exception-id="${escapeHtml(row.id)}" style="display:none;">
-              <td colspan="13">
+              <td colspan="14">
                 <div class="kerbcycle-pickup-details-content">
                   <p><strong>Issue:</strong><br>${pickupDetailText(row.issue)}</p>
                   <p><strong>Notes:</strong><br>${pickupDetailText(row.notes)}</p>
@@ -769,6 +770,7 @@ function initKerbcycleAdmin() {
                   <p><strong>Last Retry:</strong> ${pickupDetailText(row.last_retry_at || "—")}</p>
                   <p><strong>Customer ID:</strong> ${pickupDetailText(row.customer_id)}</p>
                   <p><strong>QR Code:</strong> ${pickupDetailText(row.qr_code)}</p>
+                  <p><strong>Source:</strong> ${pickupDetailText(row.source)}</p>
                 </div>
               </td>
             </tr>`;
@@ -936,6 +938,7 @@ function initKerbcycleAdmin() {
         "notes",
         pickupExceptionNotes ? pickupExceptionNotes.value : "",
       );
+      params.append("source", "admin");
 
       fetch(kerbcycle_ajax.ajax_url, {
         method: "POST",

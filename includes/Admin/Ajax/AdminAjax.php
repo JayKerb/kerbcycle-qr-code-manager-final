@@ -452,6 +452,11 @@ class AdminAjax
         $issue = sanitize_text_field($issue_raw);
         $notes = sanitize_textarea_field($notes_raw);
         $timestamp = sanitize_text_field($timestamp_raw);
+        $source_raw = isset($_POST['source']) ? wp_unslash($_POST['source']) : '';
+        $source = sanitize_key($source_raw);
+        if (!in_array($source, ['admin', 'scanner'], true)) {
+            $source = 'admin';
+        }
         if ($timestamp === '') {
             $timestamp = gmdate('c');
         }
@@ -503,6 +508,7 @@ class AdminAjax
             'submitted_at' => $timestamp,
             'webhook_sent' => 0,
             'status'       => 'pending',
+            'source'       => $source,
             'retry_count'  => 0,
             'last_retry_at' => null,
             'created_at'   => $now_utc_mysql,
@@ -672,7 +678,7 @@ class AdminAjax
         $status_filter = isset($_POST['status_filter']) ? sanitize_key(wp_unslash($_POST['status_filter'])) : '';
         if ($status_filter === 'failed') {
             $sql = $wpdb->prepare(
-                "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body, retry_count, last_retry_at
+                "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, source, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body, retry_count, last_retry_at
                 FROM {$table_name}
                 WHERE status = %s
                 ORDER BY id DESC
@@ -682,7 +688,7 @@ class AdminAjax
             );
         } else {
             $sql = $wpdb->prepare(
-                "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body, retry_count, last_retry_at
+                "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, source, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body, retry_count, last_retry_at
                 FROM {$table_name}
                 ORDER BY id DESC
                 LIMIT %d",
@@ -722,6 +728,7 @@ class AdminAjax
                 'issue' => isset($record->issue) ? (string) $record->issue : '',
                 'notes' => isset($record->notes) ? (string) $record->notes : '',
                 'status' => $status,
+                'source' => isset($record->source) && $record->source !== '' ? (string) $record->source : '',
                 'ai_severity' => isset($record->ai_severity) ? (string) $record->ai_severity : '',
                 'ai_category' => isset($record->ai_category) ? (string) $record->ai_category : '',
                 'ai_recommended_action' => isset($record->ai_recommended_action) ? (string) $record->ai_recommended_action : '',

@@ -21,6 +21,7 @@ class PickupExceptionRepository
             '%s', // submitted_at
             '%d', // webhook_sent
             '%s', // status
+            '%s', // source
             '%d', // retry_count
             '%s', // last_retry_at
             '%s', // created_at
