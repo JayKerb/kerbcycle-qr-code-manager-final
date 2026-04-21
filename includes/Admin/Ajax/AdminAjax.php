@@ -452,11 +452,8 @@ class AdminAjax
         $issue = sanitize_text_field($issue_raw);
         $notes = sanitize_textarea_field($notes_raw);
         $timestamp = sanitize_text_field($timestamp_raw);
-        $source_raw = isset($_POST['source']) ? wp_unslash($_POST['source']) : '';
-        $source = sanitize_key($source_raw);
-        if (!in_array($source, ['admin', 'scanner'], true)) {
-            $source = 'admin';
-        }
+        // This admin-side handler must not trust client-posted source.
+        $source = 'admin';
         if ($timestamp === '') {
             $timestamp = gmdate('c');
         }
