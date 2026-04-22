@@ -2,8 +2,7 @@
 
 namespace Kerbcycle\QrCode\Admin\Pages;
 
-use Kerbcycle\QrCode\Data\Repositories\PickupExceptionRepository;
-use Kerbcycle\QrCode\Services\QrService;
+use Kerbcycle\QrCode\Services\PickupExceptionRetryService;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -14,8 +13,6 @@ if (!defined('ABSPATH')) {
  */
 class PickupExceptionsPage
 {
-    private const RETRY_LOCK_TTL = 120;
-
     public function render()
     {
         if (!current_user_can('manage_options')) {
@@ -223,111 +220,28 @@ class PickupExceptionsPage
 
         check_admin_referer('kerbcycle_retry_pickup_exception_' . $exception_id);
 
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'kerbcycle_pickup_exceptions';
-        $record = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table_name} WHERE id = %d", $exception_id));
-
-        if (!$record) {
+        $retry_result = (new PickupExceptionRetryService())->retry($exception_id);
+        if ($retry_result['state'] === 'not_found') {
             $this->redirect_with_retry_notice('error', __('Pickup exception record not found.', 'kerbcycle'));
         }
 
-        if ((int) $record->webhook_sent === 1) {
+        if ($retry_result['state'] === 'ineligible') {
             $this->redirect_with_retry_notice('error', __('This pickup exception is not eligible for retry.', 'kerbcycle'));
         }
 
-        if (!$this->acquire_retry_lock($exception_id)) {
+        if ($retry_result['state'] === 'lock_conflict') {
             $this->redirect_with_retry_notice('error', __('Retry already in progress for this pickup exception.', 'kerbcycle'));
         }
 
-        $retry_timestamp = current_time('mysql', true);
-        PickupExceptionRepository::update_result($exception_id, [
-            'retry_count' => ((int) $record->retry_count) + 1,
-            'last_retry_at' => $retry_timestamp,
-            'updated_at' => $retry_timestamp,
-        ]);
-
-        $result = (new QrService())->send_pickup_exception_to_n8n([
-            'qr_code'     => (string) $record->qr_code,
-            'customer_id' => (int) $record->customer_id,
-            'issue'       => (string) $record->issue,
-            'notes'       => (string) $record->notes,
-            'timestamp'   => !empty($record->submitted_at) ? (string) $record->submitted_at : '',
-        ]);
-
-        if (is_wp_error($result)) {
-            PickupExceptionRepository::update_result($exception_id, [
-                'webhook_sent'             => 0,
-                'webhook_status_code'      => 0,
-                'status'                   => 'failed',
-                'webhook_response_body'    => $result->get_error_message(),
-                'ai_severity'              => '',
-                'ai_category'              => '',
-                'ai_summary'               => '',
-                'ai_recommended_action'    => '',
-                'updated_at'               => current_time('mysql', true),
-            ]);
-            $this->release_retry_lock($exception_id);
+        if ($retry_result['state'] === 'webhook_error') {
             $this->redirect_with_retry_notice('error', __('Retry failed. The record remains saved locally.', 'kerbcycle'));
         }
 
-        if (!empty($result['success'])) {
-            $body = isset($result['body']) ? $result['body'] : '';
-            $decoded_body = json_decode((string) $body, true);
-            $ai_summary = is_array($decoded_body) && isset($decoded_body['summary']) ? (string) $decoded_body['summary'] : '';
-            $ai_category = is_array($decoded_body) && isset($decoded_body['category']) ? (string) $decoded_body['category'] : '';
-            $ai_severity = is_array($decoded_body) && isset($decoded_body['severity']) ? (string) $decoded_body['severity'] : '';
-            $ai_recommended_action = is_array($decoded_body) && isset($decoded_body['recommended_action']) ? (string) $decoded_body['recommended_action'] : '';
-
-            PickupExceptionRepository::update_result($exception_id, [
-                'webhook_sent'             => 1,
-                'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
-                'status'                   => 'sent',
-                'webhook_response_body'    => is_scalar($body) ? (string) $body : wp_json_encode($body),
-                'ai_severity'              => $ai_severity,
-                'ai_category'              => $ai_category,
-                'ai_summary'               => $ai_summary,
-                'ai_recommended_action'    => $ai_recommended_action,
-                'updated_at'               => current_time('mysql', true),
-            ]);
-            $this->release_retry_lock($exception_id);
+        if ($retry_result['state'] === 'success') {
             $this->redirect_with_retry_notice('success', __('Pickup exception resent successfully.', 'kerbcycle'));
         }
 
-        $result_body = isset($result['body']) ? $result['body'] : '';
-        PickupExceptionRepository::update_result($exception_id, [
-            'webhook_sent'             => 0,
-            'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
-            'status'                   => 'failed',
-            'webhook_response_body'    => is_scalar($result_body) ? (string) $result_body : wp_json_encode($result_body),
-            'ai_severity'              => '',
-            'ai_category'              => '',
-            'ai_summary'               => '',
-            'ai_recommended_action'    => '',
-            'updated_at'               => current_time('mysql', true),
-        ]);
-        $this->release_retry_lock($exception_id);
         $this->redirect_with_retry_notice('error', __('Retry failed. The record remains saved locally.', 'kerbcycle'));
-    }
-
-    private function retry_lock_key($exception_id)
-    {
-        return 'kerbcycle_pickup_retry_lock_' . (int) $exception_id;
-    }
-
-    private function acquire_retry_lock($exception_id)
-    {
-        $key = $this->retry_lock_key($exception_id);
-        $now = time();
-        $expires_at = (int) get_option($key, 0);
-        if ($expires_at > 0 && $expires_at <= $now) {
-            delete_option($key);
-        }
-        return add_option($key, (string) ($now + self::RETRY_LOCK_TTL), '', 'no');
-    }
-
-    private function release_retry_lock($exception_id)
-    {
-        delete_option($this->retry_lock_key($exception_id));
     }
 
     private function redirect_with_retry_notice($status, $message)

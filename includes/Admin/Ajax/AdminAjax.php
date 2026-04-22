@@ -14,6 +14,7 @@ use Kerbcycle\QrCode\Data\Repositories\MessageLogRepository;
 use Kerbcycle\QrCode\Data\Repositories\ErrorLogRepository;
 use Kerbcycle\QrCode\Data\Repositories\PickupExceptionRepository;
 use Kerbcycle\QrCode\Admin\Pages\DashboardPage;
+use Kerbcycle\QrCode\Services\PickupExceptionRetryService;
 
 /**
  * The admin ajax.
@@ -25,7 +26,6 @@ use Kerbcycle\QrCode\Admin\Pages\DashboardPage;
 class AdminAjax
 {
     private $qr_service;
-    private const RETRY_LOCK_TTL = 120;
     private const PICKUP_DEDUPE_TTL = 45;
 
     /**
@@ -773,116 +773,49 @@ class AdminAjax
             wp_send_json_error(['message' => __('Invalid pickup exception ID.', 'kerbcycle')], 400);
         }
 
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'kerbcycle_pickup_exceptions';
-        $record = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table_name} WHERE id = %d", $exception_id));
-
-        if (!$record) {
+        $retry_result = (new PickupExceptionRetryService())->retry($exception_id, $this->qr_service);
+        if ($retry_result['state'] === 'not_found') {
             $this->log_action('pickup_exception_retry', 'failed', __('Pickup exception record not found.', 'kerbcycle'), [
                 'exception_id' => $exception_id,
             ], 'pickup_exception');
             wp_send_json_error(['message' => __('Pickup exception record not found.', 'kerbcycle')], 404);
         }
 
-        if ((int) $record->webhook_sent === 1) {
+        if ($retry_result['state'] === 'ineligible') {
             $this->log_action('pickup_exception_retry', 'invalid_state', __('Pickup exception is not eligible for retry.', 'kerbcycle'), [
                 'exception_id' => $exception_id,
             ], 'pickup_exception');
             wp_send_json_error(['message' => __('This pickup exception is not eligible for retry.', 'kerbcycle')], 400);
         }
 
-        if (!$this->acquire_retry_lock($exception_id)) {
+        if ($retry_result['state'] === 'lock_conflict') {
             $this->log_action('pickup_exception_retry', 'suppressed', __('Retry already in progress for this pickup exception.', 'kerbcycle'), [
                 'exception_id' => $exception_id,
             ], 'pickup_exception');
             wp_send_json_error(['message' => __('Retry already in progress for this pickup exception.', 'kerbcycle')], 409);
         }
 
-        $retry_timestamp = current_time('mysql', true);
-        PickupExceptionRepository::update_result($exception_id, [
-            'retry_count' => ((int) $record->retry_count) + 1,
-            'last_retry_at' => $retry_timestamp,
-            'updated_at' => $retry_timestamp,
-        ]);
-
-        $result = $this->qr_service->send_pickup_exception_to_n8n([
-            'qr_code'     => (string) $record->qr_code,
-            'customer_id' => (int) $record->customer_id,
-            'issue'       => (string) $record->issue,
-            'notes'       => (string) $record->notes,
-            'timestamp'   => !empty($record->submitted_at) ? (string) $record->submitted_at : '',
-        ]);
-
-        if (is_wp_error($result)) {
+        if ($retry_result['state'] === 'webhook_error') {
             $this->log_action('pickup_exception_retry', 'failed', __('Retry webhook failed.', 'kerbcycle'), [
                 'exception_id' => $exception_id,
-                'error_code'   => $result->get_error_code(),
+                'error_code'   => isset($retry_result['error_code']) ? $retry_result['error_code'] : '',
             ], 'pickup_exception');
-            PickupExceptionRepository::update_result($exception_id, [
-                'webhook_sent'             => 0,
-                'webhook_status_code'      => 0,
-                'status'                   => 'failed',
-                'webhook_response_body'    => $result->get_error_message(),
-                'ai_severity'              => '',
-                'ai_category'              => '',
-                'ai_summary'               => '',
-                'ai_recommended_action'    => '',
-                'updated_at'               => current_time('mysql', true),
-            ]);
-            $this->release_retry_lock($exception_id);
             wp_send_json_error(['message' => __('Retry failed. The record remains saved locally.', 'kerbcycle')], 500);
         }
 
-        if (!empty($result['success'])) {
-            $body = isset($result['body']) ? $result['body'] : '';
-            $decoded_body = json_decode((string) $body, true);
-            $ai_summary = is_array($decoded_body) && isset($decoded_body['summary']) ? (string) $decoded_body['summary'] : '';
-            $ai_category = is_array($decoded_body) && isset($decoded_body['category']) ? (string) $decoded_body['category'] : '';
-            $ai_severity = is_array($decoded_body) && isset($decoded_body['severity']) ? (string) $decoded_body['severity'] : '';
-            $ai_recommended_action = is_array($decoded_body) && isset($decoded_body['recommended_action']) ? (string) $decoded_body['recommended_action'] : '';
-
-            PickupExceptionRepository::update_result($exception_id, [
-                'webhook_sent'             => 1,
-                'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
-                'status'                   => 'sent',
-                'webhook_response_body'    => is_scalar($body) ? (string) $body : wp_json_encode($body),
-                'ai_severity'              => $ai_severity,
-                'ai_category'              => $ai_category,
-                'ai_summary'               => $ai_summary,
-                'ai_recommended_action'    => $ai_recommended_action,
-                'updated_at'               => current_time('mysql', true),
-            ]);
-            $this->release_retry_lock($exception_id);
+        if ($retry_result['state'] === 'success') {
             $this->log_action('pickup_exception_retry', 'success', __('Pickup exception resent successfully.', 'kerbcycle'), [
                 'exception_id' => $exception_id,
-                'status_code'  => isset($result['status_code']) ? (int) $result['status_code'] : 0,
+                'status_code'  => isset($retry_result['webhook_status_code']) ? (int) $retry_result['webhook_status_code'] : 0,
             ], 'pickup_exception');
             wp_send_json_success(['message' => __('Pickup exception resent successfully.', 'kerbcycle')]);
         }
 
-        $result_body = isset($result['body']) ? $result['body'] : '';
         $this->log_action('pickup_exception_retry', 'failed', __('Retry webhook returned non-success response.', 'kerbcycle'), [
             'exception_id' => $exception_id,
-            'status_code'  => isset($result['status_code']) ? (int) $result['status_code'] : 0,
+            'status_code'  => isset($retry_result['webhook_status_code']) ? (int) $retry_result['webhook_status_code'] : 0,
         ], 'pickup_exception');
-        PickupExceptionRepository::update_result($exception_id, [
-            'webhook_sent'             => 0,
-            'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
-            'status'                   => 'failed',
-            'webhook_response_body'    => is_scalar($result_body) ? (string) $result_body : wp_json_encode($result_body),
-            'ai_severity'              => '',
-            'ai_category'              => '',
-            'ai_summary'               => '',
-            'ai_recommended_action'    => '',
-            'updated_at'               => current_time('mysql', true),
-        ]);
-        $this->release_retry_lock($exception_id);
         wp_send_json_error(['message' => __('Retry failed. The record remains saved locally.', 'kerbcycle')], 500);
-    }
-
-    private function retry_lock_key($exception_id)
-    {
-        return 'kerbcycle_pickup_retry_lock_' . (int) $exception_id;
     }
 
     private function pickup_dedupe_option_key($qr_code, $customer_id, $issue, $notes)
@@ -924,22 +857,6 @@ class AdminAjax
     {
         $expires = time() + self::PICKUP_DEDUPE_TTL;
         update_option($key, (int) $record_id . ':' . (int) $expires, false);
-    }
-
-    private function acquire_retry_lock($exception_id)
-    {
-        $key = $this->retry_lock_key($exception_id);
-        $now = time();
-        $expires_at = (int) get_option($key, 0);
-        if ($expires_at > 0 && $expires_at <= $now) {
-            delete_option($key);
-        }
-        return add_option($key, (string) ($now + self::RETRY_LOCK_TTL), '', 'no');
-    }
-
-    private function release_retry_lock($exception_id)
-    {
-        delete_option($this->retry_lock_key($exception_id));
     }
 
     /**
