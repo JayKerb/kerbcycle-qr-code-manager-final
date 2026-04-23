@@ -82,10 +82,43 @@ class ErrorsPage
                     <tr><td colspan="6"><?php esc_html_e('No errors found.', 'kerbcycle'); ?></td></tr>
                 <?php else : ?>
                     <?php foreach ($logs as $log) : ?>
+                    <?php $structured = $this->parse_structured_message($log->message); ?>
                     <tr>
                         <td><?php echo esc_html($log->id); ?></td>
                         <td><?php echo esc_html($log->type); ?></td>
-                        <td><?php echo esc_html(wp_trim_words(wp_strip_all_tags($log->message), 20, '…')); ?></td>
+                        <td>
+                            <?php if (!empty($structured)) : ?>
+                                <?php
+                                $summary_parts = [];
+                                if (!empty($structured['action'])) {
+                                    $summary_parts[] = sprintf(__('Action: %s', 'kerbcycle'), $structured['action']);
+                                }
+                                if (!empty($structured['status'])) {
+                                    $summary_parts[] = sprintf(__('Status: %s', 'kerbcycle'), $structured['status']);
+                                }
+                                if (!empty($structured['qr_code'])) {
+                                    $summary_parts[] = sprintf(__('QR: %s', 'kerbcycle'), $structured['qr_code']);
+                                }
+                                if (!empty($structured['exception_id'])) {
+                                    $summary_parts[] = sprintf(__('Exception: %s', 'kerbcycle'), $structured['exception_id']);
+                                }
+                                if (!empty($structured['actor_user_id'])) {
+                                    $summary_parts[] = sprintf(__('Actor: #%s', 'kerbcycle'), $structured['actor_user_id']);
+                                }
+                                $summary = implode(' | ', $summary_parts);
+                                ?>
+                                <div><?php echo esc_html($summary); ?></div>
+                                <?php if (!empty($structured['reason'])) : ?>
+                                    <div><strong><?php esc_html_e('Reason:', 'kerbcycle'); ?></strong> <?php echo esc_html($structured['reason']); ?></div>
+                                <?php endif; ?>
+                                <details>
+                                    <summary><?php esc_html_e('Raw payload', 'kerbcycle'); ?></summary>
+                                    <code style="white-space: pre-wrap; word-break: break-word;"><?php echo esc_html($log->message); ?></code>
+                                </details>
+                            <?php else : ?>
+                                <?php echo esc_html(wp_trim_words(wp_strip_all_tags($log->message), 20, '…')); ?>
+                            <?php endif; ?>
+                        </td>
                         <td><?php echo esc_html($log->page); ?></td>
                         <td><?php echo esc_html($log->status); ?></td>
                         <td><?php echo esc_html(get_date_from_gmt($log->created_at, 'Y-m-d H:i:s')); ?></td>
@@ -110,5 +143,66 @@ class ErrorsPage
             <?php endif; ?>
         </div>
 <?php
+    }
+
+    /**
+     * Parse structured log payloads while preserving legacy raw message behavior.
+     *
+     * @param string $message
+     * @return array<string, string>
+     */
+    private function parse_structured_message($message)
+    {
+        if (!is_string($message) || $message === '') {
+            return [];
+        }
+
+        $decoded = json_decode($message, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $action = isset($decoded['action']) ? sanitize_text_field((string) $decoded['action']) : '';
+        if ($action === '') {
+            return [];
+        }
+
+        $context = (isset($decoded['context']) && is_array($decoded['context'])) ? $decoded['context'] : [];
+
+        $reason = '';
+        foreach (['reason', 'message'] as $key) {
+            if (isset($decoded[$key]) && (string) $decoded[$key] !== '') {
+                $reason = sanitize_text_field((string) $decoded[$key]);
+                break;
+            }
+        }
+
+        $qr_code = '';
+        if (isset($decoded['qr_code']) && (string) $decoded['qr_code'] !== '') {
+            $qr_code = sanitize_text_field((string) $decoded['qr_code']);
+        } elseif (isset($context['qr_code']) && (string) $context['qr_code'] !== '') {
+            $qr_code = sanitize_text_field((string) $context['qr_code']);
+        }
+
+        $exception_id = '';
+        foreach (['exception_id', 'pickup_exception_id'] as $key) {
+            if (isset($decoded[$key]) && (string) $decoded[$key] !== '') {
+                $exception_id = sanitize_text_field((string) $decoded[$key]);
+                break;
+            }
+            if (isset($context[$key]) && (string) $context[$key] !== '') {
+                $exception_id = sanitize_text_field((string) $context[$key]);
+                break;
+            }
+        }
+
+        return [
+            'action'        => $action,
+            'status'        => isset($decoded['status']) ? sanitize_text_field((string) $decoded['status']) : '',
+            'actor_user_id' => isset($decoded['actor_user_id']) ? sanitize_text_field((string) $decoded['actor_user_id']) : '',
+            'qr_code'       => $qr_code,
+            'exception_id'  => $exception_id,
+            'reason'        => $reason,
+        ];
     }
 }
