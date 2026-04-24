@@ -98,7 +98,7 @@ abstract class TestCase extends \WP_UnitTestCase
 
     public function ajax_die_handler(): callable
     {
-        return static function () : void {
+        return static function (): void {
             throw new AjaxDieException('AJAX die captured');
         };
     }
