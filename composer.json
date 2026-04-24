@@ -1,0 +1,9 @@
+{
+  "name": "kerbcycle/qr-code-manager",
+  "description": "KerbCycle QR Code Manager test dependencies",
+  "type": "project",
+  "require-dev": {
+    "phpunit/phpunit": "^9.6",
+    "yoast/phpunit-polyfills": "^2.0"
+  }
+}
