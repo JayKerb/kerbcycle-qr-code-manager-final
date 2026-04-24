@@ -1,0 +1,63 @@
+name: PHPUnit Smoke Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  phpunit-smoke:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: wordpress_test
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      WP_TESTS_DIR: /tmp/wordpress-tests-lib
+      WP_CORE_DIR: /tmp/wordpress
+      DB_HOST: 127.0.0.1
+      DB_NAME: wordpress_test
+      DB_USER: wordpress
+      DB_PASS: wordpress
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
+        with:
+          php-version: '8.3'
+          tools: composer:v2
+
+      - name: Show PHP version
+        run: php -v
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Install WordPress test suite
+        run: |
+          curl -fsSL -o /tmp/install-wp-tests.sh https://raw.githubusercontent.com/wp-cli/scaffold-command/master/templates/install-wp-tests.sh
+          chmod +x /tmp/install-wp-tests.sh
+          /tmp/install-wp-tests.sh "$DB_NAME" "$DB_USER" "$DB_PASS" "$DB_HOST" latest
+
+      - name: Run PHPUnit smoke tests
+        run: vendor/bin/phpunit -c phpunit.xml.dist
