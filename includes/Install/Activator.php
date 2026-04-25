@@ -48,6 +48,11 @@ class Activator
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql);
 
+        $qr_table_found = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
+        if ($qr_table_found !== $table_name) {
+            $wpdb->query(str_replace('CREATE TABLE ', 'CREATE TABLE IF NOT EXISTS ', $sql));
+        }
+
         // Create QR code history table
         $history_table = $wpdb->prefix . 'kerbcycle_qr_code_history';
         $sql = "CREATE TABLE $history_table (
