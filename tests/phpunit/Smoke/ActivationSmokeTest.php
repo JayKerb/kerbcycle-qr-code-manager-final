@@ -22,6 +22,7 @@ final class ActivationSmokeTest extends TestCase
         $tables = $wpdb->get_col('SHOW TABLES');
         $dbError = $wpdb->last_error;
         $dbDeltaAvailable = function_exists('dbDelta') ? 'yes' : 'no';
+        $activationDiagnostics = Activator::$activation_diagnostics;
         $found = $wpdb->get_var(
             $wpdb->prepare('SHOW TABLES LIKE %s', $tablePattern)
         );
@@ -30,13 +31,14 @@ final class ActivationSmokeTest extends TestCase
             $table,
             $found,
             sprintf(
-                'Activation should create the kerbcycle QR table. prefix=%s expected=%s found=%s dbDelta=%s db_error=%s tables=%s',
+                'Activation should create the kerbcycle QR table. prefix=%s expected=%s found=%s dbDelta=%s db_error=%s tables=%s activation_diag=%s',
                 (string) $wpdb->prefix,
                 (string) $table,
                 var_export($found, true),
                 $dbDeltaAvailable,
                 (string) $dbError,
-                wp_json_encode($tables)
+                wp_json_encode($tables),
+                wp_json_encode($activationDiagnostics)
             )
         );
     }

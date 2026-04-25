@@ -18,6 +18,13 @@ if (!defined('ABSPATH')) {
 class Activator
 {
     /**
+     * Activation diagnostics for tests.
+     *
+     * @var array<string, mixed>
+     */
+    public static $activation_diagnostics = [];
+
+    /**
      * Short Description. (use period)
      *
      * Long Description.
@@ -26,6 +33,7 @@ class Activator
      */
     public static function activate()
     {
+        self::$activation_diagnostics = [];
         self::grant_capabilities();
 
         global $wpdb;
@@ -46,7 +54,16 @@ class Activator
         ) $charset_collate;";
 
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-        dbDelta($sql);
+        $qrDbDeltaResult = dbDelta($sql);
+        self::$activation_diagnostics = [
+            'qr_table' => $table_name,
+            'dbdelta_available' => function_exists('dbDelta') ? 'yes' : 'no',
+            'qr_dbdelta_result' => $qrDbDeltaResult,
+            'qr_dbdelta_mentions_table' => is_array($qrDbDeltaResult) && strpos(wp_json_encode($qrDbDeltaResult), $table_name) !== false ? 'yes' : 'no',
+            'wpdb_last_error_after_qr_dbdelta' => (string) $wpdb->last_error,
+            'wpdb_last_query_after_qr_dbdelta' => (string) $wpdb->last_query,
+            'qr_sql' => $sql,
+        ];
 
         // Create QR code history table
         $history_table = $wpdb->prefix . 'kerbcycle_qr_code_history';
