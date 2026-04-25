@@ -18,8 +18,9 @@ final class ActivationSmokeTest extends TestCase
         Activator::activate();
 
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
+        $tablePattern = $wpdb->esc_like($table);
         $found = $wpdb->get_var(
-            $wpdb->prepare('SHOW TABLES LIKE %s', $table)
+            $wpdb->prepare('SHOW TABLES LIKE %s', $tablePattern)
         );
 
         $this->assertSame($table, $found, 'Activation should create the kerbcycle QR table.');
