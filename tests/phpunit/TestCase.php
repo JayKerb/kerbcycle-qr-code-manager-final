@@ -74,6 +74,7 @@ abstract class TestCase extends \WP_UnitTestCase
         $_REQUEST = $_POST;
 
         add_filter('wp_die_ajax_handler', [$this, 'ajax_die_handler']);
+        add_filter('wp_die_handler', [$this, 'ajax_die_handler']);
 
         $json = '';
         $bufferLevel = ob_get_level();
@@ -89,6 +90,7 @@ abstract class TestCase extends \WP_UnitTestCase
             }
 
             remove_filter('wp_die_ajax_handler', [$this, 'ajax_die_handler']);
+            remove_filter('wp_die_handler', [$this, 'ajax_die_handler']);
         }
 
         $decoded = json_decode($json, true);
