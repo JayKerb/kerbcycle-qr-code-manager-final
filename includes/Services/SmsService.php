@@ -1,5 +1,4 @@
 <?php
-
 namespace Kerbcycle\QrCode\Services;
 
 if (!defined('ABSPATH')) {
