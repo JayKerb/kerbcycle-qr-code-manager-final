@@ -85,8 +85,8 @@ abstract class TestCase extends \WP_UnitTestCase
         } catch (AjaxDieException $e) {
             // expected for wp_send_json_* in ajax handlers
         } finally {
-            if (ob_get_level() > $bufferLevel) {
-                $json = (string) ob_get_clean();
+            while (ob_get_level() > $bufferLevel) {
+                $json .= (string) ob_get_clean();
             }
 
             remove_filter('wp_die_ajax_handler', [$this, 'ajax_die_handler']);
