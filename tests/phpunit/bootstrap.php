@@ -13,6 +13,8 @@ if (!file_exists($_tests_dir . '/includes/functions.php')) {
     exit(1);
 }
 
+require_once dirname(__DIR__, 2) . '/vendor/autoload.php';
+
 require_once $_tests_dir . '/includes/functions.php';
 
 tests_add_filter('muplugins_loaded', static function (): void {
@@ -20,3 +22,5 @@ tests_add_filter('muplugins_loaded', static function (): void {
 });
 
 require $_tests_dir . '/includes/bootstrap.php';
+
+require_once __DIR__ . '/TestCase.php';
