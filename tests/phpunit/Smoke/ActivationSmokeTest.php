@@ -18,9 +18,9 @@ final class ActivationSmokeTest extends TestCase
         Activator::activate();
 
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
-        $tables = $wpdb->get_col('SHOW TABLES');
+        $wpdb->query("SELECT 1 FROM {$table} LIMIT 1");
 
-        $this->assertContains($table, $tables, 'Activation should create the kerbcycle QR table.');
+        $this->assertSame('', $wpdb->last_error, 'Activation should create the kerbcycle QR table.');
     }
 
     public function test_activation_sets_default_qr_options_if_defined(): void
