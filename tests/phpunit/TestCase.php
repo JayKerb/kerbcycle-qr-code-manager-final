@@ -76,17 +76,20 @@ abstract class TestCase extends \WP_UnitTestCase
         add_filter('wp_die_ajax_handler', [$this, 'ajax_die_handler']);
 
         $json = '';
+        $bufferLevel = ob_get_level();
         ob_start();
 
         try {
             $ajax->{$method}();
         } catch (AjaxDieException $e) {
             // expected for wp_send_json_* in ajax handlers
+        } finally {
+            if (ob_get_level() > $bufferLevel) {
+                $json = (string) ob_get_clean();
+            }
+
+            remove_filter('wp_die_ajax_handler', [$this, 'ajax_die_handler']);
         }
-
-        $json = (string) ob_get_clean();
-
-        remove_filter('wp_die_ajax_handler', [$this, 'ajax_die_handler']);
 
         $decoded = json_decode($json, true);
 
@@ -98,7 +101,7 @@ abstract class TestCase extends \WP_UnitTestCase
 
     public function ajax_die_handler(): callable
     {
-        return static function (): void {
+        return static function ($message = '', $title = '', $args = []): void {
             throw new AjaxDieException('AJAX die captured');
         };
     }
