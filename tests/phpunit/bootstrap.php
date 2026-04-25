@@ -22,4 +22,3 @@ tests_add_filter('muplugins_loaded', static function (): void {
 });
 
 require $_tests_dir . '/includes/bootstrap.php';
-
