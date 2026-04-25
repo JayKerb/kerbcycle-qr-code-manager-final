@@ -18,14 +18,14 @@ final class ActivationSmokeTest extends TestCase
         Activator::activate();
 
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
-        $found = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table));
+        $tables = $wpdb->get_col('SHOW TABLES');
 
-        $this->assertSame($table, $found, 'Activation should create the kerbcycle QR table.');
+        $this->assertContains($table, $tables, 'Activation should create the kerbcycle QR table.');
     }
 
     public function test_activation_sets_default_qr_options_if_defined(): void
     {
-        $activatorSource = file_get_contents(dirname(__DIR__, 4) . '/includes/Install/Activator.php');
+        $activatorSource = file_get_contents(dirname(__DIR__, 3) . '/includes/Install/Activator.php');
         $this->assertNotFalse($activatorSource);
 
         if (strpos($activatorSource, 'update_option(') === false) {
