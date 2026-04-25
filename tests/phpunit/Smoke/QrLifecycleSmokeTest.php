@@ -96,4 +96,119 @@ final class QrLifecycleSmokeTest extends TestCase
         $this->assertSame('assigned', $row->status);
         $this->assertSame($firstCustomerId, (int) $row->user_id, 'Second assignment attempt must not overwrite original owner.');
     }
+
+    public function test_release_qr_code_fails_with_conflicting_assigned_rows_and_does_not_mutate_state(): void
+    {
+        global $wpdb;
+
+        $adminId = $this->create_admin_user();
+        $firstCustomerId = self::factory()->user->create(['role' => 'subscriber', 'display_name' => 'Conflict Customer One']);
+        $secondCustomerId = self::factory()->user->create(['role' => 'subscriber', 'display_name' => 'Conflict Customer Two']);
+        $qrCode = 'SMOKE-RELEASE-CONFLICT-001';
+
+        $wpdb->insert(
+            $this->qr_table_name(),
+            [
+                'qr_code' => $qrCode,
+                'user_id' => $firstCustomerId,
+                'display_name' => 'Conflict Customer One',
+                'status' => 'assigned',
+                'assigned_at' => current_time('mysql'),
+            ],
+            ['%s', '%d', '%s', '%s', '%s']
+        );
+
+        $wpdb->insert(
+            $this->qr_table_name(),
+            [
+                'qr_code' => $qrCode,
+                'user_id' => $secondCustomerId,
+                'display_name' => 'Conflict Customer Two',
+                'status' => 'assigned',
+                'assigned_at' => current_time('mysql'),
+            ],
+            ['%s', '%d', '%s', '%s', '%s']
+        );
+
+        $release = $this->call_admin_ajax(new AdminAjax(), 'release_qr_code', $adminId, [
+            'action' => 'release_qr_code',
+            'qr_code' => $qrCode,
+        ]);
+
+        $this->assertFalse($release['success']);
+        $this->assertIsArray($release['data'] ?? null);
+        $this->assertNotEmpty($release['data']['message'] ?? '');
+        $this->assertStringContainsString('ambiguous', strtolower((string) ($release['data']['message'] ?? '')));
+
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                'SELECT user_id, status, assigned_at FROM ' . $this->qr_table_name() . ' WHERE qr_code = %s ORDER BY id ASC',
+                $qrCode
+            )
+        );
+        $this->assertCount(2, $rows);
+        $this->assertSame('assigned', $rows[0]->status);
+        $this->assertSame($firstCustomerId, (int) $rows[0]->user_id);
+        $this->assertNotEmpty($rows[0]->assigned_at);
+        $this->assertSame('assigned', $rows[1]->status);
+        $this->assertSame($secondCustomerId, (int) $rows[1]->user_id);
+        $this->assertNotEmpty($rows[1]->assigned_at);
+    }
+
+    public function test_assign_qr_code_rejects_invalid_customer_id_without_state_change(): void
+    {
+        $adminId = $this->create_admin_user();
+        $qrCode = 'SMOKE-INVALID-CUSTOMER-001';
+
+        $this->insert_available_qr($qrCode);
+
+        $assign = $this->call_admin_ajax(new AdminAjax(), 'assign_qr_code', $adminId, [
+            'action' => 'assign_qr_code',
+            'qr_code' => $qrCode,
+            'customer_id' => '99999999',
+        ]);
+
+        $this->assertFalse($assign['success']);
+        $this->assertIsArray($assign['data'] ?? null);
+        $this->assertNotEmpty($assign['data']['message'] ?? '');
+        $this->assertStringContainsString('invalid customer', strtolower((string) ($assign['data']['message'] ?? '')));
+
+        $row = $this->get_qr_row($qrCode);
+        $this->assertNotNull($row);
+        $this->assertSame('available', $row->status);
+        $this->assertTrue(empty($row->user_id) || (int) $row->user_id === 0);
+        $this->assertTrue(empty($row->assigned_at));
+    }
+
+    public function test_assign_qr_code_success_response_includes_admin_js_record_shape(): void
+    {
+        $adminId = $this->create_admin_user();
+        $customerId = self::factory()->user->create(['role' => 'subscriber', 'display_name' => 'Record Shape Customer']);
+        $qrCode = 'SMOKE-RECORD-SHAPE-001';
+
+        $this->insert_available_qr($qrCode);
+
+        $assign = $this->call_admin_ajax(new AdminAjax(), 'assign_qr_code', $adminId, [
+            'action' => 'assign_qr_code',
+            'qr_code' => $qrCode,
+            'customer_id' => (string) $customerId,
+        ]);
+
+        $this->assertTrue($assign['success']);
+        $this->assertIsArray($assign['data'] ?? null);
+        $this->assertNotEmpty($assign['data']['message'] ?? '');
+        $this->assertIsArray($assign['data']['record'] ?? null);
+
+        $record = $assign['data']['record'];
+        $this->assertArrayHasKey('id', $record);
+        $this->assertArrayHasKey('qr_code', $record);
+        $this->assertArrayHasKey('user_id', $record);
+        $this->assertArrayHasKey('display_name', $record);
+        $this->assertArrayHasKey('status', $record);
+        $this->assertArrayHasKey('assigned_at', $record);
+        $this->assertSame($qrCode, $record['qr_code']);
+        $this->assertSame($customerId, (int) $record['user_id']);
+        $this->assertSame('assigned', $record['status']);
+        $this->assertNotEmpty($record['assigned_at']);
+    }
 }
