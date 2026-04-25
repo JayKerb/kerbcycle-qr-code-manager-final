@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace KerbCycle\Tests\PhpUnit\Smoke;
 
+require_once __DIR__ . '/../TestCase.php';
+
 use KerbCycle\Tests\PhpUnit\TestCase;
 use Kerbcycle\QrCode\Install\Activator;
 
