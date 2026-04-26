@@ -12,7 +12,7 @@ use WP_REST_Request;
 
 final class QrBehaviorSmokeTest extends TestCase
 {
-// code (keep this) codex/fix-phpunit-ajax-output-leak-eq1s26
+    // code (keep this) codex/fix-phpunit-ajax-output-leak-eq1s26
     private function create_operator_user(): int
     {
         return self::factory()->user->create(['role' => 'kerbcycle_operator']);
@@ -35,7 +35,7 @@ final class QrBehaviorSmokeTest extends TestCase
         );
     }
 
-// code (keep this)main
+    // code (keep this)main
     public function test_duplicate_qr_assignment_is_rejected_without_overwriting_owner(): void
     {
         $adminId = $this->create_admin_user();
@@ -110,7 +110,7 @@ final class QrBehaviorSmokeTest extends TestCase
         $this->assertSame('available', $normalized['status'] ?? null);
         $this->assertArrayHasKey('id', $normalized);
     }
-// code (keep this) codex/fix-phpunit-ajax-output-leak-eq1s26
+    // code (keep this) codex/fix-phpunit-ajax-output-leak-eq1s26
 
     public function test_operator_can_release_qr_via_ajax(): void
     {
@@ -230,5 +230,5 @@ final class QrBehaviorSmokeTest extends TestCase
         $this->assertSame($customerId, (int) $rows[0]->user_id);
         $this->assertSame($customerId, (int) $rows[1]->user_id);
     }
-// code (keep this)main
+    // code (keep this)main
 }
