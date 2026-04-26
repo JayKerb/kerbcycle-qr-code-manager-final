@@ -50,7 +50,7 @@ class Activator
             status varchar(20) DEFAULT 'available',
             assigned_at datetime DEFAULT NULL,
             created_at timestamp DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY  (id)
+            PRIMARY KEY (id)
         ) $charset_collate;";
 
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
