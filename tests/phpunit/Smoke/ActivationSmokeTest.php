@@ -18,29 +18,9 @@ final class ActivationSmokeTest extends TestCase
         Activator::activate();
 
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
-        $tablePattern = $wpdb->esc_like($table);
-        $tables = $wpdb->get_col('SHOW TABLES');
-        $dbError = $wpdb->last_error;
-        $dbDeltaAvailable = function_exists('dbDelta') ? 'yes' : 'no';
-        $activationDiagnostics = Activator::$activation_diagnostics;
-        $found = $wpdb->get_var(
-            $wpdb->prepare('SHOW TABLES LIKE %s', $tablePattern)
-        );
+        $wpdb->query("SELECT 1 FROM {$table} LIMIT 1");
 
-        $this->assertSame(
-            $table,
-            $found,
-            sprintf(
-                'Activation should create the kerbcycle QR table. prefix=%s expected=%s found=%s dbDelta=%s db_error=%s tables=%s activation_diag=%s',
-                (string) $wpdb->prefix,
-                (string) $table,
-                var_export($found, true),
-                $dbDeltaAvailable,
-                (string) $dbError,
-                wp_json_encode($tables),
-                wp_json_encode($activationDiagnostics)
-            )
-        );
+        $this->assertSame('', (string) $wpdb->last_error, 'Activation should create a queryable kerbcycle QR table.');
     }
 
     public function test_activation_sets_default_qr_options_if_defined(): void
