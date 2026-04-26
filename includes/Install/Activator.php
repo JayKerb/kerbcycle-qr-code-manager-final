@@ -18,13 +18,6 @@ if (!defined('ABSPATH')) {
 class Activator
 {
     /**
-     * Activation diagnostics for tests.
-     *
-     * @var array<string, mixed>
-     */
-    public static $activation_diagnostics = [];
-
-    /**
      * Short Description. (use period)
      *
      * Long Description.
@@ -33,14 +26,12 @@ class Activator
      */
     public static function activate()
     {
-        self::$activation_diagnostics = [];
         self::grant_capabilities();
 
         global $wpdb;
 
         // Create QR codes table
         $table_name = $wpdb->prefix . 'kerbcycle_qr_codes';
-        $tablePattern = $wpdb->esc_like($table_name);
         $charset_collate = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE $table_name (
@@ -56,21 +47,7 @@ class Activator
         ) $charset_collate;";
 
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
-        $qrDbDeltaResult = dbDelta($sql);
-        $wpdbLastErrorAfterQrDbDelta = (string) $wpdb->last_error;
-        $wpdbLastQueryAfterQrDbDelta = (string) $wpdb->last_query;
-        $tableExistsAfterDbDelta = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $tablePattern)) === $table_name;
-
-        self::$activation_diagnostics = [
-            'qr_table' => $table_name,
-            'dbdelta_available' => function_exists('dbDelta') ? 'yes' : 'no',
-            'qr_dbdelta_result' => $qrDbDeltaResult,
-            'qr_dbdelta_mentions_table' => is_array($qrDbDeltaResult) && strpos(wp_json_encode($qrDbDeltaResult), $table_name) !== false ? 'yes' : 'no',
-            'wpdb_last_error_after_qr_dbdelta' => $wpdbLastErrorAfterQrDbDelta,
-            'wpdb_last_query_after_qr_dbdelta' => $wpdbLastQueryAfterQrDbDelta,
-            'qr_sql' => $sql,
-            'table_exists_after_dbdelta' => $tableExistsAfterDbDelta ? 'yes' : 'no',
-        ];
+        dbDelta($sql);
 
         // Create QR code history table
         $history_table = $wpdb->prefix . 'kerbcycle_qr_code_history';
