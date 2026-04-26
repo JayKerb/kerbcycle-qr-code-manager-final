@@ -56,14 +56,39 @@ class Activator
 
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         $qrDbDeltaResult = dbDelta($sql);
+        $wpdbLastErrorAfterQrDbDelta = (string) $wpdb->last_error;
+        $wpdbLastQueryAfterQrDbDelta = (string) $wpdb->last_query;
+        $tableExistsAfterDbDelta = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name)) === $table_name;
+
+        $directCreateAttempted = 'no';
+        $directCreateResult = null;
+        $directCreateLastError = '';
+        $tableExistsAfterDirectCreate = $tableExistsAfterDbDelta ? 'yes' : 'no';
+        $lastQueryAfterDirectCreate = '';
+
+        if (!$tableExistsAfterDbDelta) {
+            $directCreateAttempted = 'yes';
+            $directSql = str_replace('CREATE TABLE ', 'CREATE TABLE IF NOT EXISTS ', $sql);
+            $directCreateResult = $wpdb->query($directSql);
+            $directCreateLastError = (string) $wpdb->last_error;
+            $tableExistsAfterDirectCreate = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name)) === $table_name ? 'yes' : 'no';
+            $lastQueryAfterDirectCreate = (string) $wpdb->last_query;
+        }
+
         self::$activation_diagnostics = [
             'qr_table' => $table_name,
             'dbdelta_available' => function_exists('dbDelta') ? 'yes' : 'no',
             'qr_dbdelta_result' => $qrDbDeltaResult,
             'qr_dbdelta_mentions_table' => is_array($qrDbDeltaResult) && strpos(wp_json_encode($qrDbDeltaResult), $table_name) !== false ? 'yes' : 'no',
-            'wpdb_last_error_after_qr_dbdelta' => (string) $wpdb->last_error,
-            'wpdb_last_query_after_qr_dbdelta' => (string) $wpdb->last_query,
+            'wpdb_last_error_after_qr_dbdelta' => $wpdbLastErrorAfterQrDbDelta,
+            'wpdb_last_query_after_qr_dbdelta' => $wpdbLastQueryAfterQrDbDelta,
             'qr_sql' => $sql,
+            'table_exists_after_dbdelta' => $tableExistsAfterDbDelta ? 'yes' : 'no',
+            'direct_create_attempted' => $directCreateAttempted,
+            'direct_create_result' => $directCreateResult,
+            'direct_create_last_error' => $directCreateLastError,
+            'table_exists_after_direct_create' => $tableExistsAfterDirectCreate,
+            'last_query_after_direct_create' => $lastQueryAfterDirectCreate,
         ];
 
         // Create QR code history table
