@@ -61,21 +61,6 @@ class Activator
         $wpdbLastQueryAfterQrDbDelta = (string) $wpdb->last_query;
         $tableExistsAfterDbDelta = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $tablePattern)) === $table_name;
 
-        $directCreateAttempted = 'no';
-        $directCreateResult = null;
-        $directCreateLastError = '';
-        $tableExistsAfterDirectCreate = $tableExistsAfterDbDelta ? 'yes' : 'no';
-        $lastQueryAfterDirectCreate = '';
-
-        if (!$tableExistsAfterDbDelta) {
-            $directCreateAttempted = 'yes';
-            $directSql = str_replace('CREATE TABLE ', 'CREATE TABLE IF NOT EXISTS ', $sql);
-            $directCreateResult = $wpdb->query($directSql);
-            $lastQueryAfterDirectCreate = (string) $wpdb->last_query;
-            $directCreateLastError = (string) $wpdb->last_error;
-            $tableExistsAfterDirectCreate = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $tablePattern)) === $table_name ? 'yes' : 'no';
-        }
-
         self::$activation_diagnostics = [
             'qr_table' => $table_name,
             'dbdelta_available' => function_exists('dbDelta') ? 'yes' : 'no',
@@ -85,11 +70,6 @@ class Activator
             'wpdb_last_query_after_qr_dbdelta' => $wpdbLastQueryAfterQrDbDelta,
             'qr_sql' => $sql,
             'table_exists_after_dbdelta' => $tableExistsAfterDbDelta ? 'yes' : 'no',
-            'direct_create_attempted' => $directCreateAttempted,
-            'direct_create_result' => $directCreateResult,
-            'direct_create_last_error' => $directCreateLastError,
-            'table_exists_after_direct_create' => $tableExistsAfterDirectCreate,
-            'last_query_after_direct_create' => $lastQueryAfterDirectCreate,
         ];
 
         // Create QR code history table
