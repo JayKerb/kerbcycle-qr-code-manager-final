@@ -61,7 +61,8 @@ final class SecurityBoundarySmokeTest extends TestCase
         $response = rest_get_server()->dispatch($request);
 
         $this->assertSame(200, $response->get_status());
-        $data = $response->get_data();
+        $responseData = $response->get_data();
+        $data = is_array($responseData) ? $responseData : (array) $responseData;
         $this->assertSame($qrCode, $data['qr_code'] ?? null);
     }
 }
