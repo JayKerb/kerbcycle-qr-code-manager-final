@@ -43,7 +43,7 @@ class Activator
         $tablePattern = $wpdb->esc_like($table_name);
         $charset_collate = $wpdb->get_charset_collate();
 
-        $sql = "CREATE TABLE `$table_name` (
+        $sql = "CREATE TABLE $table_name (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             qr_code varchar(255) NOT NULL,
             user_id mediumint(9),
@@ -51,7 +51,7 @@ class Activator
             status varchar(20) DEFAULT 'available',
             assigned_at datetime DEFAULT NULL,
             created_at timestamp DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
+            PRIMARY KEY  (id),
             KEY qr_code_idx (qr_code)
         ) $charset_collate;";
 
