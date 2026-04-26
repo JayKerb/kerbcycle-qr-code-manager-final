@@ -42,7 +42,7 @@ class Activator
         $table_name = $wpdb->prefix . 'kerbcycle_qr_codes';
         $charset_collate = $wpdb->get_charset_collate();
 
-        $sql = "CREATE TABLE $table_name (
+        $sql = "CREATE TABLE `$table_name` (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             qr_code varchar(255) NOT NULL,
             user_id mediumint(9),
