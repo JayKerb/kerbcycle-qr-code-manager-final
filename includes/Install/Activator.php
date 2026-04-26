@@ -40,6 +40,7 @@ class Activator
 
         // Create QR codes table
         $table_name = $wpdb->prefix . 'kerbcycle_qr_codes';
+        $tablePattern = $wpdb->esc_like($table_name);
         $charset_collate = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE `$table_name` (
@@ -58,7 +59,7 @@ class Activator
         $qrDbDeltaResult = dbDelta($sql);
         $wpdbLastErrorAfterQrDbDelta = (string) $wpdb->last_error;
         $wpdbLastQueryAfterQrDbDelta = (string) $wpdb->last_query;
-        $tableExistsAfterDbDelta = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name)) === $table_name;
+        $tableExistsAfterDbDelta = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $tablePattern)) === $table_name;
 
         $directCreateAttempted = 'no';
         $directCreateResult = null;
@@ -70,9 +71,9 @@ class Activator
             $directCreateAttempted = 'yes';
             $directSql = str_replace('CREATE TABLE ', 'CREATE TABLE IF NOT EXISTS ', $sql);
             $directCreateResult = $wpdb->query($directSql);
-            $directCreateLastError = (string) $wpdb->last_error;
-            $tableExistsAfterDirectCreate = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name)) === $table_name ? 'yes' : 'no';
             $lastQueryAfterDirectCreate = (string) $wpdb->last_query;
+            $directCreateLastError = (string) $wpdb->last_error;
+            $tableExistsAfterDirectCreate = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $tablePattern)) === $table_name ? 'yes' : 'no';
         }
 
         self::$activation_diagnostics = [
