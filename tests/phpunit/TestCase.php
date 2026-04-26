@@ -13,9 +13,9 @@ class AjaxDieException extends \RuntimeException
 
 abstract class TestCase extends \WP_UnitTestCase
 {
-    protected function setUp(): void
+    protected function set_up(): void
     {
-        parent::setUp();
+        parent::set_up();
         Activator::activate();
     }
 
