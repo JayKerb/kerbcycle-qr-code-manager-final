@@ -18,7 +18,7 @@ final class ActivationSmokeTest extends TestCase
         Activator::activate();
 
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
-        $wpdb->query("SELECT 1 FROM {$table} LIMIT 1");
+        $wpdb->get_var("SELECT 1 FROM {$table} LIMIT 1");
 
         $this->assertSame(
             '',
@@ -29,7 +29,7 @@ final class ActivationSmokeTest extends TestCase
 
     public function test_activation_sets_default_qr_options_if_defined(): void
     {
-        $activatorSource = file_get_contents(dirname(__DIR__, 3) . '/includes/Install/Activator.php');
+        $activatorSource = file_get_contents(dirname(__DIR__, 4) . '/includes/Install/Activator.php');
         $this->assertNotFalse($activatorSource);
 
         if (strpos($activatorSource, 'update_option(') === false) {
