@@ -480,4 +480,96 @@ final class QrBehaviorSmokeTest extends TestCase
         $this->assertSame('available', $row->status);
         $this->assertTrue(empty($row->user_id) || (int) $row->user_id === 0);
     }
+
+    public function test_admin_bulk_release_fails_with_empty_payload_and_rows_unchanged(): void
+    {
+        $adminId = $this->create_admin_user();
+        $customerId = self::factory()->user->create(['role' => 'subscriber', 'display_name' => 'Empty Bulk']);
+        $qrCode = 'SMOKE-BULK-EMPTY-001';
+
+        $this->insert_assigned_qr($qrCode, $customerId, 'Empty Bulk');
+
+        $response = $this->call_admin_ajax(new AdminAjax(), 'bulk_release_qr_codes', $adminId, [
+            'action' => 'bulk_release_qr_codes',
+            'qr_codes' => '',
+        ]);
+
+        $this->assertFalse($response['success']);
+
+        $row = $this->get_qr_row($qrCode);
+        $this->assertNotNull($row);
+        $this->assertSame('assigned', $row->status);
+        $this->assertSame($customerId, (int) $row->user_id);
+    }
+
+    public function test_admin_bulk_release_with_mixed_valid_and_unknown_codes_releases_only_valid_rows(): void
+    {
+        $adminId = $this->create_admin_user();
+        $customerId = self::factory()->user->create(['role' => 'subscriber', 'display_name' => 'Mixed Bulk']);
+        $validQr = 'SMOKE-BULK-MIXED-VALID-001';
+        $unknownQr = 'SMOKE-BULK-MIXED-UNKNOWN-001';
+        $untouchedQr = 'SMOKE-BULK-MIXED-UNTOUCHED-001';
+
+        $this->insert_assigned_qr($validQr, $customerId, 'Mixed Bulk');
+        $this->insert_assigned_qr($untouchedQr, $customerId, 'Mixed Bulk');
+
+        $response = $this->call_admin_ajax(new AdminAjax(), 'bulk_release_qr_codes', $adminId, [
+            'action' => 'bulk_release_qr_codes',
+            'qr_codes' => $validQr . ',' . $unknownQr,
+        ]);
+
+        $this->assertTrue($response['success']);
+
+        $validRow = $this->get_qr_row($validQr);
+        $untouchedRow = $this->get_qr_row($untouchedQr);
+        $unknownRow = $this->get_qr_row($unknownQr);
+
+        $this->assertNotNull($validRow);
+        $this->assertNotNull($untouchedRow);
+        $this->assertSame('available', $validRow->status);
+        $this->assertTrue(empty($validRow->user_id) || (int) $validRow->user_id === 0);
+
+        $this->assertSame('assigned', $untouchedRow->status);
+        $this->assertSame($customerId, (int) $untouchedRow->user_id);
+        $this->assertNull($unknownRow);
+    }
+
+    public function test_assignment_with_whitespace_padded_qr_code_does_not_create_corrupt_duplicate_state(): void
+    {
+        global $wpdb;
+
+        $adminId = $this->create_admin_user();
+        $customerId = self::factory()->user->create(['role' => 'subscriber', 'display_name' => 'Whitespace Customer']);
+        $qrCode = 'SMOKE-EDGE-WS-001';
+        $paddedQrCode = '  ' . $qrCode . '  ';
+
+        $this->insert_available_qr($qrCode);
+
+        $response = $this->call_admin_ajax(new AdminAjax(), 'assign_qr_code', $adminId, [
+            'action' => 'assign_qr_code',
+            'qr_code' => $paddedQrCode,
+            'customer_id' => (string) $customerId,
+        ]);
+
+        $this->assertIsBool($response['success']);
+
+        $normalizedRow = $this->get_qr_row($qrCode);
+        $this->assertNotNull($normalizedRow);
+
+        $paddedCount = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                'SELECT COUNT(*) FROM ' . $this->qr_table_name() . ' WHERE qr_code = %s',
+                $paddedQrCode
+            )
+        );
+        $this->assertSame(0, $paddedCount);
+
+        if ($response['success']) {
+            $this->assertSame('assigned', $normalizedRow->status);
+            $this->assertSame($customerId, (int) $normalizedRow->user_id);
+        } else {
+            $this->assertSame('available', $normalizedRow->status);
+            $this->assertTrue(empty($normalizedRow->user_id) || (int) $normalizedRow->user_id === 0);
+        }
+    }
 }

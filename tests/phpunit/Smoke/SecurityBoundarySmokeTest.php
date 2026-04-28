@@ -12,6 +12,16 @@ use WP_REST_Request;
 
 final class SecurityBoundarySmokeTest extends TestCase
 {
+    public function test_qr_status_rest_route_denies_logged_out_user(): void
+    {
+        wp_set_current_user(0);
+
+        $request = new WP_REST_Request('GET', '/kerbcycle/v1/qr-status/SMOKE-REST-LOGGED-OUT-001');
+        $response = rest_get_server()->dispatch($request);
+
+        $this->assertSame(401, $response->get_status());
+    }
+
     public function test_low_privilege_user_cannot_call_pickup_exception_test_ajax_handler(): void
     {
         $subscriberId = $this->create_subscriber_user();
@@ -34,6 +44,17 @@ final class SecurityBoundarySmokeTest extends TestCase
         wp_set_current_user($subscriberId);
 
         $request = new WP_REST_Request('GET', '/kerbcycle/v1/qr-status/SMOKE-REST-001');
+        $response = rest_get_server()->dispatch($request);
+
+        $this->assertSame(403, $response->get_status());
+    }
+
+    public function test_qr_status_rest_route_denies_operator_user(): void
+    {
+        $operatorId = self::factory()->user->create(['role' => 'kerbcycle_operator']);
+        wp_set_current_user($operatorId);
+
+        $request = new WP_REST_Request('GET', '/kerbcycle/v1/qr-status/SMOKE-REST-OPERATOR-001');
         $response = rest_get_server()->dispatch($request);
 
         $this->assertSame(403, $response->get_status());
