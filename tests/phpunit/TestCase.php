@@ -13,9 +13,9 @@ class AjaxDieException extends \RuntimeException
 
 abstract class TestCase extends \WP_UnitTestCase
 {
-    protected function setUp(): void
+    public function set_up(): void
     {
-        parent::setUp();
+        parent::set_up();
         Activator::activate();
     }
 
@@ -75,6 +75,7 @@ abstract class TestCase extends \WP_UnitTestCase
 
         add_filter('wp_die_ajax_handler', [$this, 'ajax_die_handler']);
         add_filter('wp_die_handler', [$this, 'ajax_die_handler']);
+        add_filter('wp_doing_ajax', '__return_true');
 
         $json = '';
         $bufferLevel = ob_get_level();
@@ -91,6 +92,7 @@ abstract class TestCase extends \WP_UnitTestCase
 
             remove_filter('wp_die_ajax_handler', [$this, 'ajax_die_handler']);
             remove_filter('wp_die_handler', [$this, 'ajax_die_handler']);
+            remove_filter('wp_doing_ajax', '__return_true');
         }
 
         $decoded = json_decode($json, true);
