@@ -19,7 +19,7 @@ final class SecurityBoundarySmokeTest extends TestCase
         $request = new WP_REST_Request('GET', '/kerbcycle/v1/qr-status/SMOKE-REST-LOGGED-OUT-001');
         $response = rest_get_server()->dispatch($request);
 
-        $this->assertSame(403, $response->get_status());
+        $this->assertSame(401, $response->get_status());
     }
 
     public function test_low_privilege_user_cannot_call_pickup_exception_test_ajax_handler(): void
