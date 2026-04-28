@@ -18,7 +18,7 @@ final class ActivationSmokeTest extends TestCase
         Activator::activate();
 
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
-        $wpdb->query("SELECT 1 FROM {$table} LIMIT 1");
+        $wpdb->get_var("SELECT 1 FROM {$table} LIMIT 1");
 
         $this->assertSame(
             '',
