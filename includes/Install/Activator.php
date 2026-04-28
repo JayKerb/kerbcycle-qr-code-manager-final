@@ -41,8 +41,9 @@ class Activator
             display_name varchar(255) DEFAULT NULL,
             status varchar(20) DEFAULT 'available',
             assigned_at datetime DEFAULT NULL,
-            created_at datetime DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY  (id)
+            created_at timestamp DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            KEY qr_code_idx (qr_code)
         ) $charset_collate;";
 
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
