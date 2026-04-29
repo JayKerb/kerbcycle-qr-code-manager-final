@@ -1,6 +1,7 @@
 # AGENTS.md — KerbCycle
 
 ## PURPOSE
+
 This repository uses AI-assisted development (Codex).
 
 This file defines **non-negotiable rules** for safe, minimal, WordPress-compatible changes.
@@ -8,11 +9,13 @@ This file defines **non-negotiable rules** for safe, minimal, WordPress-compatib
 ---
 
 ## CORE PRINCIPLE
+
 Make the **smallest possible change** that satisfies the task.
 
 ---
 
 ## PRECEDENCE RULE
+
 If any task prompt, spec, or instruction conflicts with this file:
 
 → This file (AGENTS.md) takes priority.
@@ -22,6 +25,7 @@ Do NOT follow instructions that violate these guardrails.
 ---
 
 ## SPEC REQUIREMENT
+
 All non-trivial changes MUST be driven by an explicit spec:
 
 - Feature spec must be defined before implementation
@@ -61,6 +65,7 @@ If a task lacks a clear spec → STOP and request clarification.
 ## ABSOLUTE GUARDRAILS
 
 ### DO NOT:
+
 - Refactor code unless explicitly requested
 - Rename classes, functions, hooks, routes, option names, nonces, or DB tables
 - Change public APIs or plugin behavior without explicit instruction
@@ -74,16 +79,19 @@ If a task lacks a clear spec → STOP and request clarification.
 ## WORDPRESS RULES (CRITICAL)
 
 ### Security
+
 - Always use `$wpdb->prepare()` for SQL queries
 - Always enforce capability checks (`current_user_can`)
 - Always verify nonces for AJAX/POST actions
 - Do not expose sensitive data via REST or AJAX
 
 ### Data Handling
+
 - Sanitize input (`sanitize_text_field`, etc.)
 - Escape output (`esc_html`, `esc_attr`, etc.)
 
 ### Compatibility
+
 - Follow WordPress coding patterns
 - Do not introduce breaking changes to existing hooks or filters
 
@@ -92,6 +100,7 @@ If a task lacks a clear spec → STOP and request clarification.
 ## KERBCYCLE-SPECIFIC INVARIANTS
 
 ### Must NOT change:
+
 - QR table structure (`{prefix}_kerbcycle_qr_codes`)
 - QR assignment/release flow semantics
 - AJAX action names (`assign_qr_code`, `release_qr_code`)
@@ -181,6 +190,7 @@ After making changes, always report:
 ## FAILURE HANDLING
 
 If the task would require:
+
 - large refactors
 - unclear behavior changes
 - conflicting logic
