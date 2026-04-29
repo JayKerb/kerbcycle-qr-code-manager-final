@@ -1,31 +1,90 @@
-<?xml version="1.0"?>
-<ruleset name="KerbCycle QR Code Manager">
-  <description>Repo-level PHPCS rules for WordPress and PHP compatibility checks.</description>
+<?xml version="2.0"?>
+<ruleset name="KerbCycle Coding Standards">
 
-  <arg name="colors"/>
-  <arg value="p"/>
+    <description>
+        KerbCycle WordPress plugin coding standards.
+        Focuses on WordPress compatibility, security-relevant checks, and scoped linting.
+    </description>
 
-  <file>.</file>
+    <!-- Scan plugin source files -->
+    <file>kerbcycle-qr-code-manager.php</file>
+    <file>includes</file>
+    <file>admin</file>
+    <file>public</file>
 
-  <exclude-pattern>*/vendor/*</exclude-pattern>
-  <exclude-pattern>*/node_modules/*</exclude-pattern>
-  <exclude-pattern>*/build/*</exclude-pattern>
-  <exclude-pattern>*/dist/*</exclude-pattern>
-  <exclude-pattern>*/coverage/*</exclude-pattern>
-  <exclude-pattern>*/.git/*</exclude-pattern>
-  <exclude-pattern>*/assets/vendor/*</exclude-pattern>
-  <exclude-pattern>*/third-party/*</exclude-pattern>
-  <exclude-pattern>*/tmp/*</exclude-pattern>
-  <exclude-pattern>*/temp/*</exclude-pattern>
-  <exclude-pattern>*/cache/*</exclude-pattern>
-  <exclude-pattern>*/tests/fixtures/*</exclude-pattern>
-  <exclude-pattern>*.min.js</exclude-pattern>
-  <exclude-pattern>*.min.css</exclude-pattern>
+    <!-- Optional: include PHP test files only if you want tests linted -->
+    <!-- <file>tests/phpunit</file> -->
 
-  <rule ref="WordPress-Core"/>
-  <rule ref="WordPress-Extra"/>
-  <rule ref="WordPress-Docs"/>
-  <rule ref="PHPCompatibilityWP">
-    <config name="testVersion" value="8.3-"/>
-  </rule>
+    <!-- Do not scan dependencies or generated/cache/build files -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/build/*</exclude-pattern>
+    <exclude-pattern>*/dist/*</exclude-pattern>
+    <exclude-pattern>*/coverage/*</exclude-pattern>
+    <exclude-pattern>*/.git/*</exclude-pattern>
+
+    <!-- Avoid noisy/low-value test false positives by default -->
+    <exclude-pattern>*/tests/*</exclude-pattern>
+
+    <!-- WordPress coding standards -->
+    <rule ref="WordPress-Core"/>
+    <rule ref="WordPress-Docs"/>
+    <rule ref="WordPress-Extra"/>
+
+    <!-- PHP compatibility for WordPress-supported PHP versions -->
+    <rule ref="PHPCompatibilityWP"/>
+
+    <!-- Target PHP version range: adjust if your plugin requires something else -->
+    <config name="testVersion" value="7.4-8.3"/>
+
+    <!-- WordPress minimum version, optional but useful -->
+    <config name="minimum_supported_wp_version" value="6.0"/>
+
+    <!-- Text domain for plugin i18n -->
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="kerbcycle-qr-code-manager"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Keep security checks active -->
+    <rule ref="WordPress.Security.EscapeOutput"/>
+    <rule ref="WordPress.Security.ValidatedSanitizedInput"/>
+    <rule ref="WordPress.DB.PreparedSQL"/>
+
+    <!-- Allow table-name interpolation when table name is constructed internally.
+         Still require prepared placeholders for user-controlled values. -->
+    <rule ref="WordPress.DB.PreparedSQL.InterpolatedNotPrepared">
+        <severity>5</severity>
+    </rule>
+
+    <!-- Reduce noise around WordPress global function qualification in namespaced files.
+         Keep this enabled if Codacy/PHPCS is useful here; exclude only if too noisy. -->
+    <!--
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+        <exclude-pattern>*/tests/*</exclude-pattern>
+    </rule>
+    -->
+
+    <!-- Avoid requiring Yoda conditions if you do not want Codex doing broad style churn -->
+    <rule ref="WordPress.PHP.YodaConditions">
+        <severity>0</severity>
+    </rule>
+
+    <!-- Keep line-length as warning, not blocker -->
+    <rule ref="Generic.Files.LineLength">
+        <properties>
+            <property name="lineLimit" value="120"/>
+            <property name="absoluteLineLimit" value="160"/>
+        </properties>
+        <severity>3</severity>
+    </rule>
+
+    <!-- Output formatting -->
+    <arg name="extensions" value="php"/>
+    <arg name="colors"/>
+    <arg value="ps"/>
+
 </ruleset>
