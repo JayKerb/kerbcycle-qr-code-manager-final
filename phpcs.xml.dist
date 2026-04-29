@@ -8,9 +8,9 @@
 
     <!-- Scan plugin source files -->
     <file>kerbcycle-qr-code-manager.php</file>
-    <file>includes</file>
-    <file>admin</file>
-    <file>public</file>
+    <file>.</file>
+    <file>.</file>
+    <file>.</file>
 
     <!-- Optional: include PHP test files only if you want tests linted -->
     <!-- <file>tests/phpunit</file> -->
