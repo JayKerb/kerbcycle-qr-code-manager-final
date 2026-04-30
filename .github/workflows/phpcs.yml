@@ -38,13 +38,24 @@ jobs:
         #run: |
           #vendor/bin/phpcs --standard=phpcs.xml.dist --report=checkstyle > phpcs-report.xml
 
-      - name: Explain PHPCS baseline behavior
+      - name: Run PHPCS (capture result)
+        id: phpcs
+        continue-on-error: true
         run: |
-          echo "This workflow fails when PHPCS finds WordPress coding-standard violations."
-          echo "A failure here means the scan completed and found issues; it does not necessarily mean CI setup is broken."
+          vendor/bin/phpcs --standard=phpcs.xml.dist --report=summary
 
-      - name: Check WordPress coding standards with PHPCS
-        run: vendor/bin/phpcs --standard=phpcs.xml.dist --report=summary
+      - name: Explain result
+        run: |
+          if [ "${{ steps.phpcs.outcome }}" = "failure" ]; then
+            echo "❌ PHPCS violations found. This is expected during baseline cleanup."
+            echo "➡️ This means the scan ran successfully but found coding standard issues."
+          else
+            echo "✅ PHPCS passed with no violations."
+          fi
+
+      - name: Fail if violations exist
+        if: steps.phpcs.outcome == 'failure'
+        run: exit 1
 
       #- name: Annotate PHPCS results
         #if: always()
