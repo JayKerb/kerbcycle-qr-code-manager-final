@@ -38,7 +38,12 @@ jobs:
         #run: |
           #vendor/bin/phpcs --standard=phpcs.xml.dist --report=checkstyle > phpcs-report.xml
 
-      - name: Run PHPCS summary
+      - name: Explain PHPCS baseline behavior
+        run: |
+          echo "This workflow fails when PHPCS finds WordPress coding-standard violations."
+          echo "A failure here means the scan completed and found issues; it does not necessarily mean CI setup is broken."
+
+      - name: Check WordPress coding standards with PHPCS
         run: vendor/bin/phpcs --standard=phpcs.xml.dist --report=summary
 
       #- name: Annotate PHPCS results
