@@ -32,11 +32,14 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
 
-      - name: Run PHPCS
-        id: phpcs
-        continue-on-error: true
-        run: |
-          vendor/bin/phpcs --standard=phpcs.xml.dist --report=checkstyle > phpcs-report.xml
+      #- name: Run PHPCS
+        #id: phpcs
+        #continue-on-error: true
+        #run: |
+          #vendor/bin/phpcs --standard=phpcs.xml.dist --report=checkstyle > phpcs-report.xml
+
+      - name: Run PHPCS summary
+        run: vendor/bin/phpcs --standard=phpcs.xml.dist --report=summary
 
       - name: Annotate PHPCS results
         if: always()
