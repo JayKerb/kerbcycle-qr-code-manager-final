@@ -2,8 +2,8 @@
 
 namespace Kerbcycle\QrCode\Install;
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 /**
@@ -15,20 +15,18 @@ if (!defined('ABSPATH')) {
  * @package    Kerbcycle\QrCode
  * @subpackage Kerbcycle\QrCode\Install
  */
-class Uninstaller
-{
-    /**
-     * Short Description. (use period)
-     *
-     * Long Description.
-     *
-     * @since    1.0.0
-     */
-    public static function deactivate()
-    {
-        $timestamp = wp_next_scheduled('kerbcycle_qr_reminder');
-        if ($timestamp) {
-            wp_unschedule_event($timestamp, 'kerbcycle_qr_reminder');
-        }
-    }
+class Uninstaller {
+	/**
+	 * Short Description. (use period)
+	 *
+	 * Long Description.
+	 *
+	 * @since    1.0.0
+	 */
+	public static function deactivate() {
+		$timestamp = wp_next_scheduled( 'kerbcycle_qr_reminder' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'kerbcycle_qr_reminder' );
+		}
+	}
 }
