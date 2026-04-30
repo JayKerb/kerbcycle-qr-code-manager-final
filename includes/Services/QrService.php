@@ -3,7 +3,7 @@
 namespace Kerbcycle\QrCode\Services;
 
 if (!defined('ABSPATH')) {
-    exit;
+	exit;
 }
 
 use Kerbcycle\QrCode\Data\Repositories\QrCodeRepository;
@@ -20,304 +20,304 @@ use Kerbcycle\QrCode\Services\SmsService;
  */
 class QrService
 {
-    private $repository;
+	private $repository;
 
-    public function __construct()
-    {
-        $this->repository = new QrCodeRepository();
-    }
+	public function __construct()
+	{
+		$this->repository = new QrCodeRepository();
+	}
 
-    public function add($qr_code)
-    {
-        // Prevent duplicates regardless of current status (available or assigned)
-        if ($this->repository->find_by_qr_code($qr_code)) {
-            return new \WP_Error('duplicate_qr_code', __('This QR code already exists.', 'kerbcycle'));
-        }
-        $inserted = $this->repository->insert_available($qr_code);
-        if ($inserted === false) {
-            return false;
-        }
-        return $this->repository->find_by_qr_code($qr_code);
-    }
+	public function add($qr_code)
+	{
+		// Prevent duplicates regardless of current status (available or assigned)
+		if ($this->repository->find_by_qr_code($qr_code)) {
+			return new \WP_Error('duplicate_qr_code', __('This QR code already exists.', 'kerbcycle'));
+		}
+		$inserted = $this->repository->insert_available($qr_code);
+		if ($inserted === false) {
+			return false;
+		}
+		return $this->repository->find_by_qr_code($qr_code);
+	}
 
-    public function assign($qr_code, $user_id, $send_email, $send_sms, $send_reminder)
-    {
-        $user_id = (int) $user_id;
-        if ($user_id < 1 || !get_userdata($user_id)) {
-            return new \WP_Error('invalid_customer', __('Invalid customer selected.', 'kerbcycle'));
-        }
+	public function assign($qr_code, $user_id, $send_email, $send_sms, $send_reminder)
+	{
+		$user_id = (int) $user_id;
+		if ($user_id < 1 || !get_userdata($user_id)) {
+			return new \WP_Error('invalid_customer', __('Invalid customer selected.', 'kerbcycle'));
+		}
 
-        $latest = $this->repository->find_by_qr_code($qr_code);
-        $assigned_count = $this->repository->count_by_status($qr_code, 'assigned');
-        if ($assigned_count > 0) {
-            $active_assigned = $this->repository->find_latest_by_status($qr_code, 'assigned');
-            if ($active_assigned && (int) $active_assigned->user_id === (int) $user_id) {
-                return new \WP_Error(
-                    'qr_code_already_assigned',
-                    __('This QR code is already assigned to the selected customer.', 'kerbcycle')
-                );
-            }
+		$latest = $this->repository->find_by_qr_code($qr_code);
+		$assigned_count = $this->repository->count_by_status($qr_code, 'assigned');
+		if ($assigned_count > 0) {
+			$active_assigned = $this->repository->find_latest_by_status($qr_code, 'assigned');
+			if ($active_assigned && (int) $active_assigned->user_id === (int) $user_id) {
+				return new \WP_Error(
+					'qr_code_already_assigned',
+					__('This QR code is already assigned to the selected customer.', 'kerbcycle')
+				);
+			}
 
-            $message = __('This QR code is already assigned. Release it before assigning it to another customer.', 'kerbcycle');
+			$message = __('This QR code is already assigned. Release it before assigning it to another customer.', 'kerbcycle');
 
-            if ($active_assigned && !empty($active_assigned->display_name)) {
-                /* translators: %s is the customer's display name. */
-                $message = sprintf(
-                    __('This QR code is already assigned to %s. Release it before assigning it to another customer.', 'kerbcycle'),
-                    $active_assigned->display_name
-                );
-            } elseif ($active_assigned && !empty($active_assigned->user_id)) {
-                /* translators: %d is the customer's ID. */
-                $message = sprintf(
-                    __('This QR code is already assigned to customer #%d. Release it before assigning it to another customer.', 'kerbcycle'),
-                    (int) $active_assigned->user_id
-                );
-            }
+			if ($active_assigned && !empty($active_assigned->display_name)) {
+				/* translators: %s is the customer's display name. */
+				$message = sprintf(
+					__('This QR code is already assigned to %s. Release it before assigning it to another customer.', 'kerbcycle'),
+					$active_assigned->display_name
+				);
+			} elseif ($active_assigned && !empty($active_assigned->user_id)) {
+				/* translators: %d is the customer's ID. */
+				$message = sprintf(
+					__('This QR code is already assigned to customer #%d. Release it before assigning it to another customer.', 'kerbcycle'),
+					(int) $active_assigned->user_id
+				);
+			}
 
-            return new \WP_Error('qr_code_already_assigned', $message);
-        }
+			return new \WP_Error('qr_code_already_assigned', $message);
+		}
 
-        if (!$latest || !isset($latest->status) || $latest->status !== 'available') {
-            $this->log_qr_state_event(
-                'qr_assign',
-                'invalid_state',
-                'QR code is not available for assignment.',
-                $qr_code,
-                ['customer_id' => $user_id]
-            );
-            return new \WP_Error('qr_code_not_available', __('QR code is not available for assignment.', 'kerbcycle'));
-        }
+		if (!$latest || !isset($latest->status) || $latest->status !== 'available') {
+			$this->log_qr_state_event(
+				'qr_assign',
+				'invalid_state',
+				'QR code is not available for assignment.',
+				$qr_code,
+				['customer_id' => $user_id]
+			);
+			return new \WP_Error('qr_code_not_available', __('QR code is not available for assignment.', 'kerbcycle'));
+		}
 
-        $user = get_userdata($user_id);
-        $name = $user ? $user->display_name : '';
-        $result = $this->repository->update_available_to_assigned($qr_code, $user_id, $name);
+		$user = get_userdata($user_id);
+		$name = $user ? $user->display_name : '';
+		$result = $this->repository->update_available_to_assigned($qr_code, $user_id, $name);
 
-        if ($result === false) {
-            return new \WP_Error('db_error', 'Failed to assign QR code in database.');
-        }
-        if ($result === 0) {
-            $latest_after_update = $this->repository->find_by_qr_code($qr_code);
-            if ($latest_after_update && isset($latest_after_update->status) && $latest_after_update->status === 'assigned') {
-                if ((int) $latest_after_update->user_id === $user_id) {
-                    return new \WP_Error(
-                        'qr_code_already_assigned',
-                        __('This QR code is already assigned to the selected customer.', 'kerbcycle')
-                    );
-                }
-                return new \WP_Error(
-                    'qr_code_already_assigned',
-                    __('This QR code was assigned by another request. Refresh and try again.', 'kerbcycle')
-                );
-            }
-            return new \WP_Error('db_error', 'Failed to assign QR code in database.');
-        }
+		if ($result === false) {
+			return new \WP_Error('db_error', 'Failed to assign QR code in database.');
+		}
+		if ($result === 0) {
+			$latest_after_update = $this->repository->find_by_qr_code($qr_code);
+			if ($latest_after_update && isset($latest_after_update->status) && $latest_after_update->status === 'assigned') {
+				if ((int) $latest_after_update->user_id === $user_id) {
+					return new \WP_Error(
+						'qr_code_already_assigned',
+						__('This QR code is already assigned to the selected customer.', 'kerbcycle')
+					);
+				}
+				return new \WP_Error(
+					'qr_code_already_assigned',
+					__('This QR code was assigned by another request. Refresh and try again.', 'kerbcycle')
+				);
+			}
+			return new \WP_Error('db_error', 'Failed to assign QR code in database.');
+		}
 
-        $sms_result   = null;
-        $email_result = null;
-        if ($send_email) {
-            $email_result = (new EmailService())->send_notification($user_id, $qr_code, 'assigned');
-        }
-        if ($send_sms) {
-            $sms_result = (new SmsService())->send_notification($user_id, $qr_code, 'assigned');
-        }
-        // Reminder logic would go here
-        // if ($send_reminder) { ... }
+		$sms_result   = null;
+		$email_result = null;
+		if ($send_email) {
+			$email_result = (new EmailService())->send_notification($user_id, $qr_code, 'assigned');
+		}
+		if ($send_sms) {
+			$sms_result = (new SmsService())->send_notification($user_id, $qr_code, 'assigned');
+		}
+		// Reminder logic would go here
+		// if ($send_reminder) { ... }
 
-        return [
-            'sms_result'   => $sms_result,
-            'email_result' => $email_result,
-            'record'       => $this->repository->find_by_qr_code($qr_code),
-        ];
-    }
+		return [
+			'sms_result'   => $sms_result,
+			'email_result' => $email_result,
+			'record'       => $this->repository->find_by_qr_code($qr_code),
+		];
+	}
 
-    public function release($qr_code, $send_email, $send_sms)
-    {
-        $latest = $this->repository->find_by_qr_code($qr_code);
-        if (!$latest) {
-            return new \WP_Error('not_found', 'QR code not found.');
-        }
+	public function release($qr_code, $send_email, $send_sms)
+	{
+		$latest = $this->repository->find_by_qr_code($qr_code);
+		if (!$latest) {
+			return new \WP_Error('not_found', 'QR code not found.');
+		}
 
-        $assigned_count = $this->repository->count_by_status($qr_code, 'assigned');
-        if ($assigned_count < 1) {
-            $this->log_qr_state_event(
-                'qr_release',
-                'invalid_state',
-                'QR code is not currently assigned.',
-                $qr_code
-            );
-            return new \WP_Error('invalid_state', __('QR code is not currently assigned.', 'kerbcycle'));
-        }
-        if ($assigned_count > 1) {
-            $this->log_qr_state_event(
-                'qr_release',
-                'conflicting_state',
-                'QR code assignment state is ambiguous.',
-                $qr_code,
-                ['assigned_count' => (int) $assigned_count]
-            );
-            return new \WP_Error('conflicting_state', __('QR code assignment state is ambiguous. Resolve duplicates before release.', 'kerbcycle'));
-        }
+		$assigned_count = $this->repository->count_by_status($qr_code, 'assigned');
+		if ($assigned_count < 1) {
+			$this->log_qr_state_event(
+				'qr_release',
+				'invalid_state',
+				'QR code is not currently assigned.',
+				$qr_code
+			);
+			return new \WP_Error('invalid_state', __('QR code is not currently assigned.', 'kerbcycle'));
+		}
+		if ($assigned_count > 1) {
+			$this->log_qr_state_event(
+				'qr_release',
+				'conflicting_state',
+				'QR code assignment state is ambiguous.',
+				$qr_code,
+				['assigned_count' => (int) $assigned_count]
+			);
+			return new \WP_Error('conflicting_state', __('QR code assignment state is ambiguous. Resolve duplicates before release.', 'kerbcycle'));
+		}
 
-        $row = $this->repository->find_latest_by_status($qr_code, 'assigned');
-        if (!$row || !isset($row->status) || $row->status !== 'assigned') {
-            $this->log_qr_state_event(
-                'qr_release',
-                'invalid_state',
-                'Assigned row missing or invalid during release.',
-                $qr_code
-            );
-            return new \WP_Error('invalid_state', __('QR code is not currently assigned.', 'kerbcycle'));
-        }
+		$row = $this->repository->find_latest_by_status($qr_code, 'assigned');
+		if (!$row || !isset($row->status) || $row->status !== 'assigned') {
+			$this->log_qr_state_event(
+				'qr_release',
+				'invalid_state',
+				'Assigned row missing or invalid during release.',
+				$qr_code
+			);
+			return new \WP_Error('invalid_state', __('QR code is not currently assigned.', 'kerbcycle'));
+		}
 
-        $result = $this->repository->release_latest_assigned($qr_code);
+		$result = $this->repository->release_latest_assigned($qr_code);
 
-        if ($result === false) {
-            return new \WP_Error('db_error', 'Failed to release QR code in database.');
-        }
+		if ($result === false) {
+			return new \WP_Error('db_error', 'Failed to release QR code in database.');
+		}
 
-        // Non-blocking webhook call: local DB release remains the source of truth.
-        $this->send_pickup_exception_webhook([
-            'qr_code'     => $qr_code,
-            'customer_id' => isset($row->user_id) ? (int) $row->user_id : 0,
-            'issue'       => '',
-            'notes'       => '',
-            'timestamp'   => '',
-        ]);
+		// Non-blocking webhook call: local DB release remains the source of truth.
+		$this->send_pickup_exception_webhook([
+			'qr_code'     => $qr_code,
+			'customer_id' => isset($row->user_id) ? (int) $row->user_id : 0,
+			'issue'       => '',
+			'notes'       => '',
+			'timestamp'   => '',
+		]);
 
-        $sms_result   = null;
-        $email_result = null;
-        if ($row->user_id) {
-            if ($send_email) {
-                $email_result = (new EmailService())->send_notification($row->user_id, $qr_code, 'released');
-            }
-            if ($send_sms) {
-                $sms_result = (new SmsService())->send_notification($row->user_id, $qr_code, 'released');
-            }
-        }
+		$sms_result   = null;
+		$email_result = null;
+		if ($row->user_id) {
+			if ($send_email) {
+				$email_result = (new EmailService())->send_notification($row->user_id, $qr_code, 'released');
+			}
+			if ($send_sms) {
+				$sms_result = (new SmsService())->send_notification($row->user_id, $qr_code, 'released');
+			}
+		}
 
-        return [
-            'sms_result'   => $sms_result,
-            'email_result' => $email_result,
-        ];
-    }
+		return [
+			'sms_result'   => $sms_result,
+			'email_result' => $email_result,
+		];
+	}
 
-    public function send_pickup_exception_to_n8n(array $data)
-    {
-        return $this->send_pickup_exception_webhook($data);
-    }
+	public function send_pickup_exception_to_n8n(array $data)
+	{
+		return $this->send_pickup_exception_webhook($data);
+	}
 
-    private function send_pickup_exception_webhook(array $data)
-    {
-        $options = AiSettingsService::get_options();
-        $webhook_url = AiSettingsService::current_webhook_url($options);
+	private function send_pickup_exception_webhook(array $data)
+	{
+		$options = AiSettingsService::get_options();
+		$webhook_url = AiSettingsService::current_webhook_url($options);
 
-        if ($webhook_url === '' && defined('KERBCYCLE_PICKUP_EXCEPTION_WEBHOOK_URL')) {
-            $webhook_url = KERBCYCLE_PICKUP_EXCEPTION_WEBHOOK_URL;
-        }
+		if ($webhook_url === '' && defined('KERBCYCLE_PICKUP_EXCEPTION_WEBHOOK_URL')) {
+			$webhook_url = KERBCYCLE_PICKUP_EXCEPTION_WEBHOOK_URL;
+		}
 
-        if ($webhook_url === '') {
-            $webhook_url = get_option('kerbcycle_pickup_exception_webhook_url', '');
-        }
+		if ($webhook_url === '') {
+			$webhook_url = get_option('kerbcycle_pickup_exception_webhook_url', '');
+		}
 
-        $webhook_url = is_string($webhook_url) ? trim($webhook_url) : '';
-        if ($webhook_url === '') {
-            return new \WP_Error('pickup_exception_webhook_missing', __('Pickup exception webhook URL is not configured.', 'kerbcycle'));
-        }
+		$webhook_url = is_string($webhook_url) ? trim($webhook_url) : '';
+		if ($webhook_url === '') {
+			return new \WP_Error('pickup_exception_webhook_missing', __('Pickup exception webhook URL is not configured.', 'kerbcycle'));
+		}
 
-        $payload = [
-            'event'       => 'pickup_exception',
-            'qr_code'     => isset($data['qr_code']) ? (string) $data['qr_code'] : '',
-            'customer_id' => isset($data['customer_id']) ? (int) $data['customer_id'] : 0,
-            'issue'       => isset($data['issue']) ? (string) $data['issue'] : '',
-            'notes'       => isset($data['notes']) ? (string) $data['notes'] : '',
-            'timestamp'   => !empty($data['timestamp']) ? (string) $data['timestamp'] : gmdate('c'),
-        ];
+		$payload = [
+			'event'       => 'pickup_exception',
+			'qr_code'     => isset($data['qr_code']) ? (string) $data['qr_code'] : '',
+			'customer_id' => isset($data['customer_id']) ? (int) $data['customer_id'] : 0,
+			'issue'       => isset($data['issue']) ? (string) $data['issue'] : '',
+			'notes'       => isset($data['notes']) ? (string) $data['notes'] : '',
+			'timestamp'   => !empty($data['timestamp']) ? (string) $data['timestamp'] : gmdate('c'),
+		];
 
-        $response = wp_remote_post($webhook_url, [
-            'method'  => 'POST',
-            'timeout' => AiSettingsService::current_timeout($options),
-            'headers' => [
-                'Content-Type' => 'application/json',
-            ],
-            'body'    => wp_json_encode($payload),
-        ]);
+		$response = wp_remote_post($webhook_url, [
+			'method'  => 'POST',
+			'timeout' => AiSettingsService::current_timeout($options),
+			'headers' => [
+				'Content-Type' => 'application/json',
+			],
+			'body'    => wp_json_encode($payload),
+		]);
 
-        if (is_wp_error($response)) {
-            error_log('KerbCycle pickup_exception webhook WP_Error: ' . $response->get_error_message());
-            return $response;
-        }
+		if (is_wp_error($response)) {
+			error_log('KerbCycle pickup_exception webhook WP_Error: ' . $response->get_error_message());
+			return $response;
+		}
 
-        $status_code = (int) wp_remote_retrieve_response_code($response);
-        if ($status_code < 200 || $status_code >= 300) {
-            $body = wp_remote_retrieve_body($response);
-            error_log('KerbCycle pickup_exception webhook HTTP ' . $status_code . ' Body: ' . $body);
-            return [
-                'success'     => false,
-                'status_code' => $status_code,
-                'body'        => $body,
-                'payload'     => $payload,
-            ];
-        }
+		$status_code = (int) wp_remote_retrieve_response_code($response);
+		if ($status_code < 200 || $status_code >= 300) {
+			$body = wp_remote_retrieve_body($response);
+			error_log('KerbCycle pickup_exception webhook HTTP ' . $status_code . ' Body: ' . $body);
+			return [
+				'success'     => false,
+				'status_code' => $status_code,
+				'body'        => $body,
+				'payload'     => $payload,
+			];
+		}
 
-        return [
-            'success'     => true,
-            'status_code' => $status_code,
-            'body'        => wp_remote_retrieve_body($response),
-            'payload'     => $payload,
-        ];
-    }
+		return [
+			'success'     => true,
+			'status_code' => $status_code,
+			'body'        => wp_remote_retrieve_body($response),
+			'payload'     => $payload,
+		];
+	}
 
-    public function bulk_release(array $codes)
-    {
-        return $this->repository->bulk_release($codes);
-    }
+	public function bulk_release(array $codes)
+	{
+		return $this->repository->bulk_release($codes);
+	}
 
-    public function bulk_delete(array $codes)
-    {
-        return $this->repository->bulk_delete_available($codes);
-    }
+	public function bulk_delete(array $codes)
+	{
+		return $this->repository->bulk_delete_available($codes);
+	}
 
-    public function update($old_code, $new_code)
-    {
-        if ($this->repository->find_by_qr_code($new_code)) {
-            return new \WP_Error('duplicate_qr_code', __('This QR code already exists.', 'kerbcycle'));
-        }
-        return $this->repository->update_code($old_code, $new_code);
-    }
+	public function update($old_code, $new_code)
+	{
+		if ($this->repository->find_by_qr_code($new_code)) {
+			return new \WP_Error('duplicate_qr_code', __('This QR code already exists.', 'kerbcycle'));
+		}
+		return $this->repository->update_code($old_code, $new_code);
+	}
 
-    public function get_assigned_by_user($user_id)
-    {
-        return $this->repository->get_assigned_codes_by_user($user_id);
-    }
+	public function get_assigned_by_user($user_id)
+	{
+		return $this->repository->get_assigned_codes_by_user($user_id);
+	}
 
-    /**
-     * Log QR state conflict/invalid-state events for diagnosis.
-     *
-     * @param string $action
-     * @param string $status
-     * @param string $reason
-     * @param string $qr_code
-     * @param array  $context
-     *
-     * @return void
-     */
-    private function log_qr_state_event($action, $status, $reason, $qr_code, array $context = [])
-    {
-        $payload = [
-            'timestamp'     => gmdate('c'),
-            'actor_user_id' => function_exists('get_current_user_id') ? (int) get_current_user_id() : 0,
-            'action'        => $action,
-            'status'        => $status,
-            'qr_code'       => (string) $qr_code,
-            'reason'        => $reason,
-            'context'       => $context,
-        ];
+	/**
+	 * Log QR state conflict/invalid-state events for diagnosis.
+	 *
+	 * @param string $action
+	 * @param string $status
+	 * @param string $reason
+	 * @param string $qr_code
+	 * @param array  $context
+	 *
+	 * @return void
+	 */
+	private function log_qr_state_event($action, $status, $reason, $qr_code, array $context = [])
+	{
+		$payload = [
+			'timestamp'     => gmdate('c'),
+			'actor_user_id' => function_exists('get_current_user_id') ? (int) get_current_user_id() : 0,
+			'action'        => $action,
+			'status'        => $status,
+			'qr_code'       => (string) $qr_code,
+			'reason'        => $reason,
+			'context'       => $context,
+		];
 
-        ErrorLogRepository::log([
-            'type'    => 'qr_state',
-            'message' => wp_json_encode($payload),
-            'page'    => 'kerbcycle-qr-manager',
-            'status'  => $status,
-        ]);
-    }
+		ErrorLogRepository::log([
+			'type'    => 'qr_state',
+			'message' => wp_json_encode($payload),
+			'page'    => 'kerbcycle-qr-manager',
+			'status'  => $status,
+		]);
+	}
 }
