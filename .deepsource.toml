@@ -34,4 +34,4 @@ enabled = true
 
 [[transformers]]
 name = "php-cs-fixer"
-enabled = true
+enabled = false
