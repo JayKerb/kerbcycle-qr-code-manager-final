@@ -41,11 +41,11 @@ jobs:
       - name: Run PHPCS summary
         run: vendor/bin/phpcs --standard=phpcs.xml.dist --report=summary
 
-      - name: Annotate PHPCS results
-        if: always()
-        uses: jwgmeligmeyling/checkstyle-github-action@a12be500c097a5cedab881d4785ef9b4a4d3ee6a
-        with:
-          path: phpcs-report.xml
+      #- name: Annotate PHPCS results
+        #if: always()
+        #uses: jwgmeligmeyling/checkstyle-github-action@a12be500c097a5cedab881d4785ef9b4a4d3ee6a
+        #with:
+          #path: phpcs-report.xml
 
       - name: Fail if PHPCS found violations
         if: steps.phpcs.outcome == 'failure'
