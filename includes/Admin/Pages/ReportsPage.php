@@ -2,7 +2,7 @@
 
 namespace Kerbcycle\QrCode\Admin\Pages;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
