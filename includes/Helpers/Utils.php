@@ -2,8 +2,8 @@
 
 namespace Kerbcycle\QrCode\Helpers;
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+if (! defined('ABSPATH')) {
+    exit;
 }
 
 /**
@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @package    Kerbcycle\QrCode
  * @subpackage Kerbcycle\QrCode\Helpers
  */
-class Utils {
-	// Utility functions will be added here.
+class Utils
+{
+    // Utility functions will be added here.
 }
