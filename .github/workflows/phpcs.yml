@@ -38,23 +38,24 @@ jobs:
         #run: |
           #vendor/bin/phpcs --standard=phpcs.xml.dist --report=checkstyle > phpcs-report.xml
 
-      - name: Run PHPCS (capture result)
+      - name: Run PHPCS summary and capture exit code
         id: phpcs
-        continue-on-error: true
         run: |
+          set +e
           vendor/bin/phpcs --standard=phpcs.xml.dist --report=summary
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          set -e
 
-      - name: Explain result
+      - name: Explain PHPCS result
         run: |
-          if [ "${{ steps.phpcs.outcome }}" = "failure" ]; then
-            echo "❌ PHPCS violations found. This is expected during baseline cleanup."
-            echo "➡️ This means the scan ran successfully but found coding standard issues."
+          if [ "${{ steps.phpcs.outputs.exit_code }}" != "0" ]; then
+            echo "❌ PHPCS violations found. This means the scan completed but found WordPress coding-standard issues."
           else
             echo "✅ PHPCS passed with no violations."
           fi
 
-      - name: Fail if violations exist
-        if: steps.phpcs.outcome == 'failure'
+      - name: Fail if PHPCS found violations
+        if: steps.phpcs.outputs.exit_code != '0'
         run: exit 1
 
       #- name: Annotate PHPCS results
