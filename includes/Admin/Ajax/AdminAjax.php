@@ -779,7 +779,10 @@ class AdminAjax
             wp_send_json_error(['message' => __('Invalid pickup exception ID.', 'kerbcycle')], 400);
         }
 
-        $retry_result = (new PickupExceptionRetryService())->retry($exception_id, $this->qr_service);
+        $retry_result = ( new PickupExceptionRetryService() )->retry(
+            $exception_id,
+            $this->qr_service
+        );
         if ($retry_result['state'] === 'not_found') {
             $this->log_action('pickup_exception_retry', 'failed', __('Pickup exception record not found.', 'kerbcycle'), [
                 'exception_id' => $exception_id,
@@ -791,14 +794,20 @@ class AdminAjax
             $this->log_action('pickup_exception_retry', 'invalid_state', __('Pickup exception is not eligible for retry.', 'kerbcycle'), [
                 'exception_id' => $exception_id,
             ], 'pickup_exception');
-            wp_send_json_error(['message' => __('This pickup exception is not eligible for retry.', 'kerbcycle')], 400);
+            wp_send_json_error(
+                ['message' => __('This pickup exception is not eligible for retry.', 'kerbcycle')],
+                400
+            );
         }
 
         if ($retry_result['state'] === 'lock_conflict') {
             $this->log_action('pickup_exception_retry', 'suppressed', __('Retry already in progress for this pickup exception.', 'kerbcycle'), [
                 'exception_id' => $exception_id,
             ], 'pickup_exception');
-            wp_send_json_error(['message' => __('Retry already in progress for this pickup exception.', 'kerbcycle')], 409);
+            wp_send_json_error(
+                ['message' => __('Retry already in progress for this pickup exception.', 'kerbcycle')],
+                409
+            );
         }
 
         if ($retry_result['state'] === 'webhook_error') {
