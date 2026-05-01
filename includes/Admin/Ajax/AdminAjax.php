@@ -192,8 +192,8 @@ class AdminAjax
         }
 
         $raw_codes = explode(',', wp_unslash($_POST['qr_codes']));
-        $codes = array_map('trim', array_map('sanitize_text_field', $raw_codes));
-        $codes = array_filter($codes);
+        $codes     = array_map('trim', array_map('sanitize_text_field', $raw_codes));
+        $codes     = array_filter($codes);
 
         if (empty($codes)) {
             wp_send_json_error(['message' => 'No valid QR codes provided.']);
@@ -210,7 +210,9 @@ class AdminAjax
                 )
             ]);
         } else {
-            wp_send_json_error(['message' => 'Could not find or release any of the selected QR codes. They may have already been released or do not exist.']);
+            wp_send_json_error(
+                ['message' => 'Could not find or release any of the selected QR codes. They may have already been released or do not exist.']
+            );
         }
     }
 
@@ -226,8 +228,8 @@ class AdminAjax
         }
 
         $raw_codes = explode(',', wp_unslash($_POST['qr_codes']));
-        $codes = array_map('trim', array_map('sanitize_text_field', $raw_codes));
-        $codes = array_filter($codes);
+        $codes     = array_map('trim', array_map('sanitize_text_field', $raw_codes));
+        $codes     = array_filter($codes);
 
         if (empty($codes)) {
             wp_send_json_error(['message' => 'No valid QR codes provided.']);
@@ -244,7 +246,9 @@ class AdminAjax
                 )
             ]);
         } else {
-            wp_send_json_error(['message' => 'Could not delete any of the selected QR codes. Ensure they are available.']);
+            wp_send_json_error(
+                ['message' => 'Could not delete any of the selected QR codes. Ensure they are available.']
+            );
         }
     }
 
@@ -329,7 +333,7 @@ class AdminAjax
             wp_send_json_error(['message' => __('Could not read uploaded file.', 'kerbcycle')]);
         }
 
-        $header = fgetcsv($handle);
+        $header     = fgetcsv($handle);
         if ($header === false) {
             fclose($handle);
             wp_send_json_error(['message' => __('Invalid CSV file.', 'kerbcycle')]);
