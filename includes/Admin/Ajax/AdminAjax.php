@@ -691,8 +691,8 @@ class AdminAjax
         \Kerbcycle\QrCode\Install\Activator::activate();
 
         global $wpdb;
-        $table_name = $wpdb->prefix . 'kerbcycle_pickup_exceptions';
-        $limit = 50;
+        $table_name    = $wpdb->prefix . 'kerbcycle_pickup_exceptions';
+        $limit         = 50;
         $status_filter = isset($_POST['status_filter']) ? sanitize_key(wp_unslash($_POST['status_filter'])) : '';
         if ($status_filter === 'failed') {
             $sql = $wpdb->prepare(
@@ -714,16 +714,16 @@ class AdminAjax
             );
         }
         $records = $wpdb->get_results($sql);
-        $rows = [];
+        $rows    = [];
 
         foreach ($records as $record) {
-            $status = isset($record->status) ? (string) $record->status : (((int) $record->webhook_sent) === 1 ? 'sent' : 'failed');
+            $status    = isset($record->status) ? (string) $record->status : (((int) $record->webhook_sent) === 1 ? 'sent' : 'failed');
             $retry_url = '';
             if (((int) $record->webhook_sent) === 0) {
                 $retry_args = [
-                    'page' => 'kerbcycle-pickup-exceptions',
+                    'page'              => 'kerbcycle-pickup-exceptions',
                     'kerbcycle_action' => 'retry_pickup_exception',
-                    'exception_id' => (int) $record->id,
+                    'exception_id'      => (int) $record->id,
                 ];
                 if ($status_filter === 'failed') {
                     $retry_args['status_filter'] = 'failed';
@@ -738,25 +738,25 @@ class AdminAjax
             }
 
             $rows[] = [
-                'id' => (int) $record->id,
-                'submitted_at' => isset($record->submitted_at) ? (string) $record->submitted_at : '',
-                'updated_at' => isset($record->updated_at) ? (string) $record->updated_at : '',
-                'qr_code' => isset($record->qr_code) ? (string) $record->qr_code : '',
-                'customer_id' => isset($record->customer_id) ? (string) $record->customer_id : '',
-                'issue' => isset($record->issue) ? (string) $record->issue : '',
-                'notes' => isset($record->notes) ? (string) $record->notes : '',
-                'status' => $status,
-                'source' => isset($record->source) && $record->source !== '' ? (string) $record->source : '',
-                'ai_severity' => isset($record->ai_severity) ? (string) $record->ai_severity : '',
-                'ai_category' => isset($record->ai_category) ? (string) $record->ai_category : '',
+                'id'                    => (int) $record->id,
+                'submitted_at'          => isset($record->submitted_at) ? (string) $record->submitted_at : '',
+                'updated_at'            => isset($record->updated_at) ? (string) $record->updated_at : '',
+                'qr_code'               => isset($record->qr_code) ? (string) $record->qr_code : '',
+                'customer_id'           => isset($record->customer_id) ? (string) $record->customer_id : '',
+                'issue'                 => isset($record->issue) ? (string) $record->issue : '',
+                'notes'                 => isset($record->notes) ? (string) $record->notes : '',
+                'status'                => $status,
+                'source'                => isset($record->source) && $record->source !== '' ? (string) $record->source : '',
+                'ai_severity'           => isset($record->ai_severity) ? (string) $record->ai_severity : '',
+                'ai_category'           => isset($record->ai_category) ? (string) $record->ai_category : '',
                 'ai_recommended_action' => isset($record->ai_recommended_action) ? (string) $record->ai_recommended_action : '',
-                'ai_summary' => isset($record->ai_summary) ? (string) $record->ai_summary : '',
-                'webhook_status_code' => isset($record->webhook_status_code) ? (string) $record->webhook_status_code : '',
+                'ai_summary'            => isset($record->ai_summary) ? (string) $record->ai_summary : '',
+                'webhook_status_code'   => isset($record->webhook_status_code) ? (string) $record->webhook_status_code : '',
                 'webhook_response_body' => isset($record->webhook_response_body) ? (string) $record->webhook_response_body : '',
-                'retry_count' => isset($record->retry_count) ? (int) $record->retry_count : 0,
-                'last_retry_at' => isset($record->last_retry_at) ? (string) $record->last_retry_at : '',
-                'retry_url' => $retry_url,
-                'can_retry' => ((int) $record->webhook_sent) === 0,
+                'retry_count'           => isset($record->retry_count) ? (int) $record->retry_count : 0,
+                'last_retry_at'         => isset($record->last_retry_at) ? (string) $record->last_retry_at : '',
+                'retry_url'             => $retry_url,
+                'can_retry'             => ((int) $record->webhook_sent) === 0,
             ];
         }
 
