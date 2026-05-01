@@ -497,15 +497,15 @@ class AdminAjax
                 'issue'        => $issue,
             ], 'pickup_exception');
             wp_send_json_success([
-                'status'      => 'duplicate_suppressed',
-                'message'     => __('Duplicate pickup exception suppressed. Existing record retained.', 'kerbcycle'),
-                'exception_id' => $duplicate_id,
-                'local_save'  => ['success' => true, 'id' => $duplicate_id],
-                'webhook'     => ['success' => true, 'duplicate' => true],
+                'status'                => 'duplicate_suppressed',
+                'message'               => __('Duplicate pickup exception suppressed. Existing record retained.', 'kerbcycle'),
+                'exception_id'          => $duplicate_id,
+                'local_save'            => ['success' => true, 'id' => $duplicate_id],
+                'webhook'               => ['success' => true, 'duplicate' => true],
                 'ai_recommended_action' => '',
-                'ai_summary'  => '',
-                'ai_category' => '',
-                'ai_severity' => '',
+                'ai_summary'            => '',
+                'ai_category'           => '',
+                'ai_severity'           => '',
             ]);
         }
 
