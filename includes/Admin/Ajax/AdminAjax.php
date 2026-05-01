@@ -605,7 +605,7 @@ class AdminAjax
         );
 
         if ($is_webhook_success) {
-            $body = isset($result['body']) ? $result['body'] : '';
+            $body         = isset($result['body']) ? $result['body'] : '';
             $decoded_body = is_array($body) ? $body : json_decode((string) $body, true);
             $ai_payload = [];
 
@@ -619,34 +619,34 @@ class AdminAjax
                 }
             }
 
-            $ai_summary = isset($ai_payload['summary']) ? (string) $ai_payload['summary'] : '';
-            $ai_category = isset($ai_payload['category']) ? (string) $ai_payload['category'] : '';
-            $ai_severity = isset($ai_payload['severity']) ? (string) $ai_payload['severity'] : '';
+            $ai_summary            = isset($ai_payload['summary']) ? (string) $ai_payload['summary'] : '';
+            $ai_category           = isset($ai_payload['category']) ? (string) $ai_payload['category'] : '';
+            $ai_severity           = isset($ai_payload['severity']) ? (string) $ai_payload['severity'] : '';
             $ai_recommended_action = isset($ai_payload['recommended_action']) ? (string) $ai_payload['recommended_action'] : '';
 
             PickupExceptionRepository::update_result($exception_id, [
-                'webhook_sent'             => 1,
-                'webhook_status_code'      => $result_status_code,
-                'status'                   => 'sent',
-                'webhook_response_body'    => is_scalar($body) ? (string) $body : wp_json_encode($body),
-                'ai_severity'              => $ai_severity,
-                'ai_category'              => $ai_category,
-                'ai_summary'               => $ai_summary,
-                'ai_recommended_action'    => $ai_recommended_action,
-                'updated_at'               => current_time('mysql', true),
+                'webhook_sent'          => 1,
+                'webhook_status_code'   => $result_status_code,
+                'status'                => 'sent',
+                'webhook_response_body' => is_scalar($body) ? (string) $body : wp_json_encode($body),
+                'ai_severity'           => $ai_severity,
+                'ai_category'           => $ai_category,
+                'ai_summary'            => $ai_summary,
+                'ai_recommended_action' => $ai_recommended_action,
+                'updated_at'            => current_time('mysql', true),
             ]);
 
             wp_send_json_success([
-                'status'      => 'success',
-                'message'     => __('Pickup exception saved locally and sent to webhook.', 'kerbcycle'),
-                'exception_id' => $exception_id,
-                'local_save'  => ['success' => true, 'id' => $exception_id],
-                'webhook'     => $result,
-                'webhook_body' => $body,
+                'status'                => 'success',
+                'message'               => __('Pickup exception saved locally and sent to webhook.', 'kerbcycle'),
+                'exception_id'          => $exception_id,
+                'local_save'            => ['success' => true, 'id' => $exception_id],
+                'webhook'               => $result,
+                'webhook_body'          => $body,
                 'ai_recommended_action' => $ai_recommended_action,
-                'ai_summary'  => $ai_summary,
-                'ai_category' => $ai_category,
-                'ai_severity' => $ai_severity,
+                'ai_summary'            => $ai_summary,
+                'ai_category'           => $ai_category,
+                'ai_severity'           => $ai_severity,
             ]);
         }
 
@@ -659,28 +659,28 @@ class AdminAjax
             'status_code'  => isset($result['status_code']) ? (int) $result['status_code'] : 0,
         ], 'pickup_exception');
         PickupExceptionRepository::update_result($exception_id, [
-            'webhook_sent'             => 0,
-            'webhook_status_code'      => isset($result['status_code']) ? (int) $result['status_code'] : 0,
-            'status'                   => 'failed',
-            'webhook_response_body'    => is_scalar($result_body) ? (string) $result_body : wp_json_encode($result_body),
-            'ai_severity'              => '',
-            'ai_category'              => '',
-            'ai_summary'               => '',
-            'ai_recommended_action'    => '',
-            'updated_at'               => current_time('mysql', true),
+            'webhook_sent'          => 0,
+            'webhook_status_code'   => isset($result['status_code']) ? (int) $result['status_code'] : 0,
+            'status'                => 'failed',
+            'webhook_response_body' => is_scalar($result_body) ? (string) $result_body : wp_json_encode($result_body),
+            'ai_severity'           => '',
+            'ai_category'           => '',
+            'ai_summary'            => '',
+            'ai_recommended_action' => '',
+            'updated_at'            => current_time('mysql', true),
         ]);
 
         wp_send_json_success([
-            'status'      => 'partial_success',
-            'message'     => __('Pickup exception saved locally, but webhook delivery failed.', 'kerbcycle'),
-            'exception_id' => $exception_id,
-            'local_save'  => ['success' => true, 'id' => $exception_id],
-            'webhook'     => is_array($result) ? $result : ['success' => false],
-            'webhook_body' => isset($result['body']) ? $result['body'] : '',
+            'status'                => 'partial_success',
+            'message'               => __('Pickup exception saved locally, but webhook delivery failed.', 'kerbcycle'),
+            'exception_id'          => $exception_id,
+            'local_save'            => ['success' => true, 'id' => $exception_id],
+            'webhook'               => is_array($result) ? $result : ['success' => false],
+            'webhook_body'          => isset($result['body']) ? $result['body'] : '',
             'ai_recommended_action' => '',
-            'ai_summary'  => '',
-            'ai_category' => '',
-            'ai_severity' => '',
+            'ai_summary'            => '',
+            'ai_category'           => '',
+            'ai_severity'           => '',
         ]);
     }
 
