@@ -549,13 +549,15 @@ class AdminAjax
             'issue'        => $issue,
         ], 'pickup_exception');
 
-        $result = $this->qr_service->send_pickup_exception_to_n8n([
-            'qr_code'     => $qr_code,
-            'customer_id' => $customer_id,
-            'issue'       => $issue,
-            'notes'       => $notes,
-            'timestamp'   => $timestamp,
-        ]);
+        $result = $this->qr_service->send_pickup_exception_to_n8n(
+            [
+                'qr_code'     => $qr_code,
+                'customer_id' => $customer_id,
+                'issue'       => $issue,
+                'notes'       => $notes,
+                'timestamp'   => $timestamp,
+            ]
+        );
 
         if (is_wp_error($result)) {
             $this->log_action('pickup_exception_submit', 'failed', __('Webhook delivery failed after local save.', 'kerbcycle'), [
@@ -579,19 +581,19 @@ class AdminAjax
 
             // Webhook failures return partial success because local persistence already succeeded.
             wp_send_json_success([
-                'status'      => 'partial_success',
-                'message'     => __('Pickup exception saved locally, but webhook delivery failed.', 'kerbcycle'),
+                'status'                => 'partial_success',
+                'message'               => __('Pickup exception saved locally, but webhook delivery failed.', 'kerbcycle'),
                 'exception_id' => $exception_id,
-                'local_save'  => ['success' => true, 'id' => $exception_id],
-                'webhook'     => [
+                'local_save'            => ['success' => true, 'id' => $exception_id],
+                'webhook'               => [
                     'success' => false,
                     'message' => $result->get_error_message(),
                     'code'    => $result->get_error_code(),
                 ],
                 'ai_recommended_action' => '',
-                'ai_summary'  => '',
-                'ai_category' => '',
-                'ai_severity' => '',
+                'ai_summary'            => '',
+                'ai_category'           => '',
+                'ai_severity'           => '',
             ]);
         }
 
