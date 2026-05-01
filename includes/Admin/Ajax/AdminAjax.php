@@ -462,21 +462,21 @@ class AdminAjax
     {
         \Kerbcycle\QrCode\Install\Activator::activate();
 
-        $qr_code_raw = isset($_POST['qr_code']) ? wp_unslash($_POST['qr_code']) : '';
+        $qr_code_raw     = isset($_POST['qr_code']) ? wp_unslash($_POST['qr_code']) : '';
         $customer_id_raw = isset($_POST['customer_id']) ? wp_unslash($_POST['customer_id']) : '';
-        $issue_raw = isset($_POST['issue']) ? wp_unslash($_POST['issue']) : '';
-        $notes_raw = isset($_POST['notes']) ? wp_unslash($_POST['notes']) : '';
-        $timestamp_raw = isset($_POST['timestamp']) ? wp_unslash($_POST['timestamp']) : '';
+        $issue_raw       = isset($_POST['issue']) ? wp_unslash($_POST['issue']) : '';
+        $notes_raw       = isset($_POST['notes']) ? wp_unslash($_POST['notes']) : '';
+        $timestamp_raw   = isset($_POST['timestamp']) ? wp_unslash($_POST['timestamp']) : '';
 
-        $qr_code = sanitize_text_field($qr_code_raw);
+        $qr_code     = sanitize_text_field($qr_code_raw);
         $customer_id = absint($customer_id_raw);
-        $issue = sanitize_text_field($issue_raw);
-        $notes = sanitize_textarea_field($notes_raw);
-        $timestamp = sanitize_text_field($timestamp_raw);
+        $issue       = sanitize_text_field($issue_raw);
+        $notes       = sanitize_textarea_field($notes_raw);
+        $timestamp   = sanitize_text_field($timestamp_raw);
         // Server-side source is fixed by handler context; do not trust client-posted source.
         $source = $source === 'scanner' ? 'scanner' : 'admin';
         if ($timestamp === '') {
-            $timestamp = gmdate('c');
+            $timestamp = gmdate( 'c' );
         }
 
         if ($issue === '') {
