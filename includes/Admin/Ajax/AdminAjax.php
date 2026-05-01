@@ -172,7 +172,7 @@ class AdminAjax
         }
 
         $user_id = isset($_POST['customer_id']) ? intval(wp_unslash($_POST['customer_id'])) : 0;
-        if (!$user_id) {
+        if ( ! $user_id ) {
             wp_send_json_error(['message' => __('Invalid user ID', 'kerbcycle')]);
         }
 
@@ -423,8 +423,10 @@ class AdminAjax
             wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
 
-        $ids = isset($_POST['log_ids']) && is_array($_POST['log_ids']) ? array_map('absint', wp_unslash($_POST['log_ids'])) : [];
-        if (!$ids) {
+        $ids = isset($_POST['log_ids']) && is_array($_POST['log_ids'])
+            ? array_map('absint', wp_unslash($_POST['log_ids']))
+            : [];
+        if ( ! $ids ) {
             wp_send_json_error(['message' => __('No logs selected', 'kerbcycle')]);
         }
 
