@@ -832,6 +832,7 @@ class AdminAjax
             strtolower(trim((string) $issue)),
             strtolower(trim((string) $notes)),
         ];
+
         return 'kerbcycle_pickup_dedupe_' . md5(implode('|', $parts));
     }
 
@@ -862,7 +863,12 @@ class AdminAjax
     private function store_pickup_dedupe_record($key, $record_id)
     {
         $expires = time() + self::PICKUP_DEDUPE_TTL;
-        update_option($key, (int) $record_id . ':' . (int) $expires, false);
+
+        update_option(
+            $key,
+            (int) $record_id . ':' . (int) $expires,
+            false
+        );
     }
 
     /**
