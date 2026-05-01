@@ -61,10 +61,10 @@ class AdminAjax
             wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
 
-        $qr_code      = sanitize_text_field(wp_unslash($_POST['qr_code']));
-        $user_id      = intval(wp_unslash($_POST['customer_id']));
-        $send_email   = !empty($_POST['send_email']) && get_option('kerbcycle_qr_enable_email', 1);
-        $send_sms     = !empty($_POST['send_sms']) && get_option('kerbcycle_qr_enable_sms', 0);
+        $qr_code       = sanitize_text_field(wp_unslash($_POST['qr_code']));
+        $user_id       = intval(wp_unslash($_POST['customer_id']));
+        $send_email    = !empty($_POST['send_email']) && get_option('kerbcycle_qr_enable_email', 1);
+        $send_sms      = !empty($_POST['send_sms']) && get_option('kerbcycle_qr_enable_sms', 0);
         $send_reminder = !empty($_POST['send_reminder']) && get_option('kerbcycle_qr_enable_reminders', 0);
 
         $result = $this->qr_service->assign($qr_code, $user_id, $send_email, $send_sms, $send_reminder);
@@ -131,7 +131,7 @@ class AdminAjax
             wp_send_json_error(['message' => __('Unauthorized', 'kerbcycle')], 403);
         }
 
-        $qr_code   = sanitize_text_field(wp_unslash($_POST['qr_code']));
+        $qr_code    = sanitize_text_field(wp_unslash($_POST['qr_code']));
         $send_email = !empty($_POST['send_email']) && get_option('kerbcycle_qr_enable_email', 1);
         $send_sms   = !empty($_POST['send_sms']) && get_option('kerbcycle_qr_enable_sms', 0);
 
