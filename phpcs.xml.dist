@@ -1,73 +1,87 @@
 <?xml version="1.0"?>
 <ruleset name="KerbCycle Coding Standards">
 
-    <description>
-        KerbCycle WordPress plugin coding standards.
-        Focuses on practical WordPress compatibility, security checks, and low-noise CI enforcement.
-    </description>
+	<description>
+		KerbCycle WordPress plugin coding standards.
+		Staged baseline: keep security/compatibility checks active while reducing
+		low-value style noise during incremental cleanup.
+	</description>
 
-    <!-- Scan plugin source -->
-    <file>kerbcycle-qr-code-manager.php</file>
-    <file>includes</file>
+	<!-- Scan plugin source files only. Avoid duplicate scan targets. -->
+	<file>kerbcycle-qr-code-manager.php</file>
+	<file>includes</file>
 
-    <!-- Exclusions -->
-    <exclude-pattern>*/vendor/*</exclude-pattern>
-    <exclude-pattern>*/node_modules/*</exclude-pattern>
-    <exclude-pattern>*/build/*</exclude-pattern>
-    <exclude-pattern>*/dist/*</exclude-pattern>
-    <exclude-pattern>*/coverage/*</exclude-pattern>
-    <exclude-pattern>*/.git/*</exclude-pattern>
-    <exclude-pattern>*/tests/*</exclude-pattern>
+	<!-- Do not scan dependencies, generated files, caches, or tests by default. -->
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+	<exclude-pattern>*/build/*</exclude-pattern>
+	<exclude-pattern>*/dist/*</exclude-pattern>
+	<exclude-pattern>*/coverage/*</exclude-pattern>
+	<exclude-pattern>*/.git/*</exclude-pattern>
+	<exclude-pattern>*/tests/*</exclude-pattern>
 
-    <!-- Core WordPress rules, but avoid docs/naming noise during cleanup phase -->
-    <rule ref="WordPress-Core"/>
-    <rule ref="WordPress-Extra"/>
+	<!-- WordPress coding standards. WordPress-Docs is intentionally excluded for now
+	     because mandatory file/function/member docblocks create high noise during cleanup. -->
+	<rule ref="WordPress-Core"/>
+	<rule ref="WordPress-Extra"/>
 
-    <!-- PHP compatibility -->
-    <rule ref="PHPCompatibilityWP"/>
-    <config name="testVersion" value="7.4-8.3"/>
-    <config name="minimum_supported_wp_version" value="6.0"/>
+	<!-- PHP compatibility for WordPress-supported PHP versions. -->
+	<rule ref="PHPCompatibilityWP"/>
+	<config name="testVersion" value="7.4-8.3"/>
+	<config name="minimum_supported_wp_version" value="6.0"/>
 
-    <!-- Text domain -->
-    <rule ref="WordPress.WP.I18n">
-        <properties>
-            <property name="text_domain" type="array">
-                <element value="kerbcycle-qr-code-manager"/>
-            </property>
-        </properties>
-    </rule>
+	<!-- Plugin i18n text domain. Keep this visible because it is a real consistency issue,
+	     but treat fixes as a dedicated i18n pass, not mixed with formatting cleanup. -->
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="kerbcycle-qr-code-manager"/>
+			</property>
+		</properties>
+	</rule>
 
-    <!-- Keep important security checks active -->
-    <rule ref="WordPress.Security.EscapeOutput"/>
-    <rule ref="WordPress.Security.ValidatedSanitizedInput"/>
-    <rule ref="WordPress.DB.PreparedSQL"/>
+	<!-- Keep high-value security/data handling checks active. -->
+	<rule ref="WordPress.Security.EscapeOutput"/>
+	<rule ref="WordPress.Security.ValidatedSanitizedInput"/>
+	<rule ref="WordPress.DB.PreparedSQL"/>
 
-    <!-- Reduce noisy naming/file-structure rules for current PSR-style plugin structure -->
-    <rule ref="WordPress.Files.FileName">
-        <severity>0</severity>
-    </rule>
+	<!-- Keep table-name interpolation visible, but not as the top cleanup driver.
+	     User-controlled values should still use placeholders. -->
+	<rule ref="WordPress.DB.PreparedSQL.InterpolatedNotPrepared">
+		<severity>5</severity>
+	</rule>
 
-    <!-- Avoid requiring long array syntax if project uses modern PHP arrays -->
-    <rule ref="Universal.Arrays.DisallowShortArraySyntax">
-        <severity>0</severity>
-    </rule>
+	<!-- Staged cleanup noise reducers.
+	     These are style/structure rules that should not block early CI while the codebase
+	     is being brought into shape incrementally. Re-enable later if desired. -->
+	<rule ref="Generic.WhiteSpace.DisallowSpaceIndent">
+		<severity>0</severity>
+	</rule>
 
-    <!-- Avoid broad Yoda-condition churn -->
-    <rule ref="WordPress.PHP.YodaConditions">
-        <severity>0</severity>
-    </rule>
+	<rule ref="Universal.Arrays.DisallowShortArraySyntax">
+		<severity>0</severity>
+	</rule>
 
-    <!-- Keep line length as warning -->
-    <rule ref="Generic.Files.LineLength">
-        <properties>
-            <property name="lineLimit" value="120"/>
-            <property name="absoluteLineLimit" value="160"/>
-        </properties>
-        <severity>3</severity>
-    </rule>
+	<rule ref="WordPress.Files.FileName">
+		<severity>0</severity>
+	</rule>
 
-    <arg name="extensions" value="php"/>
-    <arg name="colors"/>
-    <arg value="ps"/>
+	<rule ref="WordPress.PHP.YodaConditions">
+		<severity>0</severity>
+	</rule>
+
+	<!-- Keep line length as a warning, not a hard blocker. -->
+	<rule ref="Generic.Files.LineLength">
+		<properties>
+			<property name="lineLimit" value="120"/>
+			<property name="absoluteLineLimit" value="160"/>
+		</properties>
+		<severity>3</severity>
+	</rule>
+
+	<!-- Output formatting. -->
+	<arg name="extensions" value="php"/>
+	<arg name="colors"/>
+	<arg value="ps"/>
 
 </ruleset>
