@@ -3,8 +3,9 @@
 
 	<description>
 		KerbCycle WordPress plugin coding standards.
-		Staged baseline: keep security/compatibility checks active while reducing
-		low-value style noise during incremental cleanup.
+		Staged baseline v2: enforce practical WordPress spacing, security, i18n,
+		and PHP compatibility while deferring disruptive repo-wide conventions such
+		as file renames, mandatory docblocks, tabs-only indentation, and Yoda churn.
 	</description>
 
 	<!-- Scan plugin source files only. Avoid duplicate scan targets. -->
@@ -20,10 +21,22 @@
 	<exclude-pattern>*/.git/*</exclude-pattern>
 	<exclude-pattern>*/tests/*</exclude-pattern>
 
-	<!-- WordPress coding standards. WordPress-Docs is intentionally excluded for now
-	     because mandatory file/function/member docblocks create high noise during cleanup. -->
+	<!-- Core WordPress coding standards.
+	     WordPress-Docs is intentionally excluded for now because mandatory
+	     file/function/member docblocks create high noise during incremental cleanup. -->
 	<rule ref="WordPress-Core"/>
 	<rule ref="WordPress-Extra"/>
+
+	<!-- Explicitly keep WordPress-style spacing active.
+	     This prevents Codex or contributors from collapsing conditions back to compact PHP style. -->
+	<rule ref="WordPress.WhiteSpace.ControlStructureSpacing"/>
+	<rule ref="WordPress.WhiteSpace.OperatorSpacing"/>
+	<rule ref="PEAR.Functions.FunctionCallSignature"/>
+	<rule ref="Squiz.Functions.FunctionDeclarationArgumentSpacing"/>
+	<rule ref="Generic.Functions.OpeningFunctionBraceKernighanRitchie"/>
+	<rule ref="Generic.Classes.OpeningBraceSameLine"/>
+	<rule ref="NormalizedArrays.Arrays.ArrayBraceSpacing"/>
+	<rule ref="Generic.WhiteSpace.ArbitraryParenthesesSpacing"/>
 
 	<!-- PHP compatibility for WordPress-supported PHP versions. -->
 	<rule ref="PHPCompatibilityWP"/>
@@ -52,7 +65,7 @@
 	</rule>
 
 	<!-- Staged cleanup noise reducers.
-	     These are style/structure rules that should not block early CI while the codebase
+	     These style/structure rules should not block early CI while the codebase
 	     is being brought into shape incrementally. Re-enable later if desired. -->
 	<rule ref="Generic.WhiteSpace.DisallowSpaceIndent">
 		<severity>0</severity>
