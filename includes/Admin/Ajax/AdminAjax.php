@@ -56,7 +56,7 @@ class AdminAjax {
     public function assign_qr_code() {
         Nonces::verify( 'kerbcycle_qr_nonce', 'security' );
         if ( ! Capabilities::can( Capabilities::manage_operations() ) ) {
-            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle' ) ], 403 );
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle-qr-code-manager' ) ], 403 );
         }
 
         $qr_code       = sanitize_text_field( wp_unslash( $_POST['qr_code'] ) );
@@ -83,7 +83,7 @@ class AdminAjax {
             $this->log_action(
                 'qr_assign',
                 'success',
-                __( 'QR code assigned successfully', 'kerbcycle' ),
+                __( 'QR code assigned successfully', 'kerbcycle-qr-code-manager' ),
                 [
 					'qr_code'     => $qr_code,
 					'customer_id' => $user_id,
@@ -97,13 +97,13 @@ class AdminAjax {
             if ( $send_email ) {
                 $response['email_sent'] = ( $result['email_result'] === true );
                 if ( $result['email_result'] !== true ) {
-                    $response['email_error'] = is_wp_error( $result['email_result'] ) ? $result['email_result']->get_error_message() : __( 'Unknown error', 'kerbcycle' );
+                    $response['email_error'] = is_wp_error( $result['email_result'] ) ? $result['email_result']->get_error_message() : __( 'Unknown error', 'kerbcycle-qr-code-manager' );
                 }
             }
             if ( $send_sms ) {
                 $response['sms_sent'] = ( $result['sms_result'] === true );
                 if ( $result['sms_result'] !== true ) {
-                    $response['sms_error'] = is_wp_error( $result['sms_result'] ) ? $result['sms_result']->get_error_message() : __( 'Unknown error', 'kerbcycle' );
+                    $response['sms_error'] = is_wp_error( $result['sms_result'] ) ? $result['sms_result']->get_error_message() : __( 'Unknown error', 'kerbcycle-qr-code-manager' );
                 }
             }
             if ( ! empty( $result['record'] ) ) {
@@ -134,7 +134,7 @@ class AdminAjax {
     public function release_qr_code() {
         Nonces::verify( 'kerbcycle_qr_nonce', 'security' );
         if ( ! Capabilities::can( Capabilities::manage_operations() ) ) {
-            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle' ) ], 403 );
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle-qr-code-manager' ) ], 403 );
         }
 
         $qr_code    = sanitize_text_field( wp_unslash( $_POST['qr_code'] ) );
@@ -158,7 +158,7 @@ class AdminAjax {
             $this->log_action(
                 'qr_release',
                 'success',
-                __( 'QR code released successfully', 'kerbcycle' ),
+                __( 'QR code released successfully', 'kerbcycle-qr-code-manager' ),
                 [
 					'qr_code' => $qr_code,
 				]
@@ -167,13 +167,13 @@ class AdminAjax {
             if ( $send_email ) {
                 $response['email_sent'] = ( $result['email_result'] === true );
                 if ( $result['email_result'] !== true ) {
-                    $response['email_error'] = is_wp_error( $result['email_result'] ) ? $result['email_result']->get_error_message() : __( 'Unknown error', 'kerbcycle' );
+                    $response['email_error'] = is_wp_error( $result['email_result'] ) ? $result['email_result']->get_error_message() : __( 'Unknown error', 'kerbcycle-qr-code-manager' );
                 }
             }
             if ( $send_sms ) {
                 $response['sms_sent'] = ( $result['sms_result'] === true );
                 if ( $result['sms_result'] !== true ) {
-                    $response['sms_error'] = is_wp_error( $result['sms_result'] ) ? $result['sms_result']->get_error_message() : __( 'Unknown error', 'kerbcycle' );
+                    $response['sms_error'] = is_wp_error( $result['sms_result'] ) ? $result['sms_result']->get_error_message() : __( 'Unknown error', 'kerbcycle-qr-code-manager' );
                 }
             }
             wp_send_json_success( $response );
@@ -183,12 +183,12 @@ class AdminAjax {
     public function get_assigned_qr_codes() {
         Nonces::verify( 'kerbcycle_qr_nonce', 'security' );
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle' ) ], 403 );
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle-qr-code-manager' ) ], 403 );
         }
 
         $user_id = isset( $_POST['customer_id'] ) ? intval( wp_unslash( $_POST['customer_id'] ) ) : 0;
         if ( ! $user_id ) {
-            wp_send_json_error( [ 'message' => __( 'Invalid user ID', 'kerbcycle' ) ] );
+            wp_send_json_error( [ 'message' => __( 'Invalid user ID', 'kerbcycle-qr-code-manager' ) ] );
         }
 
         $codes = $this->qr_service->get_assigned_by_user( $user_id );
@@ -198,11 +198,11 @@ class AdminAjax {
     public function bulk_release_qr_codes() {
         Nonces::verify( 'kerbcycle_qr_nonce', 'security' );
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle' ) ], 403 );
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle-qr-code-manager' ) ], 403 );
         }
 
         if ( empty( $_POST['qr_codes'] ) ) {
-            wp_send_json_error( [ 'message' => __( 'No QR codes were selected.', 'kerbcycle' ) ] );
+            wp_send_json_error( [ 'message' => __( 'No QR codes were selected.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
         $raw_codes = explode( ',', wp_unslash( $_POST['qr_codes'] ) );
@@ -235,11 +235,11 @@ class AdminAjax {
     public function bulk_delete_qr_codes() {
         Nonces::verify( 'kerbcycle_qr_nonce', 'security' );
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle' ) ], 403 );
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle-qr-code-manager' ) ], 403 );
         }
 
         if ( empty( $_POST['qr_codes'] ) ) {
-            wp_send_json_error( [ 'message' => __( 'No QR codes were selected.', 'kerbcycle' ) ] );
+            wp_send_json_error( [ 'message' => __( 'No QR codes were selected.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
         $raw_codes = explode( ',', wp_unslash( $_POST['qr_codes'] ) );
@@ -272,14 +272,14 @@ class AdminAjax {
     public function update_qr_code() {
         Nonces::verify( 'kerbcycle_qr_nonce', 'security' );
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle' ) ], 403 );
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle-qr-code-manager' ) ], 403 );
         }
 
         $old_code = sanitize_text_field( wp_unslash( $_POST['old_code'] ) );
         $new_code = sanitize_text_field( wp_unslash( $_POST['new_code'] ) );
 
         if ( empty( $old_code ) || empty( $new_code ) ) {
-            wp_send_json_error( [ 'message' => __( 'Invalid QR code', 'kerbcycle' ) ] );
+            wp_send_json_error( [ 'message' => __( 'Invalid QR code', 'kerbcycle-qr-code-manager' ) ] );
         }
 
         $result = $this->qr_service->update( $old_code, $new_code );
@@ -289,22 +289,22 @@ class AdminAjax {
         }
 
         if ( $result !== false ) {
-            wp_send_json_success( [ 'message' => __( 'QR code updated', 'kerbcycle' ) ] );
+            wp_send_json_success( [ 'message' => __( 'QR code updated', 'kerbcycle-qr-code-manager' ) ] );
         } else {
-            wp_send_json_error( [ 'message' => __( 'Failed to update QR code', 'kerbcycle' ) ] );
+            wp_send_json_error( [ 'message' => __( 'Failed to update QR code', 'kerbcycle-qr-code-manager' ) ] );
         }
     }
 
     public function add_qr_code() {
         Nonces::verify( 'kerbcycle_qr_nonce', 'security' );
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle' ) ], 403 );
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle-qr-code-manager' ) ], 403 );
         }
 
         $qr_code = sanitize_text_field( wp_unslash( $_POST['qr_code'] ) );
 
         if ( empty( $qr_code ) ) {
-            wp_send_json_error( [ 'message' => __( 'Invalid QR code', 'kerbcycle' ) ] );
+            wp_send_json_error( [ 'message' => __( 'Invalid QR code', 'kerbcycle-qr-code-manager' ) ] );
         }
 
         $result = $this->qr_service->add( $qr_code );
@@ -314,50 +314,50 @@ class AdminAjax {
         } elseif ( $result !== false ) {
             wp_send_json_success(
                 [
-					'message' => __( 'QR code added successfully.', 'kerbcycle' ),
+					'message' => __( 'QR code added successfully.', 'kerbcycle-qr-code-manager' ),
 					'row'     => $result,
 				]
             );
         } else {
-            wp_send_json_error( [ 'message' => __( 'Failed to add QR code due to a database error.', 'kerbcycle' ) ] );
+            wp_send_json_error( [ 'message' => __( 'Failed to add QR code due to a database error.', 'kerbcycle-qr-code-manager' ) ] );
         }
     }
 
     public function import_qr_codes() {
         Nonces::verify( 'kerbcycle_qr_nonce', 'security' );
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle' ) ], 403 );
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle-qr-code-manager' ) ], 403 );
         }
 
         if ( empty( $_FILES['import_file'] ) || ! is_uploaded_file( $_FILES['import_file']['tmp_name'] ) ) {
-            wp_send_json_error( [ 'message' => __( 'No file uploaded.', 'kerbcycle' ) ] );
+            wp_send_json_error( [ 'message' => __( 'No file uploaded.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
         $file_name = isset( $_FILES['import_file']['name'] ) ? sanitize_file_name( wp_unslash( $_FILES['import_file']['name'] ) ) : '';
         $extension = strtolower( pathinfo( $file_name, PATHINFO_EXTENSION ) );
         if ( $extension !== 'csv' ) {
-            wp_send_json_error( [ 'message' => __( 'Only CSV files are allowed.', 'kerbcycle' ) ] );
+            wp_send_json_error( [ 'message' => __( 'Only CSV files are allowed.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
         $file_size = isset( $_FILES['import_file']['size'] ) ? (int) $_FILES['import_file']['size'] : 0;
         if ( $file_size < 1 || $file_size > 5 * MB_IN_BYTES ) {
-            wp_send_json_error( [ 'message' => __( 'Invalid file size.', 'kerbcycle' ) ] );
+            wp_send_json_error( [ 'message' => __( 'Invalid file size.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
         $handle = fopen( $_FILES['import_file']['tmp_name'], 'r' );
         if ( ! $handle ) {
-            wp_send_json_error( [ 'message' => __( 'Could not read uploaded file.', 'kerbcycle' ) ] );
+            wp_send_json_error( [ 'message' => __( 'Could not read uploaded file.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
         $header = fgetcsv( $handle );
         if ( $header === false ) {
             fclose( $handle );
-            wp_send_json_error( [ 'message' => __( 'Invalid CSV file.', 'kerbcycle' ) ] );
+            wp_send_json_error( [ 'message' => __( 'Invalid CSV file.', 'kerbcycle-qr-code-manager' ) ] );
         }
         $code_index = array_search( 'Code', $header );
         if ( $code_index === false ) {
             fclose( $handle );
-            wp_send_json_error( [ 'message' => __( 'Could not find Code column.', 'kerbcycle' ) ] );
+            wp_send_json_error( [ 'message' => __( 'Could not find Code column.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
         $added = 0;
@@ -376,19 +376,19 @@ class AdminAjax {
         if ( $added > 0 ) {
             wp_send_json_success(
                 [
-					'message' => sprintf( __( 'Imported %d QR code(s).', 'kerbcycle' ), $added ),
+					'message' => sprintf( __( 'Imported %d QR code(s).', 'kerbcycle-qr-code-manager' ), $added ),
 					'added'   => $added,
 				]
             );
         } else {
-            wp_send_json_error( [ 'message' => __( 'No QR codes were imported.', 'kerbcycle' ) ] );
+            wp_send_json_error( [ 'message' => __( 'No QR codes were imported.', 'kerbcycle-qr-code-manager' ) ] );
         }
     }
 
     public function paginate_qr_codes() {
         Nonces::verify( 'kerbcycle_qr_nonce', 'security' );
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle' ) ], 403 );
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle-qr-code-manager' ) ], 403 );
         }
 
         $args = [
@@ -431,7 +431,7 @@ class AdminAjax {
     public function ajax_report_data() {
         Nonces::verify( 'kerbcycle_qr_report_nonce', 'security' );
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle' ) ], 403 );
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle-qr-code-manager' ) ], 403 );
         }
         $report_service = new ReportService();
         $data           = $report_service->get_report_data();
@@ -441,14 +441,14 @@ class AdminAjax {
     public function delete_logs() {
         Nonces::verify( 'kerbcycle_delete_logs', 'security' );
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle' ) ], 403 );
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle-qr-code-manager' ) ], 403 );
         }
 
         $ids = isset( $_POST['log_ids'] ) && is_array( $_POST['log_ids'] )
             ? array_map( 'absint', wp_unslash( $_POST['log_ids'] ) )
             : [];
         if ( ! $ids ) {
-            wp_send_json_error( [ 'message' => __( 'No logs selected', 'kerbcycle' ) ] );
+            wp_send_json_error( [ 'message' => __( 'No logs selected', 'kerbcycle-qr-code-manager' ) ] );
         }
 
         $repo    = new MessageLogRepository();
@@ -460,7 +460,7 @@ class AdminAjax {
     public function test_pickup_exception() {
         Nonces::verify( 'kerbcycle_qr_nonce', 'security' );
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle' ) ], 403 );
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle-qr-code-manager' ) ], 403 );
         }
         $this->handle_pickup_exception_submission( 'admin' );
     }
@@ -468,7 +468,7 @@ class AdminAjax {
     public function submit_scanner_pickup_exception() {
         Nonces::verify( 'kerbcycle_qr_nonce', 'security' );
         if ( ! Capabilities::can( Capabilities::manage_operations() ) ) {
-            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle' ) ], 403 );
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle-qr-code-manager' ) ], 403 );
         }
         $this->handle_pickup_exception_submission( 'scanner' );
     }
@@ -494,11 +494,11 @@ class AdminAjax {
         }
 
         if ( $issue === '' ) {
-            wp_send_json_error( [ 'message' => __( 'Issue is required.', 'kerbcycle' ) ], 400 );
+            wp_send_json_error( [ 'message' => __( 'Issue is required.', 'kerbcycle-qr-code-manager' ) ], 400 );
         }
 
         if ( $qr_code === '' && $customer_id < 1 ) {
-            wp_send_json_error( [ 'message' => __( 'Provide at least a QR Code or Customer ID.', 'kerbcycle' ) ], 400 );
+            wp_send_json_error( [ 'message' => __( 'Provide at least a QR Code or Customer ID.', 'kerbcycle-qr-code-manager' ) ], 400 );
         }
 
         $dedupe_key   = $this->pickup_dedupe_option_key( $qr_code, $customer_id, $issue, $notes );
@@ -507,7 +507,7 @@ class AdminAjax {
             $this->log_action(
                 'pickup_exception_submit',
                 'suppressed',
-                __( 'Duplicate pickup exception suppressed.', 'kerbcycle' ),
+                __( 'Duplicate pickup exception suppressed.', 'kerbcycle-qr-code-manager' ),
                 [
 					'exception_id' => $duplicate_id,
 					'qr_code'      => $qr_code,
@@ -519,7 +519,7 @@ class AdminAjax {
             wp_send_json_success(
                 [
 					'status'                => 'duplicate_suppressed',
-					'message'               => __( 'Duplicate pickup exception suppressed. Existing record retained.', 'kerbcycle' ),
+					'message'               => __( 'Duplicate pickup exception suppressed. Existing record retained.', 'kerbcycle-qr-code-manager' ),
 					'exception_id'          => $duplicate_id,
 					'local_save'            => [
 						'success' => true,
@@ -567,7 +567,7 @@ class AdminAjax {
             $this->log_action(
                 'pickup_exception_submit',
                 'failed',
-                __( 'Failed to save pickup exception locally.', 'kerbcycle' ),
+                __( 'Failed to save pickup exception locally.', 'kerbcycle-qr-code-manager' ),
                 [
 					'qr_code'     => $qr_code,
 					'customer_id' => $customer_id,
@@ -575,13 +575,13 @@ class AdminAjax {
 				],
                 'pickup_exception'
             );
-            wp_send_json_error( [ 'message' => __( 'Failed to save pickup exception locally.', 'kerbcycle' ) ], 500 );
+            wp_send_json_error( [ 'message' => __( 'Failed to save pickup exception locally.', 'kerbcycle-qr-code-manager' ) ], 500 );
         }
         $this->store_pickup_dedupe_record( $dedupe_key, $exception_id );
         $this->log_action(
             'pickup_exception_submit',
             'success',
-            __( 'Pickup exception saved locally.', 'kerbcycle' ),
+            __( 'Pickup exception saved locally.', 'kerbcycle-qr-code-manager' ),
             [
 				'exception_id' => $exception_id,
 				'qr_code'      => $qr_code,
@@ -605,7 +605,7 @@ class AdminAjax {
             $this->log_action(
                 'pickup_exception_submit',
                 'failed',
-                __( 'Webhook delivery failed after local save.', 'kerbcycle' ),
+                __( 'Webhook delivery failed after local save.', 'kerbcycle-qr-code-manager' ),
                 [
 					'exception_id' => $exception_id,
 					'qr_code'      => $qr_code,
@@ -634,7 +634,7 @@ class AdminAjax {
             wp_send_json_success(
                 [
 					'status'                => 'partial_success',
-					'message'               => __( 'Pickup exception saved locally, but webhook delivery failed.', 'kerbcycle' ),
+					'message'               => __( 'Pickup exception saved locally, but webhook delivery failed.', 'kerbcycle-qr-code-manager' ),
 					'exception_id'          => $exception_id,
 					'local_save'            => [
 						'success' => true,
@@ -698,7 +698,7 @@ class AdminAjax {
             wp_send_json_success(
                 [
 					'status'                => 'success',
-					'message'               => __( 'Pickup exception saved locally and sent to webhook.', 'kerbcycle' ),
+					'message'               => __( 'Pickup exception saved locally and sent to webhook.', 'kerbcycle-qr-code-manager' ),
 					'exception_id'          => $exception_id,
 					'local_save'            => [
 						'success' => true,
@@ -718,7 +718,7 @@ class AdminAjax {
         $this->log_action(
             'pickup_exception_submit',
             'failed',
-            __( 'Webhook returned non-success response.', 'kerbcycle' ),
+            __( 'Webhook returned non-success response.', 'kerbcycle-qr-code-manager' ),
             [
 				'exception_id' => $exception_id,
 				'qr_code'      => $qr_code,
@@ -746,7 +746,7 @@ class AdminAjax {
         wp_send_json_success(
             [
 				'status'                => 'partial_success',
-				'message'               => __( 'Pickup exception saved locally, but webhook delivery failed.', 'kerbcycle' ),
+				'message'               => __( 'Pickup exception saved locally, but webhook delivery failed.', 'kerbcycle-qr-code-manager' ),
 				'exception_id'          => $exception_id,
 				'local_save'            => [
 					'success' => true,
@@ -765,7 +765,7 @@ class AdminAjax {
     public function get_pickup_exceptions() {
         Nonces::verify( 'kerbcycle_qr_nonce', 'security' );
         if ( ! Capabilities::can( Capabilities::manage_operations() ) ) {
-            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle' ) ], 403 );
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle-qr-code-manager' ) ], 403 );
         }
         \Kerbcycle\QrCode\Install\Activator::activate();
 
@@ -845,7 +845,7 @@ class AdminAjax {
     public function retry_pickup_exception() {
         Nonces::verify( 'kerbcycle_qr_nonce', 'security' );
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle' ) ], 403 );
+            wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle-qr-code-manager' ) ], 403 );
         }
         \Kerbcycle\QrCode\Install\Activator::activate();
 
@@ -854,13 +854,13 @@ class AdminAjax {
             $this->log_action(
                 'pickup_exception_retry',
                 'failed',
-                __( 'Invalid pickup exception ID.', 'kerbcycle' ),
+                __( 'Invalid pickup exception ID.', 'kerbcycle-qr-code-manager' ),
                 [
 					'exception_id' => $exception_id,
 				],
                 'pickup_exception'
             );
-            wp_send_json_error( [ 'message' => __( 'Invalid pickup exception ID.', 'kerbcycle' ) ], 400 );
+            wp_send_json_error( [ 'message' => __( 'Invalid pickup exception ID.', 'kerbcycle-qr-code-manager' ) ], 400 );
         }
 
         $retry_result = ( new PickupExceptionRetryService() )->retry(
@@ -871,27 +871,27 @@ class AdminAjax {
             $this->log_action(
                 'pickup_exception_retry',
                 'failed',
-                __( 'Pickup exception record not found.', 'kerbcycle' ),
+                __( 'Pickup exception record not found.', 'kerbcycle-qr-code-manager' ),
                 [
 					'exception_id' => $exception_id,
 				],
                 'pickup_exception'
             );
-            wp_send_json_error( [ 'message' => __( 'Pickup exception record not found.', 'kerbcycle' ) ], 404 );
+            wp_send_json_error( [ 'message' => __( 'Pickup exception record not found.', 'kerbcycle-qr-code-manager' ) ], 404 );
         }
 
         if ( $retry_result['state'] === 'ineligible' ) {
             $this->log_action(
                 'pickup_exception_retry',
                 'invalid_state',
-                __( 'Pickup exception is not eligible for retry.', 'kerbcycle' ),
+                __( 'Pickup exception is not eligible for retry.', 'kerbcycle-qr-code-manager' ),
                 [
 					'exception_id' => $exception_id,
 				],
                 'pickup_exception'
             );
             wp_send_json_error(
-                [ 'message' => __( 'This pickup exception is not eligible for retry.', 'kerbcycle' ) ],
+                [ 'message' => __( 'This pickup exception is not eligible for retry.', 'kerbcycle-qr-code-manager' ) ],
                 400
             );
         }
@@ -900,14 +900,14 @@ class AdminAjax {
             $this->log_action(
                 'pickup_exception_retry',
                 'suppressed',
-                __( 'Retry already in progress for this pickup exception.', 'kerbcycle' ),
+                __( 'Retry already in progress for this pickup exception.', 'kerbcycle-qr-code-manager' ),
                 [
 					'exception_id' => $exception_id,
 				],
                 'pickup_exception'
             );
             wp_send_json_error(
-                [ 'message' => __( 'Retry already in progress for this pickup exception.', 'kerbcycle' ) ],
+                [ 'message' => __( 'Retry already in progress for this pickup exception.', 'kerbcycle-qr-code-manager' ) ],
                 409
             );
         }
@@ -916,41 +916,41 @@ class AdminAjax {
             $this->log_action(
                 'pickup_exception_retry',
                 'failed',
-                __( 'Retry webhook failed.', 'kerbcycle' ),
+                __( 'Retry webhook failed.', 'kerbcycle-qr-code-manager' ),
                 [
 					'exception_id' => $exception_id,
 					'error_code'   => isset( $retry_result['error_code'] ) ? $retry_result['error_code'] : '',
 				],
                 'pickup_exception'
             );
-            wp_send_json_error( [ 'message' => __( 'Retry failed. The record remains saved locally.', 'kerbcycle' ) ], 500 );
+            wp_send_json_error( [ 'message' => __( 'Retry failed. The record remains saved locally.', 'kerbcycle-qr-code-manager' ) ], 500 );
         }
 
         if ( $retry_result['state'] === 'success' ) {
             $this->log_action(
                 'pickup_exception_retry',
                 'success',
-                __( 'Pickup exception resent successfully.', 'kerbcycle' ),
+                __( 'Pickup exception resent successfully.', 'kerbcycle-qr-code-manager' ),
                 [
 					'exception_id' => $exception_id,
 					'status_code'  => isset( $retry_result['webhook_status_code'] ) ? (int) $retry_result['webhook_status_code'] : 0,
 				],
                 'pickup_exception'
             );
-            wp_send_json_success( [ 'message' => __( 'Pickup exception resent successfully.', 'kerbcycle' ) ] );
+            wp_send_json_success( [ 'message' => __( 'Pickup exception resent successfully.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
         $this->log_action(
             'pickup_exception_retry',
             'failed',
-            __( 'Retry webhook returned non-success response.', 'kerbcycle' ),
+            __( 'Retry webhook returned non-success response.', 'kerbcycle-qr-code-manager' ),
             [
 				'exception_id' => $exception_id,
 				'status_code'  => isset( $retry_result['webhook_status_code'] ) ? (int) $retry_result['webhook_status_code'] : 0,
 			],
             'pickup_exception'
         );
-        wp_send_json_error( [ 'message' => __( 'Retry failed. The record remains saved locally.', 'kerbcycle' ) ], 500 );
+        wp_send_json_error( [ 'message' => __( 'Retry failed. The record remains saved locally.', 'kerbcycle-qr-code-manager' ) ], 500 );
     }
 
     private function pickup_dedupe_option_key( $qr_code, $customer_id, $issue, $notes ) {
