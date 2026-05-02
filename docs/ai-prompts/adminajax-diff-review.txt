@@ -1,0 +1,314 @@
+````text
+## KerbCycle AdminAjax.php Diff Review — ULTRA-STRICT MODE
+
+### CONTEXT
+
+This diff targets:
+  includes/Admin/Ajax/AdminAjax.php
+
+The change is expected to be:
+  FORMATTING-ONLY (PHPCBF or Codex formatting pass)
+
+ZERO behavioral changes are allowed.
+
+Your job is to prove (not assume) that the diff is safe.
+
+---
+
+## INPUT
+
+You will be given:
+1) A git diff (may be large)
+2) Only changes to AdminAjax.php
+
+---
+
+## PRIMARY OBJECTIVE
+
+Return a final verdict:
+  SAFE TO MERGE / SAFE WITH REVIEW / DO NOT MERGE
+
+You must justify the verdict with concrete findings.
+
+---
+
+## HARD CONSTRAINTS (FAIL FAST)
+
+If ANY of the following occur → immediately mark DO NOT MERGE:
+
+- Any method name changed
+- Any function/argument added/removed/reordered
+- Any array keys added/removed/renamed
+- Any SQL string modified
+- Any hook/action name modified
+- Any nonce name or capability string modified
+- Any response payload key/value modified
+- Any HTTP status code modified
+- Any branch/conditional logic changed
+- Any reordering of statements within a method
+- Any change to webhook payload/endpoint/handling
+- Any change to AI extraction order/fields/defaults
+- Any change to repository/service call arguments
+
+---
+
+## MANDATORY SECTION-BY-SECTION REVIEW
+
+### 1) CONSTRUCTOR (AJAX REGISTRATION)
+
+Verify ALL `add_action` calls:
+
+- Hook names EXACTLY unchanged:
+  - wp_ajax_assign_qr_code
+  - wp_ajax_release_qr_code
+  - wp_ajax_bulk_release_qr_codes
+  - wp_ajax_bulk_delete_qr_codes
+  - wp_ajax_update_qr_code
+  - wp_ajax_add_qr_code
+  - wp_ajax_get_assigned_qr_codes
+  - wp_ajax_import_qr_codes
+  - wp_ajax_kerbcycle_paginate_qr_codes
+  - wp_ajax_kerbcycle_qr_report_data
+  - wp_ajax_kerbcycle_delete_logs
+  - wp_ajax_kerbcycle_test_pickup_exception
+  - wp_ajax_kerbcycle_submit_scanner_pickup_exception
+  - wp_ajax_kerbcycle_get_pickup_exceptions
+  - wp_ajax_kerbcycle_retry_pickup_exception
+
+- Callback method names unchanged
+- No additions/removals/reordering
+
+---
+
+### 2) QR LIFECYCLE METHODS
+
+Inspect:
+- assign_qr_code
+- release_qr_code
+- bulk_release_qr_codes
+- bulk_delete_qr_codes
+- update_qr_code
+- add_qr_code
+
+Verify:
+- `Nonces::verify` unchanged
+- `current_user_can` / `Capabilities::can` unchanged
+- `$this->qr_service->...` calls unchanged (name + args)
+- `is_wp_error` checks unchanged
+- `wp_send_json_*` payload keys/values unchanged
+- No change to message strings or status codes
+
+---
+
+### 3) IMPORT / PAGINATION / REPORTS
+
+Inspect:
+- import_qr_codes
+- paginate_qr_codes
+- ajax_report_data
+- delete_logs
+
+Verify:
+- file handling logic unchanged (fopen/fgetcsv/loop)
+- `$wpdb` usage unchanged
+- `DashboardPage::*` calls unchanged
+- payload structures identical
+
+---
+
+### 4) PICKUP EXCEPTIONS (CRITICAL)
+
+Inspect:
+- test_pickup_exception
+- submit_scanner_pickup_exception
+- handle_pickup_exception_submission
+
+Verify:
+- Nonce + capability checks unchanged
+- Validation conditions unchanged
+- Dedupe logic unchanged:
+  - pickup_dedupe_option_key
+  - pickup_dedupe_active_record_id
+  - store_pickup_dedupe_record
+- Local DB create payload unchanged
+- `$payload` structure unchanged
+
+---
+
+### 5) WEBHOOK HANDLING (CRITICAL)
+
+Verify:
+- webhook call function name unchanged
+- arguments unchanged
+- payload unchanged
+- `is_wp_error` handling unchanged
+- success/failure branch conditions unchanged
+- log_action calls unchanged (action/status/message/context)
+
+---
+
+### 6) AI EXTRACTION (CRITICAL)
+
+Verify:
+- JSON decode unchanged
+- extraction order unchanged:
+  1) result
+  2) data
+  3) root
+- field names unchanged:
+  - ai_severity
+  - ai_category
+  - ai_summary
+  - ai_recommended_action
+- default values unchanged
+- casting unchanged
+
+---
+
+### 7) DB UPDATE (CRITICAL)
+
+Inspect ALL:
+  PickupExceptionRepository::update_result(...)
+
+Verify:
+- keys unchanged:
+  - webhook_sent
+  - webhook_status_code
+  - status
+  - webhook_response_body
+  - ai_* fields
+  - updated_at
+- values unchanged
+- order unchanged
+
+---
+
+### 8) FINAL RESPONSES (CRITICAL)
+
+Verify ALL `wp_send_json_success/error`:
+
+- status unchanged
+- message unchanged
+- payload keys unchanged
+- payload values unchanged
+- HTTP status codes unchanged
+- nested structures identical
+
+---
+
+### 9) RETRY FLOW (CRITICAL)
+
+Inspect:
+- retry_pickup_exception
+
+Verify:
+- `$retry_result['state']` comparisons unchanged
+- branch order unchanged
+- service call unchanged
+- log_action unchanged
+- responses unchanged
+
+---
+
+## WORDPRESS STYLE ENFORCEMENT (STRICT)
+
+Ensure all changed lines follow:
+
+✔ Correct:
+```php
+if ( ! current_user_can( 'manage_options' ) ) {
+Nonces::verify( 'kerbcycle_qr_nonce', 'security' );
+````
+
+❌ Incorrect:
+
+```php
+if (!current_user_can('manage_options')) {
+Nonces::verify('kerbcycle_qr_nonce', 'security');
+```
+
+Flag ANY regression to compact style.
+
+---
+
+## NON-FORMATTING DETECTION RULES
+
+Flag as DANGEROUS if you see:
+
+* changed strings inside quotes
+* changed array keys
+* changed numeric values
+* changed variable names
+* changed function names
+* changed order of arguments
+* removed or added lines (non-whitespace)
+* any diff not explainable as spacing/indentation/line-wrap
+
+---
+
+## OUTPUT FORMAT
+
+### SUMMARY
+
+* Files changed:
+* Lines changed:
+* Formatting-only confirmed: yes/no
+
+---
+
+### FINDINGS
+
+List every non-formatting or suspicious change:
+
+* [SAFE] spacing change in conditional
+* [WARNING] multiline array reformatted near SQL
+* [DANGEROUS] payload key modified in webhook response
+
+---
+
+### HIGH-RISK AREA STATUS
+
+For each section:
+
+* Constructor: safe / not safe
+* QR lifecycle: safe / not safe
+* Pickup exceptions: safe / not safe
+* Webhook: safe / not safe
+* AI extraction: safe / not safe
+* DB update: safe / not safe
+* Final responses: safe / not safe
+* Retry flow: safe / not safe
+
+---
+
+### WORDPRESS STYLE CHECK
+
+* consistent: yes/no
+* regressions: list
+
+---
+
+### FINAL VERDICT
+
+One of:
+
+SAFE TO MERGE
+SAFE TO MERGE WITH REVIEW
+DO NOT MERGE
+
+---
+
+### REQUIRED ACTIONS
+
+Exact lines/areas requiring manual review or rollback.
+
+---
+
+## STRICT MODE RULES
+
+* Assume risk by default
+* Verify every section explicitly
+* Do not summarize without checking
+* Do not trust the diff intent — only the actual changes
+
+```
