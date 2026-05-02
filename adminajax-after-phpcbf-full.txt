@@ -1,0 +1,434 @@
+[31mE[0m 1 / 1 (100%)
+
+
+
+[1mFILE: ...erbcycle-qr-code-manager-final/includes/Admin/Ajax/AdminAjax.php[0m
+----------------------------------------------------------------------
+[1mFOUND 148 ERRORS AND 6 WARNINGS AFFECTING 109 LINES[0m
+----------------------------------------------------------------------
+  59 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+  62 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+  62 | [31mERROR[0m   | [1mDetected usage of a possibly undefined superglobal[0m
+     |         | [1marray index: $_POST['qr_code']. Check that the array[0m
+     |         | [1mindex exists before using it.[0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotValidated)
+  63 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+  63 | [31mERROR[0m   | [1mDetected usage of a possibly undefined superglobal[0m
+     |         | [1marray index: $_POST['customer_id']. Check that the[0m
+     |         | [1marray index exists before using it.[0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotValidated)
+  64 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+  65 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+  66 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+  86 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 100 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 106 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 137 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 140 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 140 | [31mERROR[0m   | [1mDetected usage of a possibly undefined superglobal[0m
+     |         | [1marray index: $_POST['qr_code']. Check that the array[0m
+     |         | [1mindex exists before using it.[0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotValidated)
+ 141 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 142 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 161 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 170 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 176 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 186 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 189 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 189 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 191 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 201 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 204 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 205 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 208 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 208 | [31mERROR[0m   | [1mDetected usage of a non-sanitized input variable:[0m
+     |         | [1m$_POST['qr_codes'][0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotSanitized)
+ 238 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 241 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 242 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 245 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 245 | [31mERROR[0m   | [1mDetected usage of a non-sanitized input variable:[0m
+     |         | [1m$_POST['qr_codes'][0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotSanitized)
+ 275 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 278 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 278 | [31mERROR[0m   | [1mDetected usage of a possibly undefined superglobal[0m
+     |         | [1marray index: $_POST['old_code']. Check that the[0m
+     |         | [1marray index exists before using it.[0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotValidated)
+ 279 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 279 | [31mERROR[0m   | [1mDetected usage of a possibly undefined superglobal[0m
+     |         | [1marray index: $_POST['new_code']. Check that the[0m
+     |         | [1marray index exists before using it.[0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotValidated)
+ 282 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 292 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 294 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 301 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 304 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 304 | [31mERROR[0m   | [1mDetected usage of a possibly undefined superglobal[0m
+     |         | [1marray index: $_POST['qr_code']. Check that the array[0m
+     |         | [1mindex exists before using it.[0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotValidated)
+ 307 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 317 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 322 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 329 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 332 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 332 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 332 | [31mERROR[0m   | [1mDetected usage of a possibly undefined superglobal[0m
+     |         | [1marray index: $_FILES['import_file']['tmp_name'].[0m
+     |         | [1mCheck that the array index exists before using it.[0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotValidated)
+ 332 | [31mERROR[0m   | [1mDetected usage of a non-sanitized input variable:[0m
+     |         | [1m$_FILES['import_file']['tmp_name'][0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotSanitized)
+ 333 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 336 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 336 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 339 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 342 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 342 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 344 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 347 | [33mWARNING[0m | [1mFile operations should use WP_Filesystem methods[0m
+     |         | [1minstead of direct PHP filesystem calls. Found:[0m
+     |         | [1mfopen().[0m
+     |         | (WordPress.WP.AlternativeFunctions.file_system_operations_fopen)
+ 347 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 347 | [31mERROR[0m   | [1mDetected usage of a possibly undefined superglobal[0m
+     |         | [1marray index: $_FILES['import_file']['tmp_name'].[0m
+     |         | [1mCheck that the array index exists before using it.[0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotValidated)
+ 347 | [31mERROR[0m   | [1mDetected usage of a non-sanitized input variable:[0m
+     |         | [1m$_FILES['import_file']['tmp_name'][0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotSanitized)
+ 349 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 354 | [33mWARNING[0m | [1mFile operations should use WP_Filesystem methods[0m
+     |         | [1minstead of direct PHP filesystem calls. Found:[0m
+     |         | [1mfclose().[0m
+     |         | (WordPress.WP.AlternativeFunctions.file_system_operations_fclose)
+ 355 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 357 | [33mWARNING[0m | [1mNot using strict comparison for array_search; supply[0m
+     |         | [1mtrue for $strict argument.[0m
+     |         | (WordPress.PHP.StrictInArray.MissingTrueStrict)
+ 359 | [33mWARNING[0m | [1mFile operations should use WP_Filesystem methods[0m
+     |         | [1minstead of direct PHP filesystem calls. Found:[0m
+     |         | [1mfclose().[0m
+     |         | (WordPress.WP.AlternativeFunctions.file_system_operations_fclose)
+ 360 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 364 | [33mWARNING[0m | [1mVariable assignment found within a condition. Did[0m
+     |         | [1myou mean to do a comparison ?[0m
+     |         | (Generic.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition)
+ 374 | [33mWARNING[0m | [1mFile operations should use WP_Filesystem methods[0m
+     |         | [1minstead of direct PHP filesystem calls. Found:[0m
+     |         | [1mfclose().[0m
+     |         | (WordPress.WP.AlternativeFunctions.file_system_operations_fclose)
+ 379 | [31mERROR[0m   | [1mA function call to __() with texts containing[0m
+     |         | [1mplaceholders was found, but was not accompanied by a[0m
+     |         | [1m"translators:" comment on the line above to clarify[0m
+     |         | [1mthe meaning of the placeholders.[0m
+     |         | (WordPress.WP.I18n.MissingTranslatorsComment)
+ 379 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 384 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 391 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 395 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 395 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 395 | [31mERROR[0m   | [1mDetected usage of a non-sanitized input variable:[0m
+     |         | [1m$_POST['status_filter'][0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotSanitized)
+ 396 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 396 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 396 | [31mERROR[0m   | [1mDetected usage of a non-sanitized input variable:[0m
+     |         | [1m$_POST['start_date'][0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotSanitized)
+ 397 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 397 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 397 | [31mERROR[0m   | [1mDetected usage of a non-sanitized input variable:[0m
+     |         | [1m$_POST['end_date'][0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotSanitized)
+ 398 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 398 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 398 | [31mERROR[0m   | [1mDetected usage of a non-sanitized input variable:[0m
+     |         | [1m$_POST['search'][0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotSanitized)
+ 399 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 399 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 399 | [31mERROR[0m   | [1mDetected usage of a non-sanitized input variable:[0m
+     |         | [1m$_POST['s'][0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotSanitized)
+ 400 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 400 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 400 | [31mERROR[0m   | [1mDetected usage of a non-sanitized input variable:[0m
+     |         | [1m$_POST['per_page'][0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotSanitized)
+ 401 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 401 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 401 | [31mERROR[0m   | [1mDetected usage of a non-sanitized input variable:[0m
+     |         | [1m$_POST['paged'][0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotSanitized)
+ 434 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 444 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 447 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 447 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 448 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 451 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 463 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 471 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 479 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 479 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 479 | [31mERROR[0m   | [1mDetected usage of a non-sanitized input variable:[0m
+     |         | [1m$_POST['qr_code'][0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotSanitized)
+ 480 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 480 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 480 | [31mERROR[0m   | [1mDetected usage of a non-sanitized input variable:[0m
+     |         | [1m$_POST['customer_id'][0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotSanitized)
+ 481 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 481 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 481 | [31mERROR[0m   | [1mDetected usage of a non-sanitized input variable:[0m
+     |         | [1m$_POST['issue'][0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotSanitized)
+ 482 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 482 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 482 | [31mERROR[0m   | [1mDetected usage of a non-sanitized input variable:[0m
+     |         | [1m$_POST['notes'][0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotSanitized)
+ 483 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 483 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 483 | [31mERROR[0m   | [1mDetected usage of a non-sanitized input variable:[0m
+     |         | [1m$_POST['timestamp'][0m
+     |         | (WordPress.Security.ValidatedSanitizedInput.InputNotSanitized)
+ 497 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 501 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 510 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 522 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 570 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 578 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 584 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 608 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 637 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 701 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 721 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 749 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 768 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 775 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 775 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 779 | [31mERROR[0m   | [1mUse placeholders and $wpdb->prepare(); found[0m
+     |         | [1minterpolated variable {$table_name} at              [0m
+     |         | [1m  FROM {$table_name}[0m
+     |         | [1m[0m (WordPress.DB.PreparedSQL.InterpolatedNotPrepared)
+ 789 | [31mERROR[0m   | [1mUse placeholders and $wpdb->prepare(); found[0m
+     |         | [1minterpolated variable {$table_name} at              [0m
+     |         | [1m  FROM {$table_name}[0m
+     |         | [1m[0m (WordPress.DB.PreparedSQL.InterpolatedNotPrepared)
+ 795 | [31mERROR[0m   | [1mUse placeholders and $wpdb->prepare(); found $sql[0m
+     |         | (WordPress.DB.PreparedSQL.NotPrepared)
+ 848 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 852 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 852 | [31mERROR[0m   | [1mProcessing form data without nonce verification.[0m
+     |         | (WordPress.Security.NonceVerification.Missing)
+ 857 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 863 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 874 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 880 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 887 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 894 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 903 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 910 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 919 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 926 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 933 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 940 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 946 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+ 953 | [31mERROR[0m   | [1mMismatched text domain. Expected[0m
+     |         | [1m'kerbcycle-qr-code-manager' but got 'kerbcycle'.[0m
+     |         | (WordPress.WP.I18n.TextDomainMismatch)
+----------------------------------------------------------------------
+
+Time: 469ms; Memory: 26MB
+
