@@ -351,6 +351,7 @@ class AdminAjax {
             wp_send_json_error( [ 'message' => __( 'No file uploaded.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
+        // tmp_name is a PHP-generated upload path; safety is enforced with is_uploaded_file().
         $tmp_name = isset( $_FILES['import_file']['tmp_name'] ) && is_string( $_FILES['import_file']['tmp_name'] ) ? wp_unslash( $_FILES['import_file']['tmp_name'] ) : '';
         if ( '' === $tmp_name || ! is_uploaded_file( $tmp_name ) ) {
             wp_send_json_error( [ 'message' => __( 'No file uploaded.', 'kerbcycle-qr-code-manager' ) ] );
@@ -358,11 +359,17 @@ class AdminAjax {
 
         $file_name = '';
         if ( ! empty( $_FILES['import_file']['name'] ) && is_string( $_FILES['import_file']['name'] ) ) {
-            $raw_file_name = wp_unslash( $_FILES['import_file']['name'] );
-            $raw_file_name = str_replace( "\0", '', $raw_file_name );
-            $raw_file_name = preg_replace( '/\A\.+/', '', $raw_file_name );
-            $file_name     = sanitize_file_name( $raw_file_name );
-            $file_name     = substr( $file_name, 0, 255 );
+            $file_name = substr(
+                sanitize_file_name(
+                    preg_replace(
+                        '/\A\.+/',
+                        '',
+                        str_replace( "\0", '', wp_unslash( $_FILES['import_file']['name'] ) )
+                    )
+                ),
+                0,
+                255
+            );
         }
         $extension = strtolower( pathinfo( $file_name, PATHINFO_EXTENSION ) );
         if ( $extension !== 'csv' ) {
