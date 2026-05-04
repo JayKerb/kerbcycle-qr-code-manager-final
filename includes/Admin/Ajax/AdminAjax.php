@@ -60,8 +60,8 @@ class AdminAjax {
         }
 
         // phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified via Nonces::verify above.
-        $qr_code       = sanitize_text_field( wp_unslash( $_POST['qr_code'] ) );
-        $user_id       = intval( wp_unslash( $_POST['customer_id'] ) );
+        $qr_code       = isset( $_POST['qr_code'] ) ? sanitize_text_field( wp_unslash( $_POST['qr_code'] ) ) : '';
+        $user_id       = isset( $_POST['customer_id'] ) ? intval( wp_unslash( $_POST['customer_id'] ) ) : 0;
         $send_email    = ! empty( $_POST['send_email'] ) && get_option( 'kerbcycle_qr_enable_email', 1 );
         $send_sms      = ! empty( $_POST['send_sms'] ) && get_option( 'kerbcycle_qr_enable_sms', 0 );
         $send_reminder = ! empty( $_POST['send_reminder'] ) && get_option( 'kerbcycle_qr_enable_reminders', 0 );
@@ -140,7 +140,7 @@ class AdminAjax {
         }
 
         // phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified via Nonces::verify above.
-        $qr_code    = sanitize_text_field( wp_unslash( $_POST['qr_code'] ) );
+        $qr_code    = isset( $_POST['qr_code'] ) ? sanitize_text_field( wp_unslash( $_POST['qr_code'] ) ) : '';
         $send_email = ! empty( $_POST['send_email'] ) && get_option( 'kerbcycle_qr_enable_email', 1 );
         $send_sms   = ! empty( $_POST['send_sms'] ) && get_option( 'kerbcycle_qr_enable_sms', 0 );
         // phpcs:enable WordPress.Security.NonceVerification.Missing
@@ -285,8 +285,8 @@ class AdminAjax {
         }
 
         // phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified via Nonces::verify above.
-        $old_code = sanitize_text_field( wp_unslash( $_POST['old_code'] ) );
-        $new_code = sanitize_text_field( wp_unslash( $_POST['new_code'] ) );
+        $old_code = isset( $_POST['old_code'] ) ? sanitize_text_field( wp_unslash( $_POST['old_code'] ) ) : '';
+        $new_code = isset( $_POST['new_code'] ) ? sanitize_text_field( wp_unslash( $_POST['new_code'] ) ) : '';
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         if ( empty( $old_code ) || empty( $new_code ) ) {
@@ -313,7 +313,7 @@ class AdminAjax {
         }
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via Nonces::verify above.
-        $qr_code = sanitize_text_field( wp_unslash( $_POST['qr_code'] ) );
+        $qr_code = isset( $_POST['qr_code'] ) ? sanitize_text_field( wp_unslash( $_POST['qr_code'] ) ) : '';
 
         if ( empty( $qr_code ) ) {
             wp_send_json_error( [ 'message' => __( 'Invalid QR code', 'kerbcycle-qr-code-manager' ) ] );
@@ -342,7 +342,8 @@ class AdminAjax {
         }
 
         // phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified via Nonces::verify above.
-        if ( empty( $_FILES['import_file'] ) || ! is_uploaded_file( $_FILES['import_file']['tmp_name'] ) ) {
+        $tmp_name = isset( $_FILES['import_file'], $_FILES['import_file']['tmp_name'] ) ? wp_unslash( $_FILES['import_file']['tmp_name'] ) : '';
+        if ( ! isset( $_FILES['import_file'] ) || ! is_array( $_FILES['import_file'] ) || $tmp_name === '' || ! is_uploaded_file( $tmp_name ) ) {
             wp_send_json_error( [ 'message' => __( 'No file uploaded.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
@@ -357,7 +358,7 @@ class AdminAjax {
             wp_send_json_error( [ 'message' => __( 'Invalid file size.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
-        $handle = fopen( $_FILES['import_file']['tmp_name'], 'r' );
+        $handle = fopen( $tmp_name, 'r' );
         // phpcs:enable WordPress.Security.NonceVerification.Missing
         if ( ! $handle ) {
             wp_send_json_error( [ 'message' => __( 'Could not read uploaded file.', 'kerbcycle-qr-code-manager' ) ] );
