@@ -342,18 +342,41 @@ class AdminAjax {
         }
 
         // phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified via Nonces::verify above.
-        $tmp_name = isset( $_FILES['import_file'], $_FILES['import_file']['tmp_name'] ) ? wp_unslash( $_FILES['import_file']['tmp_name'] ) : '';
-        if ( ! isset( $_FILES['import_file'] ) || ! is_array( $_FILES['import_file'] ) || $tmp_name === '' || ! is_uploaded_file( $tmp_name ) ) {
+        if ( ! isset( $_FILES['import_file'] ) || ! is_array( $_FILES['import_file'] ) ) {
             wp_send_json_error( [ 'message' => __( 'No file uploaded.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
-        $file_name = isset( $_FILES['import_file']['name'] ) ? sanitize_file_name( wp_unslash( $_FILES['import_file']['name'] ) ) : '';
+        $upload_error = isset( $_FILES['import_file']['error'] ) ? (int) $_FILES['import_file']['error'] : UPLOAD_ERR_NO_FILE;
+        if ( UPLOAD_ERR_OK !== $upload_error ) {
+            wp_send_json_error( [ 'message' => __( 'No file uploaded.', 'kerbcycle-qr-code-manager' ) ] );
+        }
+
+        // tmp_name is a PHP-generated upload path; safety is enforced with is_uploaded_file().
+        $tmp_name = isset( $_FILES['import_file']['tmp_name'] ) && is_string( $_FILES['import_file']['tmp_name'] ) ? wp_unslash( $_FILES['import_file']['tmp_name'] ) : '';
+        if ( '' === $tmp_name || ! is_uploaded_file( $tmp_name ) ) {
+            wp_send_json_error( [ 'message' => __( 'No file uploaded.', 'kerbcycle-qr-code-manager' ) ] );
+        }
+
+        $file_name = '';
+        if ( ! empty( $_FILES['import_file']['name'] ) && is_string( $_FILES['import_file']['name'] ) ) {
+            $file_name = substr(
+                sanitize_file_name(
+                    preg_replace(
+                        '/\A\.+/',
+                        '',
+                        str_replace( "\0", '', wp_unslash( $_FILES['import_file']['name'] ) )
+                    )
+                ),
+                0,
+                255
+            );
+        }
         $extension = strtolower( pathinfo( $file_name, PATHINFO_EXTENSION ) );
         if ( $extension !== 'csv' ) {
             wp_send_json_error( [ 'message' => __( 'Only CSV files are allowed.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
-        $file_size = isset( $_FILES['import_file']['size'] ) ? (int) $_FILES['import_file']['size'] : 0;
+        $file_size = isset( $_FILES['import_file']['size'] ) && is_numeric( $_FILES['import_file']['size'] ) ? (int) $_FILES['import_file']['size'] : 0;
         if ( $file_size < 1 || $file_size > 5 * MB_IN_BYTES ) {
             wp_send_json_error( [ 'message' => __( 'Invalid file size.', 'kerbcycle-qr-code-manager' ) ] );
         }
