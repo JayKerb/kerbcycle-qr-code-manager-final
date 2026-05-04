@@ -356,7 +356,7 @@ class AdminAjax {
             wp_send_json_error( [ 'message' => __( 'No file uploaded.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
-        $file_name = isset( $_FILES['import_file']['name'] ) && is_string( $_FILES['import_file']['name'] ) ? \sanitize_file_name( wp_unslash( $_FILES['import_file']['name'] ) ) : '';
+        $file_name = isset( $_FILES['import_file']['name'] ) && is_string( $_FILES['import_file']['name'] ) ? wp_unslash( $_FILES['import_file']['name'] ) : '';
         $extension = strtolower( pathinfo( $file_name, PATHINFO_EXTENSION ) );
         if ( $extension !== 'csv' ) {
             wp_send_json_error( [ 'message' => __( 'Only CSV files are allowed.', 'kerbcycle-qr-code-manager' ) ] );
