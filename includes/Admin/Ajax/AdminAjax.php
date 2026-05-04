@@ -358,7 +358,7 @@ class AdminAjax {
             wp_send_json_error( [ 'message' => __( 'Invalid file size.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
-        $handle   = fopen( $tmp_name, 'r' );
+        $handle = fopen( $tmp_name, 'r' );
         // phpcs:enable WordPress.Security.NonceVerification.Missing
         if ( ! $handle ) {
             wp_send_json_error( [ 'message' => __( 'Could not read uploaded file.', 'kerbcycle-qr-code-manager' ) ] );
