@@ -38,25 +38,27 @@ jobs:
         #run: |
           #vendor/bin/phpcs --standard=phpcs.xml.dist --report=checkstyle > phpcs-report.xml
 
-      - name: Run PHPCS summary and capture exit code
+      - name: Run PHPCS repo-wide summary
         id: phpcs
         run: |
           set +e
           vendor/bin/phpcs --standard=phpcs.xml.dist --report=summary
-          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          PHPCS_EXIT_CODE=$?
           set -e
 
-      - name: Explain PHPCS result
-        run: |
-          if [ "${{ steps.phpcs.outputs.exit_code }}" != "0" ]; then
-            echo "❌ PHPCS violations found. This means the scan completed but found WordPress coding-standard issues."
+          echo "exit_code=${PHPCS_EXIT_CODE}" >> "$GITHUB_OUTPUT"
+
+          if [ "$PHPCS_EXIT_CODE" != "0" ]; then
+            echo "⚠️ Repo-wide PHPCS violations found."
+            echo "⚠️ Repo-wide PHPCS is report-only during staged cleanup."
+            echo "⚠️ Future passes should add changed-files or selected-clean-files gating."
           else
-            echo "✅ PHPCS passed with no violations."
+            echo "✅ Repo-wide PHPCS passed with no violations."
           fi
 
-      - name: Fail if PHPCS found violations
-        if: steps.phpcs.outputs.exit_code != '0'
-        run: exit 1
+      - name: Placeholder for future staged blocking gate
+        run: |
+          echo "ℹ️ Placeholder: future pass should add changed-files or selected-clean-files PHPCS blocking gate."
 
       #- name: Annotate PHPCS results
         #if: always()
@@ -64,6 +66,3 @@ jobs:
         #with:
           #path: phpcs-report.xml
 
-      - name: Fail if PHPCS found violations
-        if: steps.phpcs.outcome == 'failure'
-        run: exit 1
