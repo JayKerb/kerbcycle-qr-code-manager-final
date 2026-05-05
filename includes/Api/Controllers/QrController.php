@@ -19,8 +19,7 @@ use Kerbcycle\QrCode\Data\Repositories\QrCodeRepository;
  * @package    Kerbcycle\QrCode
  * @subpackage Kerbcycle\QrCode\Api\Controllers
  */
-class QrController
-{
+class QrController {
 	/**
 	 * Handle the QR code scan.
 	 *
@@ -32,18 +31,18 @@ class QrController
 	 */
 	public function handle_qr_code_scan( WP_REST_Request $request ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			return new \WP_Error( 'rest_forbidden', __( 'Unauthorized', 'kerbcycle' ), array( 'status' => 403 ) );
+			return new \WP_Error( 'rest_forbidden', __( 'Unauthorized', 'kerbcycle-qr-code-manager' ), array( 'status' => 403 ) );
 		}
 
 		$qr_code = sanitize_text_field( $request->get_param( 'qr_code' ) );
 		$user_id = intval( $request->get_param( 'user_id' ) );
 
 		if ( '' === $qr_code ) {
-			return new \WP_Error( 'invalid_qr_code', __( 'QR code is required.', 'kerbcycle' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'invalid_qr_code', __( 'QR code is required.', 'kerbcycle-qr-code-manager' ), array( 'status' => 400 ) );
 		}
 
 		if ( $user_id < 1 || ! get_userdata( $user_id ) ) {
-			return new \WP_Error( 'invalid_user', __( 'Invalid customer selected.', 'kerbcycle' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'invalid_user', __( 'Invalid customer selected.', 'kerbcycle-qr-code-manager' ), array( 'status' => 400 ) );
 		}
 
 		$nonce_check = Nonces::verify( 'kerbcycle_qr_nonce', 'nonce', $request );
@@ -57,7 +56,7 @@ class QrController
 			return new WP_REST_Response(
 				array(
 					'success' => false,
-					'message' => __( 'QR code already assigned.', 'kerbcycle' ),
+					'message' => __( 'QR code already assigned.', 'kerbcycle-qr-code-manager' ),
 				),
 				409
 			);
@@ -81,7 +80,7 @@ class QrController
 		return new WP_REST_Response(
 			array(
 				'success'      => true,
-				'message'      => __( 'QR code processed', 'kerbcycle' ),
+				'message'      => __( 'QR code processed', 'kerbcycle-qr-code-manager' ),
 				'qr_code'      => $qr_code,
 				'user_id'      => $user_id,
 				'display_name' => $name,
@@ -101,13 +100,14 @@ class QrController
 	 */
 	public function get_qr_status( WP_REST_Request $request ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			return new \WP_Error( 'rest_forbidden', __( 'Unauthorized', 'kerbcycle' ), array( 'status' => 403 ) );
+			return new \WP_Error( 'rest_forbidden', __( 'Unauthorized', 'kerbcycle-qr-code-manager' ), array( 'status' => 403 ) );
 		}
 
 		global $wpdb;
 		$qr_code = sanitize_text_field( $request['qr_code'] );
 		$table   = $wpdb->prefix . 'kerbcycle_qr_codes';
-		$result  = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE qr_code = %s", $qr_code ) );
+		$query   = $wpdb->prepare( 'SELECT * FROM ' . esc_sql( $table ) . ' WHERE qr_code = %s', $qr_code );
+		$result  = $wpdb->get_row( $query );
 		return $result ? rest_ensure_response( $result ) : new \WP_Error( 'not_found', 'QR Code not found', array( 'status' => 404 ) );
 	}
 }
