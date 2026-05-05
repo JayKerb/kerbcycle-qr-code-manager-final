@@ -172,7 +172,7 @@ class Activator {
 			\Kerbcycle\QrCode\Helpers\Capabilities::manage_operations() => true,
 		);
 
-		add_role( 'kerbcycle_operator', __( 'KerbCycle Operator', 'kerbcycle' ), $operator_caps );
+		add_role( 'kerbcycle_operator', __( 'KerbCycle Operator', 'kerbcycle-qr-code-manager' ), $operator_caps );
 
 		$operator = get_role( 'kerbcycle_operator' );
 		if ( $operator ) {
