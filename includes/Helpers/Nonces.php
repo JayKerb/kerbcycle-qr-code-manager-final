@@ -44,7 +44,7 @@ class Nonces {
 				wp_send_json_error( array( 'message' => $message ), 403 );
 			}
 
-			wp_die( esc_html( $message ), esc_html__( 'Error', 'kerbcycle-qr-code-manager' ), 403 );
+			wp_die( esc_html( $message ), esc_html( __( 'Error', 'kerbcycle-qr-code-manager' ) ), 403 );
 		}
 
 		return true;
