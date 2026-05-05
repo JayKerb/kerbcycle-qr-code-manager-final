@@ -28,13 +28,13 @@ class Nonces {
 		if ( $request instanceof \WP_REST_Request ) {
 			$nonce = $request->get_param( $field );
 		} elseif ( isset( $_REQUEST[ $field ] ) ) {
-			$nonce = $_REQUEST[ $field ];
+			$nonce = sanitize_text_field( wp_unslash( $_REQUEST[ $field ] ) );
 		}
 
 		$nonce = sanitize_text_field( $nonce );
 
 		if ( ! wp_verify_nonce( $nonce, $action ) ) {
-			$message = __( 'Security check failed', 'kerbcycle' );
+			$message = __( 'Security check failed', 'kerbcycle-qr-code-manager' );
 
 			if ( $request instanceof \WP_REST_Request ) {
 				return new \WP_Error( 'rest_nonce_invalid', $message, array( 'status' => 403 ) );
@@ -44,7 +44,7 @@ class Nonces {
 				wp_send_json_error( array( 'message' => $message ), 403 );
 			}
 
-			wp_die( $message, __( 'Error', 'kerbcycle' ), 403 );
+			wp_die( esc_html( $message ), esc_html( __( 'Error', 'kerbcycle-qr-code-manager' ) ), 403 );
 		}
 
 		return true;
