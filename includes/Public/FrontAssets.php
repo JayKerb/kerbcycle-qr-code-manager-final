@@ -32,12 +32,12 @@ class FrontAssets {
 	 */
 	public function enqueue_scripts() {
 		// Always register OSRM assets so they are available to the shortcode.
-		wp_register_style( 'leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', array(), null );
-		wp_register_style( 'lrm', 'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css', array(), null );
-		wp_register_style( 'leaflet-geocoder', 'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css', array(), null );
-		wp_register_script( 'leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', array(), null, true );
-		wp_register_script( 'lrm', 'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js', array( 'leaflet' ), null, true );
-		wp_register_script( 'leaflet-geocoder', 'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js', array( 'leaflet' ), null, true );
+		wp_register_style( 'leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', array(), '1.9.4' );
+		wp_register_style( 'lrm', 'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css', array(), KERBCYCLE_QR_VERSION );
+		wp_register_style( 'leaflet-geocoder', 'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css', array(), KERBCYCLE_QR_VERSION );
+		wp_register_script( 'leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', array(), '1.9.4', true );
+		wp_register_script( 'lrm', 'https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js', array( 'leaflet' ), KERBCYCLE_QR_VERSION, true );
+		wp_register_script( 'leaflet-geocoder', 'https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js', array( 'leaflet' ), KERBCYCLE_QR_VERSION, true );
 		wp_register_script(
 			'kc-osrm',
 			KERBCYCLE_QR_URL . 'assets/js/kc-osrm.js',
@@ -73,14 +73,14 @@ class FrontAssets {
 		if ( $has_scanner || $has_table ) {
 			$deps = array();
 			if ( $has_scanner ) {
-				wp_enqueue_script( 'html5-qrcode', 'https://unpkg.com/html5-qrcode', array(), null, true );
+				wp_enqueue_script( 'html5-qrcode', 'https://unpkg.com/html5-qrcode', array(), KERBCYCLE_QR_VERSION, true );
 				$deps[] = 'html5-qrcode';
 
 				wp_enqueue_script(
 					'zxing-browser',
 					'https://unpkg.com/@zxing/browser@latest',
 					array(),
-					null,
+					KERBCYCLE_QR_VERSION,
 					true
 				);
 				$deps[] = 'zxing-browser';
@@ -89,7 +89,7 @@ class FrontAssets {
 					'jsqr',
 					'https://unpkg.com/jsqr/dist/jsQR.js',
 					array(),
-					null,
+					KERBCYCLE_QR_VERSION,
 					true
 				);
 				$deps[] = 'jsqr';
