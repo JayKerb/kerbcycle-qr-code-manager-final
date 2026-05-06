@@ -41,7 +41,7 @@ class OsrmService {
 	 * Determine the current endpoint based on selected environment.
 	 */
 	public static function current_endpoint( $options = null ) {
-		$options     = $options ?: self::get_options();
+		$options     = $options ? $options : self::get_options();
 		$environment = $options['env'];
 		$map         = array(
 			'dev'   => $options['endpoint_dev'],
