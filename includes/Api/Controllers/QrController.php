@@ -107,7 +107,8 @@ class QrController
 		global $wpdb;
 		$qr_code = sanitize_text_field( $request['qr_code'] );
 		$table   = $wpdb->prefix . 'kerbcycle_qr_codes';
-		$result  = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM $table WHERE qr_code = %s", $qr_code ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; qr_code value is prepared.
+		$result  = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE qr_code = %s", $qr_code ) );
 		return $result ? rest_ensure_response( $result ) : new \WP_Error( 'not_found', 'QR Code not found', array( 'status' => 404 ) );
 	}
 }
