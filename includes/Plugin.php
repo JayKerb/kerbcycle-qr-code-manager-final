@@ -2,7 +2,7 @@
 
 namespace Kerbcycle\QrCode;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -10,8 +10,8 @@ if (!defined('ABSPATH')) {
  * Main Plugin class.
  * Orchestrates the entire plugin.
  */
-class Plugin
-{
+class Plugin {
+
     /**
      * The single instance of the class.
      */
@@ -21,9 +21,8 @@ class Plugin
      * Main Plugin Instance.
      * Ensures only one instance of the plugin is loaded.
      */
-    public static function instance()
-    {
-        if (is_null(self::$_instance)) {
+    public static function instance() {
+        if ( is_null( self::$_instance ) ) {
             self::$_instance = new self();
         }
         return self::$_instance;
@@ -32,8 +31,7 @@ class Plugin
     /**
      * Plugin constructor.
      */
-    private function __construct()
-    {
+    private function __construct() {
         $this->init();
     }
 
@@ -42,12 +40,11 @@ class Plugin
      *
      * Load the different components of the plugin.
      */
-    public function init()
-    {
+    public function init() {
         \Kerbcycle\QrCode\Admin\Pages\RoutingPage::instance();
 
         // Load admin components
-        if (is_admin()) {
+        if ( is_admin() ) {
             new \Kerbcycle\QrCode\Admin\Admin();
             new \Kerbcycle\QrCode\Admin\Assets\AdminAssets();
             new \Kerbcycle\QrCode\Admin\Ajax\AdminAjax();
