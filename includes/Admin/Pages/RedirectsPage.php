@@ -20,7 +20,7 @@ class RedirectsPage {
 	 * @since    1.0.0
 	 */
 	public function bookly_appointments() {
-		wp_redirect( admin_url( 'admin.php?page=bookly-appointments' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=bookly-appointments' ) );
 		exit;
 	}
 
@@ -30,7 +30,7 @@ class RedirectsPage {
 	 * @since    1.0.0
 	 */
 	public function terawallet() {
-		wp_redirect( admin_url( 'admin.php?page=woo-wallet' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=woo-wallet' ) );
 		exit;
 	}
 }
