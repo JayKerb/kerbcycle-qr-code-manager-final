@@ -96,17 +96,17 @@ class AdminAssets {
 		if ( $scanner_enabled ) {
 			wp_enqueue_script(
 				'zxing-browser',
-				'https://unpkg.com/@zxing/browser@latest',
+				'https://unpkg.com/@zxing/browser@0.2.0',
 				array(),
-				'latest',
+				'0.2.0',
 				true
 			);
 
 			wp_enqueue_script(
 				'jsqr',
-				'https://unpkg.com/jsqr/dist/jsQR.js',
+				'https://unpkg.com/jsqr@1.4.0/dist/jsQR.js',
 				array(),
-				KERBCYCLE_QR_VERSION,
+				'1.4.0',
 				true
 			);
 
