@@ -24,11 +24,11 @@ class AiSettingsService {
      */
 	public static function defaults() {
 		return array(
-			'env'              => 'dev',
-			'webhook_url_dev'  => '',
+			'env'               => 'dev',
+			'webhook_url_dev'   => '',
 			'webhook_url_stage' => '',
-			'webhook_url_prod' => '',
-			'timeout'          => 20,
+			'webhook_url_prod'  => '',
+			'timeout'           => 20,
 		);
 	}
 
