@@ -28,7 +28,7 @@ class EmailService {
 	 * @return bool|\WP_Error True on success, WP_Error on failure.
 	 */
 	public function send_notification( $user_id, $qr_code, $type = 'assigned', array $vars = [] ) {
-		$user = get_userdata($user_id);
+		$user = get_userdata( $user_id );
 		if ( ! $user || empty( $user->user_email ) ) {
 			return new \WP_Error( 'email_config', __( 'Missing user email', 'kerbcycle-qr-code-manager' ) );
 		}
@@ -41,10 +41,10 @@ class EmailService {
 			$vars
 		);
 
-		$rendered = MessagesService::render($type, $vars);
+		$rendered = MessagesService::render( $type, $vars );
 
-		$subject = 'KerbCycle: ' . ucfirst($type);
-		$sent    = wp_mail($user->user_email, $subject, $rendered['email']);
+		$subject = 'KerbCycle: ' . ucfirst( $type );
+		$sent    = wp_mail( $user->user_email, $subject, $rendered['email'] );
 
 		if ( ! $sent ) {
 			return new \WP_Error( 'email_send', __( 'Failed to send email', 'kerbcycle-qr-code-manager' ) );
