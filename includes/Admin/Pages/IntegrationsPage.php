@@ -35,7 +35,7 @@ class IntegrationsPage {
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($summaries as $summary) : ?>
+                    <?php foreach ( $summaries as $summary ) : ?>
                         <tr>
                             <td><?php echo esc_html( $summary['name'] ); ?></td>
                             <td><?php echo $summary['active'] ? esc_html__( 'Active', 'kerbcycle-qr-code-manager' ) : esc_html__( 'Inactive', 'kerbcycle-qr-code-manager' ); ?></td>
