@@ -2,7 +2,7 @@
 
 namespace Kerbcycle\QrCode\Services;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
@@ -16,8 +16,7 @@ use Kerbcycle\QrCode\Data\Repositories\MessageLogRepository;
  * @package    Kerbcycle\QrCode
  * @subpackage Kerbcycle\QrCode\Services
  */
-class EmailService
-{
+class EmailService {
 	/**
 	 * Send a notification email.
 	 *
@@ -28,28 +27,27 @@ class EmailService
 	 *
 	 * @return bool|\WP_Error True on success, WP_Error on failure.
 	 */
-	public function send_notification($user_id, $qr_code, $type = 'assigned', array $vars = [])
-	{
-		$user = get_userdata($user_id);
-		if (!$user || empty($user->user_email)) {
-			return new \WP_Error('email_config', __('Missing user email', 'kerbcycle'));
+	public function send_notification( $user_id, $qr_code, $type = 'assigned', array $vars = [] ) {
+		$user = get_userdata( $user_id );
+		if ( ! $user || empty( $user->user_email ) ) {
+			return new \WP_Error( 'email_config', __( 'Missing user email', 'kerbcycle-qr-code-manager' ) );
 		}
 
 		$vars = array_merge(
 			[
-				'user' => $user->display_name ?: $user->user_login,
+				'user' => $user->display_name ? $user->display_name : $user->user_login,
 				'code' => $qr_code,
 			],
 			$vars
 		);
 
-		$rendered = MessagesService::render($type, $vars);
+		$rendered = MessagesService::render( $type, $vars );
 
-		$subject = 'KerbCycle: ' . ucfirst($type);
-		$sent    = wp_mail($user->user_email, $subject, $rendered['email']);
+		$subject = 'KerbCycle: ' . ucfirst( $type );
+		$sent    = wp_mail( $user->user_email, $subject, $rendered['email'] );
 
-		if (!$sent) {
-			return new \WP_Error('email_send', __('Failed to send email', 'kerbcycle'));
+		if ( ! $sent ) {
+			return new \WP_Error( 'email_send', __( 'Failed to send email', 'kerbcycle-qr-code-manager' ) );
 		}
 
 		// Log the email.
