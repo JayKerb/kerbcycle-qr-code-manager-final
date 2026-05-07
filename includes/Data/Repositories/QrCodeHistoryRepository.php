@@ -38,9 +38,9 @@ class QrCodeHistoryRepository {
     public function recent( $limit ) {
         global $wpdb;
         $limit = absint( $limit );
-
-        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; limit value is prepared.
+        
         return $wpdb->get_results(
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; limit value is prepared.
             $wpdb->prepare( "SELECT * FROM $this->table ORDER BY changed_at DESC LIMIT %d", $limit )
         );
     }
