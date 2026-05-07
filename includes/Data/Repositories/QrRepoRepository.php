@@ -2,7 +2,7 @@
 
 namespace Kerbcycle\QrCode\Data\Repositories;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
