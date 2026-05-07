@@ -2,20 +2,18 @@
 
 namespace Kerbcycle\QrCode\Data\Repositories;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
 /**
  * Repository for QR code generator table.
  */
-class QrRepoRepository
-{
+class QrRepoRepository {
     /** @var string */
     private $table;
 
-    public function __construct()
-    {
+    public function __construct() {
         global $wpdb;
         $this->table = $wpdb->prefix . 'kerbcycle_qr_repo';
     }
@@ -23,17 +21,18 @@ class QrRepoRepository
     /**
      * Check if a code already exists in the repository.
      */
-    public function exists(string $code): bool
-    {
+    public function exists( string $code ): bool {
         global $wpdb;
-        return (bool) $wpdb->get_var($wpdb->prepare("SELECT id FROM $this->table WHERE code = %s", $code));
+        return (bool) $wpdb->get_var(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; code value is prepared.
+			$wpdb->prepare( "SELECT id FROM $this->table WHERE code = %s", $code )
+		);
     }
 
     /**
      * Insert a new code.
      */
-    public function insert(string $code, ?int $user_id = null)
-    {
+    public function insert( string $code, ?int $user_id = null ) {
         global $wpdb;
         return $wpdb->insert(
             $this->table,
@@ -42,7 +41,7 @@ class QrRepoRepository
                 'status'     => 'available',
                 'created_by' => $user_id,
             ],
-            ['%s', '%s', '%d']
+            [ '%s', '%s', '%d' ]
         );
     }
 
@@ -51,15 +50,15 @@ class QrRepoRepository
      *
      * @return array[]
      */
-    public function list_between(string $from, string $to): array
-    {
+    public function list_between( string $from, string $to ): array {
         global $wpdb;
-        return $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT id, code, status, created_at FROM $this->table WHERE DATE(created_at) BETWEEN %s AND %s ORDER BY created_at ASC",
-                $from,
-                $to
-            ),
+		return $wpdb->get_results(
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; date values are prepared.
+				"SELECT id, code, status, created_at FROM $this->table WHERE DATE(created_at) BETWEEN %s AND %s ORDER BY created_at ASC",
+				$from,
+				$to
+			),
             ARRAY_A
         );
     }
