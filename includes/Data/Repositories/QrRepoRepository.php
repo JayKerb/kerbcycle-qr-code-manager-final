@@ -52,9 +52,9 @@ class QrRepoRepository {
      */
     public function list_between( string $from, string $to ): array {
         global $wpdb;
-        return $wpdb->get_results(
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; date values are prepared.
+        return $wpdb->get_results(			
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; date values are prepared.
 				"SELECT id, code, status, created_at FROM $this->table WHERE DATE(created_at) BETWEEN %s AND %s ORDER BY created_at ASC",
 				$from,
 				$to
