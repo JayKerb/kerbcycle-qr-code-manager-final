@@ -62,8 +62,8 @@ class IntegrationsService {
         );
 
         // WP SMS - messaging
-        $sms_active   = class_exists( 'WP_SMS' ) || defined( 'WP_SMS_VERSION' );
-        $sms_summary  = $sms_active ? __( 'WP SMS active. SMS notifications available.', 'kerbcycle-qr-code-manager' ) : __( 'WP SMS inactive.', 'kerbcycle-qr-code-manager' );
+        $sms_active  = class_exists( 'WP_SMS' ) || defined( 'WP_SMS_VERSION' );
+        $sms_summary = $sms_active ? __( 'WP SMS active. SMS notifications available.', 'kerbcycle-qr-code-manager' ) : __( 'WP SMS inactive.', 'kerbcycle-qr-code-manager' );
         $summaries[] = array(
             'name'    => 'WP SMS',
             'active'  => $sms_active,
