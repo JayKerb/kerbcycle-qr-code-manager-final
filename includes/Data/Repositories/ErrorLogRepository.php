@@ -74,11 +74,11 @@ class ErrorLogRepository {
 			array_push( $params, $like, $like, $like, $like );
 		}
 		if ( '' !== $status ) {
-			$where    .= ' AND status = %s';
+			$where   .= ' AND status = %s';
 			$params[] = $status;
 		}
 		if ( '' !== $page ) {
-			$where    .= ' AND page = %s';
+			$where   .= ' AND page = %s';
 			$params[] = $page;
 		}
 
@@ -106,11 +106,11 @@ class ErrorLogRepository {
 			array_push( $params, $like, $like, $like, $like );
 		}
 		if ( '' !== $status ) {
-			$where    .= ' AND status = %s';
+			$where   .= ' AND status = %s';
 			$params[] = $status;
 		}
 		if ( '' !== $page ) {
-			$where    .= ' AND page = %s';
+			$where   .= ' AND page = %s';
 			$params[] = $page;
 		}
 
