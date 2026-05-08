@@ -2,7 +2,7 @@
 
 namespace Kerbcycle\QrCode\Admin\Pages;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -13,16 +13,14 @@ if (!defined('ABSPATH')) {
  * @package    Kerbcycle\QrCode
  * @subpackage Kerbcycle\QrCode\Admin\Pages
  */
-class SettingsPage
-{
+class SettingsPage {
     /**
      * Initialize the class and set its properties.
      *
      * @since    1.0.0
      */
-    public function __construct()
-    {
-        add_action('admin_init', [$this, 'register_settings']);
+    public function __construct() {
+        add_action( 'admin_init', [ $this, 'register_settings' ] );
     }
 
     /**
@@ -30,8 +28,7 @@ class SettingsPage
      *
      * @since    1.0.0
      */
-    public function render()
-    {
+    public function render() {
         ?>
         <div class="wrap">
             <h1><?php esc_html_e( 'KerbCycle QR Settings', 'kerbcycle-qr-code-manager' ); ?></h1>
@@ -51,17 +48,16 @@ class SettingsPage
      *
      * @since    1.0.0
      */
-    public function register_settings()
-    {
-        register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_email');
-        register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_sms');
-        register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_reminders');
-        register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_enable_scanner');
-        register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_disable_drag_drop');
-        register_setting('kerbcycle_qr_settings', 'kerbcycle_qr_codes_per_page');
-        register_setting('kerbcycle_qr_settings', 'kerbcycle_history_per_page');
-        register_setting('kerbcycle_qr_settings', 'kerbcycle_sms_history_per_page');
-        register_setting('kerbcycle_qr_settings', 'kerbcycle_email_history_per_page');
+    public function register_settings() {
+        register_setting( 'kerbcycle_qr_settings', 'kerbcycle_qr_enable_email' );
+        register_setting( 'kerbcycle_qr_settings', 'kerbcycle_qr_enable_sms' );
+        register_setting( 'kerbcycle_qr_settings', 'kerbcycle_qr_enable_reminders' );
+        register_setting( 'kerbcycle_qr_settings', 'kerbcycle_qr_enable_scanner' );
+        register_setting( 'kerbcycle_qr_settings', 'kerbcycle_qr_disable_drag_drop' );
+        register_setting( 'kerbcycle_qr_settings', 'kerbcycle_qr_codes_per_page' );
+        register_setting( 'kerbcycle_qr_settings', 'kerbcycle_history_per_page' );
+        register_setting( 'kerbcycle_qr_settings', 'kerbcycle_sms_history_per_page' );
+        register_setting( 'kerbcycle_qr_settings', 'kerbcycle_email_history_per_page' );
 
         add_settings_section(
             'kerbcycle_qr_main',
@@ -143,81 +139,72 @@ class SettingsPage
         );
     }
 
-    public function render_enable_email_field()
-    {
-        $value = get_option('kerbcycle_qr_enable_email', 1);
+    public function render_enable_email_field() {
+        $value = get_option( 'kerbcycle_qr_enable_email', 1 );
         ?>
         <input type="checkbox" name="kerbcycle_qr_enable_email" value="1" <?php checked( 1, $value ); ?> />
         <span class="description"><?php esc_html_e( 'Send email when QR codes are assigned', 'kerbcycle-qr-code-manager' ); ?></span>
         <?php
     }
 
-    public function render_enable_sms_field()
-    {
-        $value = get_option('kerbcycle_qr_enable_sms', 0);
+    public function render_enable_sms_field() {
+        $value = get_option( 'kerbcycle_qr_enable_sms', 0 );
         ?>
         <input type="checkbox" name="kerbcycle_qr_enable_sms" value="1" <?php checked( 1, $value ); ?> />
         <span class="description"><?php esc_html_e( 'Send SMS when QR codes are assigned', 'kerbcycle-qr-code-manager' ); ?></span>
         <?php
     }
 
-    public function render_enable_reminders_field()
-    {
-        $value = get_option('kerbcycle_qr_enable_reminders', 0);
+    public function render_enable_reminders_field() {
+        $value = get_option( 'kerbcycle_qr_enable_reminders', 0 );
         ?>
         <input type="checkbox" name="kerbcycle_qr_enable_reminders" value="1" <?php checked( 1, $value ); ?> />
         <span class="description"><?php esc_html_e( 'Schedule automated reminders after assignment', 'kerbcycle-qr-code-manager' ); ?></span>
         <?php
     }
 
-    public function render_enable_scanner_field()
-    {
-        $value = get_option('kerbcycle_qr_enable_scanner', 1);
+    public function render_enable_scanner_field() {
+        $value = get_option( 'kerbcycle_qr_enable_scanner', 1 );
         ?>
         <input type="checkbox" name="kerbcycle_qr_enable_scanner" value="1" <?php checked( 1, $value ); ?> />
         <span class="description"><?php esc_html_e( 'Allow camera use on the dashboard scanner', 'kerbcycle-qr-code-manager' ); ?></span>
         <?php
     }
 
-    public function render_disable_drag_drop_field()
-    {
-        $value = get_option('kerbcycle_qr_disable_drag_drop', 0);
+    public function render_disable_drag_drop_field() {
+        $value = get_option( 'kerbcycle_qr_disable_drag_drop', 0 );
         ?>
         <input type="checkbox" name="kerbcycle_qr_disable_drag_drop" value="1" <?php checked( 1, $value ); ?> />
         <span class="description"><?php esc_html_e( 'Prevent drag-and-drop reordering on the QR Codes table', 'kerbcycle-qr-code-manager' ); ?></span>
         <?php
     }
 
-    public function render_codes_per_page_field()
-    {
-        $value = get_option('kerbcycle_qr_codes_per_page', 20);
+    public function render_codes_per_page_field() {
+        $value = get_option( 'kerbcycle_qr_codes_per_page', 20 );
         ?>
         <input type="number" min="1" name="kerbcycle_qr_codes_per_page" value="<?php echo esc_attr( $value ); ?>" />
         <span class="description"><?php esc_html_e( 'Number of QR codes displayed per page', 'kerbcycle-qr-code-manager' ); ?></span>
         <?php
     }
 
-    public function render_history_per_page_field()
-    {
-        $value = get_option('kerbcycle_history_per_page', 20);
+    public function render_history_per_page_field() {
+        $value = get_option( 'kerbcycle_history_per_page', 20 );
         ?>
         <input type="number" min="1" name="kerbcycle_history_per_page" value="<?php echo esc_attr( $value ); ?>" />
         <span class="description"><?php esc_html_e( 'Number of history entries displayed per page', 'kerbcycle-qr-code-manager' ); ?></span>
         <?php
     }
 
-    public function render_sms_history_per_page_field()
-    {
-        $value = get_option('kerbcycle_sms_history_per_page', 20);
+    public function render_sms_history_per_page_field() {
+        $value = get_option( 'kerbcycle_sms_history_per_page', 20 );
         ?>
         <input type="number" min="1" name="kerbcycle_sms_history_per_page" value="<?php echo esc_attr( $value ); ?>" />
         <span class="description"><?php esc_html_e( 'Number of SMS history entries displayed per page', 'kerbcycle-qr-code-manager' ); ?></span>
         <?php
     }
 
-    public function render_email_history_per_page_field()
-    {
-        $value = get_option('kerbcycle_email_history_per_page', 20);
+    public function render_email_history_per_page_field() {
+        $value = get_option( 'kerbcycle_email_history_per_page', 20 );
         ?>
         <input type="number" min="1" name="kerbcycle_email_history_per_page" value="<?php echo esc_attr( $value ); ?>" />
         <span class="description"><?php esc_html_e( 'Number of email history entries displayed per page', 'kerbcycle-qr-code-manager' ); ?></span>
