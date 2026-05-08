@@ -2,7 +2,7 @@
 
 namespace Kerbcycle\QrCode\Data\Repositories;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -12,8 +12,7 @@ if (!defined('ABSPATH')) {
  * @package    Kerbcycle\QrCode
  * @subpackage Kerbcycle\QrCode\Data\Repositories
  */
-class ErrorLogRepository
-{
+class ErrorLogRepository {
 	private $table;
 
 	public function __construct() {
