@@ -52,7 +52,7 @@ class Notices {
 		$sanitized_message = \wp_kses_post( $message );
 		$page              = $args['page'];
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin notice state used for logging context; no server-side state is changed here.
-		if ( '' === $page && isset( $_GET['page'] ) ) {			
+		if ( '' === $page && isset( $_GET['page'] ) ) {
 			$page = \sanitize_text_field( \wp_unslash( $_GET['page'] ) );
 		}
 
