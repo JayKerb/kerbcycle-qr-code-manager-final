@@ -43,7 +43,7 @@ class AiSettingsPage {
      * Render the admin page.
      */
     public function render() {
-        $options = AiSettingsService::get_options();
+        $options     = AiSettingsService::get_options();
         $webhook_url = AiSettingsService::current_webhook_url( $options );
         ?>
         <div class="wrap">
@@ -154,7 +154,7 @@ class AiSettingsPage {
     public function render_environment_field() {
         $options = AiSettingsService::get_options();
         ?>
-        <select name="<?php echo esc_attr(self::OPTION_KEY); ?>[env]">
+        <select name="<?php echo esc_attr( self::OPTION_KEY ); ?>[env]">
             <option value="dev" <?php selected( $options['env'], 'dev' ); ?>><?php esc_html_e( 'Development', 'kerbcycle-qr-code-manager' ); ?></option>
             <option value="stage" <?php selected( $options['env'], 'stage' ); ?>><?php esc_html_e( 'Staging', 'kerbcycle-qr-code-manager' ); ?></option>
             <option value="prod" <?php selected( $options['env'], 'prod' ); ?>><?php esc_html_e( 'Production', 'kerbcycle-qr-code-manager' ); ?></option>
