@@ -53,6 +53,7 @@ class Notices {
 		$page              = $args['page'];
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin notice state used for logging context; no server-side state is changed here.
 		if ( '' === $page && isset( $_GET['page'] ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin notice state used for logging context; no server-side state is changed here.
 			$page = \sanitize_text_field( \wp_unslash( $_GET['page'] ) );
 		}
 
