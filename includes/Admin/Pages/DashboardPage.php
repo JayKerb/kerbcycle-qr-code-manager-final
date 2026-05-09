@@ -2,8 +2,8 @@
 
 namespace Kerbcycle\QrCode\Admin\Pages;
 
-if (!defined('ABSPATH')) {
-    exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
 }
 
 use Kerbcycle\QrCode\Admin\Notices;
@@ -15,8 +15,7 @@ use Kerbcycle\QrCode\Admin\Notices;
  * @package    Kerbcycle\QrCode
  * @subpackage Kerbcycle\QrCode\Admin\Pages
  */
-class DashboardPage
-{
+class DashboardPage {
     /**
      * Render the dashboard page.
      *
@@ -26,12 +25,23 @@ class DashboardPage
     {
         global $wpdb;
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
+        $status_filter = isset($_GET['status_filter']) ? sanitize_text_field(wp_unslash($_GET['status_filter'])) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
+        $start_date = isset($_GET['start_date']) ? sanitize_text_field(wp_unslash($_GET['start_date'])) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
+        $end_date = isset($_GET['end_date']) ? sanitize_text_field(wp_unslash($_GET['end_date'])) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
+        $search = isset($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
+        $current_page = isset($_GET['paged']) ? max(1, absint(wp_unslash($_GET['paged']))) : 1;
+
         $request_args = [
-            'status_filter' => isset($_GET['status_filter']) ? wp_unslash($_GET['status_filter']) : '',
-            'start_date'    => isset($_GET['start_date']) ? wp_unslash($_GET['start_date']) : '',
-            'end_date'      => isset($_GET['end_date']) ? wp_unslash($_GET['end_date']) : '',
-            'search'        => isset($_GET['s']) ? wp_unslash($_GET['s']) : '',
-            'paged'         => isset($_GET['paged']) ? wp_unslash($_GET['paged']) : 1,
+            'status_filter' => $status_filter,
+            'start_date'    => $start_date,
+            'end_date'      => $end_date,
+            'search'        => $search,
+            'paged'         => $current_page,
         ];
 
         $listing_data = self::get_listing_data($request_args);
@@ -50,7 +60,8 @@ class DashboardPage
 
         $pagination_links = self::build_pagination_links($current_page, $total_pages, $listing_data['filters']);
 
-        $table           = $wpdb->prefix . 'kerbcycle_qr_codes';
+        $table = $wpdb->prefix . 'kerbcycle_qr_codes';
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query has no user-supplied SQL fragments.
         $available_codes = $wpdb->get_results("SELECT qr_code FROM $table WHERE status = 'available' ORDER BY id DESC");
         ?>
         <div class="wrap">
@@ -58,7 +69,7 @@ class DashboardPage
             <?php
             Notices::add(
                 'info',
-                esc_html__('Select a customer and scan or choose a QR code to assign.', 'kerbcycle'),
+                esc_html__('Select a customer and scan or choose a QR code to assign.', 'kerbcycle-qr-code-manager'),
                 [
                     'log_type' => 'dashboard_instruction',
                     'page'     => 'kerbcycle-qr-manager',
@@ -75,8 +86,8 @@ class DashboardPage
         ?>
                 <?php if ($scanner_enabled) : ?>
                     <div class="qr-scanner-actions">
-                        <button id="dashboard-add-qr-btn" class="button button-primary"><?php esc_html_e('Add QR Code', 'kerbcycle'); ?></button>
-                        <button id="dashboard-reset-scan-btn" class="button"><?php esc_html_e('Scan Reset', 'kerbcycle'); ?></button>
+                        <button id="dashboard-add-qr-btn" class="button button-primary"><?php esc_html_e('Add QR Code', 'kerbcycle-qr-code-manager'); ?></button>
+                        <button id="dashboard-reset-scan-btn" class="button"><?php esc_html_e('Scan Reset', 'kerbcycle-qr-code-manager'); ?></button>
                     </div>
                     <div class="qr-scanner-customer">
                         <div class="qr-scanner-customer-select">
@@ -85,20 +96,20 @@ class DashboardPage
                                 'name'              => 'dashboard_customer_id',
                                 'id'                => 'dashboard-customer-id',
                                 'class'             => 'kc-searchable',
-                                'show_option_none'  => __('Select Customer', 'kerbcycle'),
+                                'show_option_none'  => __('Select Customer', 'kerbcycle-qr-code-manager'),
                                 'option_none_value' => ''
                             ));
                     ?>
-                            <p class="description"><?php esc_html_e('Customer Search', 'kerbcycle'); ?></p>
+                            <p class="description"><?php esc_html_e('Customer Search', 'kerbcycle-qr-code-manager'); ?></p>
                         </div>
-                        <button id="dashboard-assign-qr-btn" class="button button-primary"><?php esc_html_e('Assign QR Code', 'kerbcycle'); ?></button>
+                        <button id="dashboard-assign-qr-btn" class="button button-primary"><?php esc_html_e('Assign QR Code', 'kerbcycle-qr-code-manager'); ?></button>
                     </div>
                     <div id="reader" class="qr-reader"></div>
                 <?php else : ?>
                     <?php
                     Notices::add(
                         'warning',
-                        esc_html__('QR code scanner camera is disabled in settings.', 'kerbcycle'),
+                        esc_html__('QR code scanner camera is disabled in settings.', 'kerbcycle-qr-code-manager'),
                         [
                             'extra_classes' => 'qr-warning',
                             'log_type'      => 'dashboard_scanner_disabled',
@@ -110,69 +121,69 @@ class DashboardPage
                 <?php endif; ?>
                 <div id="scan-result" class="updated"></div>
                 <div id="kerbcycle-scanner-exception-panel" class="postbox" style="margin-top:12px;">
-                    <h2 class="hndle"><?php esc_html_e('Pickup Exception', 'kerbcycle'); ?></h2>
+                    <h2 class="hndle"><?php esc_html_e('Pickup Exception', 'kerbcycle-qr-code-manager'); ?></h2>
                     <div class="inside">
-                        <p class="description"><?php esc_html_e('Report a real pickup exception from the current scan context.', 'kerbcycle'); ?></p>
+                        <p class="description"><?php esc_html_e('Report a real pickup exception from the current scan context.', 'kerbcycle-qr-code-manager'); ?></p>
                         <button id="kerbcycle-scanner-report-exception-btn" class="button">
-                            <?php esc_html_e('Report Exception', 'kerbcycle'); ?>
+                            <?php esc_html_e('Report Exception', 'kerbcycle-qr-code-manager'); ?>
                         </button>
                         <div id="kerbcycle-scanner-exception-form-wrap" style="display:none; margin-top:10px;">
                             <div class="qr-select-group" style="margin-bottom:8px;">
-                                <input type="text" id="kerbcycle-scanner-exception-qr-code" placeholder="<?php esc_attr_e('QR Code', 'kerbcycle'); ?>" />
-                                <input type="number" id="kerbcycle-scanner-exception-customer-id" min="1" step="1" placeholder="<?php esc_attr_e('Customer ID', 'kerbcycle'); ?>" />
+                                <input type="text" id="kerbcycle-scanner-exception-qr-code" placeholder="<?php esc_attr_e('QR Code', 'kerbcycle-qr-code-manager'); ?>" />
+                                <input type="number" id="kerbcycle-scanner-exception-customer-id" min="1" step="1" placeholder="<?php esc_attr_e('Customer ID', 'kerbcycle-qr-code-manager'); ?>" />
                             </div>
                             <div class="qr-select-group" style="margin-bottom:8px;">
-                                <input type="text" id="kerbcycle-scanner-exception-issue" placeholder="<?php esc_attr_e('Issue (required)', 'kerbcycle'); ?>" />
+                                <input type="text" id="kerbcycle-scanner-exception-issue" placeholder="<?php esc_attr_e('Issue (required)', 'kerbcycle-qr-code-manager'); ?>" />
                             </div>
                             <div class="qr-select-group" style="margin-bottom:8px;">
-                                <textarea id="kerbcycle-scanner-exception-notes" rows="3" style="width:100%;" placeholder="<?php esc_attr_e('Notes', 'kerbcycle'); ?>"></textarea>
+                                <textarea id="kerbcycle-scanner-exception-notes" rows="3" style="width:100%;" placeholder="<?php esc_attr_e('Notes', 'kerbcycle-qr-code-manager'); ?>"></textarea>
                             </div>
                             <button id="kerbcycle-scanner-submit-exception" class="button button-primary">
-                                <?php esc_html_e('Submit Pickup Exception', 'kerbcycle'); ?>
+                                <?php esc_html_e('Submit Pickup Exception', 'kerbcycle-qr-code-manager'); ?>
                             </button>
                             <p id="kerbcycle-scanner-exception-status" class="description" style="margin-top:8px;"></p>
                             <p class="description" style="margin-top:4px;">
                                 <a href="<?php echo esc_url(admin_url('admin.php?page=kerbcycle-pickup-exceptions')); ?>">
-                                    <?php esc_html_e('View Pickup Exceptions', 'kerbcycle'); ?>
+                                    <?php esc_html_e('View Pickup Exceptions', 'kerbcycle-qr-code-manager'); ?>
                                 </a>
                             </p>
                         </div>
                     </div>
                 </div>
                 <div id="kerbcycle-ai-panel" class="postbox">
-                    <h2 class="hndle"><?php esc_html_e('AI Assistant (Beta)', 'kerbcycle'); ?></h2>
+                    <h2 class="hndle"><?php esc_html_e('AI Assistant (Beta)', 'kerbcycle-qr-code-manager'); ?></h2>
                     <div class="inside">
                         <div class="qr-select-group">
                             <input type="date" id="kerbcycle-ai-from-date" />
-                            <button id="kerbcycle-ai-qr-exceptions-btn" class="button"><?php esc_html_e('AI: QR Exceptions', 'kerbcycle'); ?></button>
-                            <button id="kerbcycle-ai-draft-template-btn" class="button"><?php esc_html_e('AI: Draft Template', 'kerbcycle'); ?></button>
+                            <button id="kerbcycle-ai-qr-exceptions-btn" class="button"><?php esc_html_e('AI: QR Exceptions', 'kerbcycle-qr-code-manager'); ?></button>
+                            <button id="kerbcycle-ai-draft-template-btn" class="button"><?php esc_html_e('AI: Draft Template', 'kerbcycle-qr-code-manager'); ?></button>
                         </div>
                         <p id="kerbcycle-ai-status" class="description" aria-live="polite"></p>
                         <div id="kerbcycle-ai-result" class="notice inline" style="display:none;"></div>
                         <div class="kerbcycle-ai-test">
-                            <h3><?php esc_html_e('Pickup Exception', 'kerbcycle'); ?></h3>
+                            <h3><?php esc_html_e('Pickup Exception', 'kerbcycle-qr-code-manager'); ?></h3>
                             <div class="qr-select-group" style="margin-bottom:8px;">
-                                <input type="text" id="kerbcycle-pickup-exception-qr-code" placeholder="<?php esc_attr_e('QR Code', 'kerbcycle'); ?>" />
-                                <input type="number" id="kerbcycle-pickup-exception-customer-id" min="1" step="1" placeholder="<?php esc_attr_e('Customer ID', 'kerbcycle'); ?>" />
+                                <input type="text" id="kerbcycle-pickup-exception-qr-code" placeholder="<?php esc_attr_e('QR Code', 'kerbcycle-qr-code-manager'); ?>" />
+                                <input type="number" id="kerbcycle-pickup-exception-customer-id" min="1" step="1" placeholder="<?php esc_attr_e('Customer ID', 'kerbcycle-qr-code-manager'); ?>" />
                             </div>
                             <div class="qr-select-group" style="margin-bottom:8px;">
-                                <input type="text" id="kerbcycle-pickup-exception-issue" placeholder="<?php esc_attr_e('Issue (required)', 'kerbcycle'); ?>" />
+                                <input type="text" id="kerbcycle-pickup-exception-issue" placeholder="<?php esc_attr_e('Issue (required)', 'kerbcycle-qr-code-manager'); ?>" />
                             </div>
                             <div class="qr-select-group" style="margin-bottom:8px;">
-                                <textarea id="kerbcycle-pickup-exception-notes" rows="3" style="width:100%;" placeholder="<?php esc_attr_e('Notes', 'kerbcycle'); ?>"></textarea>
+                                <textarea id="kerbcycle-pickup-exception-notes" rows="3" style="width:100%;" placeholder="<?php esc_attr_e('Notes', 'kerbcycle-qr-code-manager'); ?>"></textarea>
                             </div>
                             <button id="kerbcycle-submit-pickup-exception" class="button button-primary">
-                                <?php esc_html_e('Submit Pickup Exception', 'kerbcycle'); ?>
+                                <?php esc_html_e('Submit Pickup Exception', 'kerbcycle-qr-code-manager'); ?>
                             </button>
                             <pre id="kerbcycle-ai-test-result" style="margin-top:10px;"></pre>
                         </div>
                     </div>
                 </div>
-                <h2><?php esc_html_e('Manual QR Code Tasks', 'kerbcycle'); ?></h2>
+                <h2><?php esc_html_e('Manual QR Code Tasks', 'kerbcycle-qr-code-manager'); ?></h2>
                 <div id="qr-task-options">
-                    <label><input type="checkbox" id="send-email" <?php checked($email_enabled); ?> <?php disabled(!$email_enabled); ?>> <?php esc_html_e('Send notification email', 'kerbcycle'); ?></label>
-                    <label><input type="checkbox" id="send-sms" <?php checked($sms_enabled); ?> <?php disabled(!$sms_enabled); ?>> <?php esc_html_e('Send SMS', 'kerbcycle'); ?></label>
-                    <label><input type="checkbox" id="send-reminder" <?php checked($reminder_enabled); ?> <?php disabled(!$reminder_enabled); ?>> <?php esc_html_e('Schedule reminder', 'kerbcycle'); ?></label>
+                    <label><input type="checkbox" id="send-email" <?php checked($email_enabled); ?> <?php disabled(!$email_enabled); ?>> <?php esc_html_e('Send notification email', 'kerbcycle-qr-code-manager'); ?></label>
+                    <label><input type="checkbox" id="send-sms" <?php checked($sms_enabled); ?> <?php disabled(!$sms_enabled); ?>> <?php esc_html_e('Send SMS', 'kerbcycle-qr-code-manager'); ?></label>
+                    <label><input type="checkbox" id="send-reminder" <?php checked($reminder_enabled); ?> <?php disabled(!$reminder_enabled); ?>> <?php esc_html_e('Schedule reminder', 'kerbcycle-qr-code-manager'); ?></label>
                 </div>
                 <div id="qr-selects">
                     <div class="qr-select-group">
@@ -182,110 +193,110 @@ class DashboardPage
                 'name'             => 'customer_id',
                 'id'               => 'customer-id',
                 'class'            => 'kc-searchable',
-                'show_option_none' => __('Select Customer', 'kerbcycle')
+                'show_option_none' => __('Select Customer', 'kerbcycle-qr-code-manager')
             ));
         ?>
-                            <p class="description"><?php esc_html_e('Customer Search', 'kerbcycle'); ?></p>
+                            <p class="description"><?php esc_html_e('Customer Search', 'kerbcycle-qr-code-manager'); ?></p>
                         </div>
                     </div>
                     <div class="qr-select-group">
                         <div>
                             <select id="qr-code-select" class="kc-searchable">
-                                <option value=""><?php esc_html_e('Select QR Code', 'kerbcycle'); ?></option>
+                                <option value=""><?php esc_html_e('Select QR Code', 'kerbcycle-qr-code-manager'); ?></option>
                                 <?php foreach ($available_codes as $code) : ?>
-                                    <option value="<?= esc_attr($code->qr_code); ?>"><?= esc_html($code->qr_code); ?></option>
+                                    <option value="<?php echo esc_attr($code->qr_code); ?>"><?php echo esc_html($code->qr_code); ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <p class="description"><?php esc_html_e('Available QR Code Search', 'kerbcycle'); ?></p>
+                            <p class="description"><?php esc_html_e('Available QR Code Search', 'kerbcycle-qr-code-manager'); ?></p>
                         </div>
-                        <button id="assign-qr-btn" class="button button-primary"><?php esc_html_e('Assign QR Code', 'kerbcycle'); ?></button>
+                        <button id="assign-qr-btn" class="button button-primary"><?php esc_html_e('Assign QR Code', 'kerbcycle-qr-code-manager'); ?></button>
                     </div>
                     <div class="qr-select-group">
                         <div>
                             <select id="assigned-qr-code-select" class="kc-searchable">
-                                <option value=""><?php esc_html_e('Select Assigned QR Code', 'kerbcycle'); ?></option>
+                                <option value=""><?php esc_html_e('Select Assigned QR Code', 'kerbcycle-qr-code-manager'); ?></option>
                             </select>
-                            <p class="description"><?php esc_html_e('Assigned QR Code Search', 'kerbcycle'); ?></p>
+                            <p class="description"><?php esc_html_e('Assigned QR Code Search', 'kerbcycle-qr-code-manager'); ?></p>
                         </div>
-                        <button id="release-qr-btn" class="button"><?php esc_html_e('Release QR Code', 'kerbcycle'); ?></button>
+                        <button id="release-qr-btn" class="button"><?php esc_html_e('Release QR Code', 'kerbcycle-qr-code-manager'); ?></button>
                     </div>
                 </div>
                 <div class="qr-select-group">
-                    <input type="text" id="new-qr-code" placeholder="<?php esc_attr_e('Enter QR Code', 'kerbcycle'); ?>" />
-                    <button id="add-qr-btn" class="button"><?php esc_html_e('Add QR Code', 'kerbcycle'); ?></button>
+                    <input type="text" id="new-qr-code" placeholder="<?php esc_attr_e('Enter QR Code', 'kerbcycle-qr-code-manager'); ?>" />
+                    <button id="add-qr-btn" class="button"><?php esc_html_e('Add QR Code', 'kerbcycle-qr-code-manager'); ?></button>
                 </div>
                 <p class="description" style="margin-bottom: 15px;">
-                    <?php esc_html_e('Manually add a QR Code.', 'kerbcycle'); ?>
+                    <?php esc_html_e('Manually add a QR Code.', 'kerbcycle-qr-code-manager'); ?>
                 </p>
                 <div class="qr-select-group">
                     <input type="file" id="import-qr-file" accept=".csv" />
                 </div>
-                <p class="description"><?php esc_html_e('Import QR Codes from a selected CSV File.', 'kerbcycle'); ?></p>
+                <p class="description"><?php esc_html_e('Import QR Codes from a selected CSV File.', 'kerbcycle-qr-code-manager'); ?></p>
                 <div class="qr-select-group">
-                    <button id="import-qr-btn" class="button"><?php esc_html_e('Import QR Codes', 'kerbcycle'); ?></button>
+                    <button id="import-qr-btn" class="button"><?php esc_html_e('Import QR Codes', 'kerbcycle-qr-code-manager'); ?></button>
                 </div>
             </div>
 
-            <h2><?php esc_html_e('Manage QR Codes', 'kerbcycle'); ?></h2>
+            <h2><?php esc_html_e('Manage QR Codes', 'kerbcycle-qr-code-manager'); ?></h2>
             <form method="get" class="qr-filters">
                 <input type="hidden" name="page" value="kerbcycle-qr-manager" />
                 <select name="status_filter">
-                    <option value=""><?php esc_html_e('All Statuses', 'kerbcycle'); ?></option>
-                    <option value="assigned" <?php selected($status_filter, 'assigned'); ?>><?php esc_html_e('Assigned', 'kerbcycle'); ?></option>
-                    <option value="available" <?php selected($status_filter, 'available'); ?>><?php esc_html_e('Available', 'kerbcycle'); ?></option>
+                    <option value=""><?php esc_html_e('All Statuses', 'kerbcycle-qr-code-manager'); ?></option>
+                    <option value="assigned" <?php selected($status_filter, 'assigned'); ?>><?php esc_html_e('Assigned', 'kerbcycle-qr-code-manager'); ?></option>
+                    <option value="available" <?php selected($status_filter, 'available'); ?>><?php esc_html_e('Available', 'kerbcycle-qr-code-manager'); ?></option>
                 </select>
-                <input type="date" name="start_date" value="<?= esc_attr($start_date); ?>" />
-                <input type="date" name="end_date" value="<?= esc_attr($end_date); ?>" />
-                <input type="search" name="s" value="<?= esc_attr($search); ?>" placeholder="<?php esc_attr_e('Search', 'kerbcycle'); ?>" />
-                <button class="button"><?php esc_html_e('Filter', 'kerbcycle'); ?></button>
-                <a href="<?php echo esc_url(admin_url('admin.php?page=kerbcycle-qr-manager')); ?>" class="button"><?php esc_html_e('Reset', 'kerbcycle'); ?></a>
+                <input type="date" name="start_date" value="<?php echo esc_attr($start_date); ?>" />
+                <input type="date" name="end_date" value="<?php echo esc_attr($end_date); ?>" />
+                <input type="search" name="s" value="<?php echo esc_attr($search); ?>" placeholder="<?php esc_attr_e('Search', 'kerbcycle-qr-code-manager'); ?>" />
+                <button class="button"><?php esc_html_e('Filter', 'kerbcycle-qr-code-manager'); ?></button>
+                <a href="<?php echo esc_url(admin_url('admin.php?page=kerbcycle-qr-manager')); ?>" class="button"><?php esc_html_e('Reset', 'kerbcycle-qr-code-manager'); ?></a>
             </form>
-            <p class="description"><?php esc_html_e('Drag and drop to reorder, select multiple codes for bulk actions, or click a code to edit.', 'kerbcycle'); ?></p>
+            <p class="description"><?php esc_html_e('Drag and drop to reorder, select multiple codes for bulk actions, or click a code to edit.', 'kerbcycle-qr-code-manager'); ?></p>
             <form id="qr-code-bulk-form">
                 <select id="bulk-action-top">
-                    <option value=""><?php esc_html_e('Bulk actions', 'kerbcycle'); ?></option>
-                    <option value="release"><?php esc_html_e('Release', 'kerbcycle'); ?></option>
-                    <option value="delete"><?php esc_html_e('Delete', 'kerbcycle'); ?></option>
+                    <option value=""><?php esc_html_e('Bulk actions', 'kerbcycle-qr-code-manager'); ?></option>
+                    <option value="release"><?php esc_html_e('Release', 'kerbcycle-qr-code-manager'); ?></option>
+                    <option value="delete"><?php esc_html_e('Delete', 'kerbcycle-qr-code-manager'); ?></option>
                 </select>
-                <button id="apply-bulk-top" class="button" data-target="bulk-action-top"><?php esc_html_e('Apply', 'kerbcycle'); ?></button>
-                <p class="qr-code-counts">QR Codes: <span class="qr-available-count"><?= esc_html($available_count); ?></span> Available <span class="qr-assigned-count"><?= esc_html($assigned_count); ?></span> Assigned</p>
+                <button id="apply-bulk-top" class="button" data-target="bulk-action-top"><?php esc_html_e('Apply', 'kerbcycle-qr-code-manager'); ?></button>
+                <p class="qr-code-counts">QR Codes: <span class="qr-available-count"><?php echo esc_html($available_count); ?></span> Available <span class="qr-assigned-count"><?php echo esc_html($assigned_count); ?></span> Assigned</p>
                 <div
                     id="qr-listing"
                     class="qr-listing"
-                    data-current-page="<?= esc_attr($current_page); ?>"
-                    data-total-pages="<?= esc_attr($total_pages); ?>"
-                    data-total-items="<?= esc_attr($total_items); ?>"
-                    data-per-page="<?= esc_attr($per_page); ?>"
-                    data-status-filter="<?= esc_attr($status_filter); ?>"
-                    data-start-date="<?= esc_attr($start_date); ?>"
-                    data-end-date="<?= esc_attr($end_date); ?>"
-                    data-search="<?= esc_attr($search); ?>"
+                    data-current-page="<?php echo esc_attr($current_page); ?>"
+                    data-total-pages="<?php echo esc_attr($total_pages); ?>"
+                    data-total-items="<?php echo esc_attr($total_items); ?>"
+                    data-per-page="<?php echo esc_attr($per_page); ?>"
+                    data-status-filter="<?php echo esc_attr($status_filter); ?>"
+                    data-start-date="<?php echo esc_attr($start_date); ?>"
+                    data-end-date="<?php echo esc_attr($end_date); ?>"
+                    data-search="<?php echo esc_attr($search); ?>"
                 >
                     <?php if ($pagination_links) : ?>
                         <div class="qr-pagination" data-pagination-position="top">
                             <div class="qr-pagination-controls" aria-live="polite"></div>
                             <div class="tablenav qr-pagination-fallback">
                                 <div class="tablenav-pages">
-                                    <?= $pagination_links; ?>
+                                    <?php echo $pagination_links; ?>
                                 </div>
                             </div>
                         </div>
                     <?php endif; ?>
                     <ul id="qr-code-list">
                         <li class="qr-header">
-                            <input type="checkbox" class="qr-select" id="qr-select-all" title="<?php esc_attr_e('Select all', 'kerbcycle'); ?>" />
+                            <input type="checkbox" class="qr-select" id="qr-select-all" title="<?php esc_attr_e('Select all', 'kerbcycle-qr-code-manager'); ?>" />
                             <?php
-                            $id_label        = __('ID', 'kerbcycle');
-        $code_label      = __('QR Code', 'kerbcycle');
-        $user_label      = __('User ID', 'kerbcycle');
-        $customer_label  = __('Customer', 'kerbcycle');
-        $status_label    = __('Status', 'kerbcycle');
-        $assigned_label  = __('Assigned At', 'kerbcycle');
-        $sort_label_text = __('Sort by %s', 'kerbcycle');
+                            $id_label        = __('ID', 'kerbcycle-qr-code-manager');
+        $code_label      = __('QR Code', 'kerbcycle-qr-code-manager');
+        $user_label      = __('User ID', 'kerbcycle-qr-code-manager');
+        $customer_label  = __('Customer', 'kerbcycle-qr-code-manager');
+        $status_label    = __('Status', 'kerbcycle-qr-code-manager');
+        $assigned_label  = __('Assigned At', 'kerbcycle-qr-code-manager');
+        $sort_label_text = __('Sort by %s', 'kerbcycle-qr-code-manager');
         ?>
                             <span class="qr-id">
-                                <button type="button" class="qr-sort-control" data-sort-key="id" data-sort-type="number" data-sort-label="<?= esc_attr($id_label); ?>" aria-pressed="false" title="<?= esc_attr(sprintf($sort_label_text, $id_label)); ?>">
-                                    <span class="qr-sort-label"><?= esc_html($id_label); ?></span>
+                                <button type="button" class="qr-sort-control" data-sort-key="id" data-sort-type="number" data-sort-label="<?php echo esc_attr($id_label); ?>" aria-pressed="false" title="<?php echo esc_attr(sprintf($sort_label_text, $id_label)); ?>">
+                                    <span class="qr-sort-label"><?php echo esc_html($id_label); ?></span>
                                     <span class="sort-indicator" aria-hidden="true">
                                         <span class="sort-arrow sort-arrow-asc"></span>
                                         <span class="sort-arrow sort-arrow-desc"></span>
@@ -293,8 +304,8 @@ class DashboardPage
                                 </button>
                             </span>
                             <span class="qr-text">
-                                <button type="button" class="qr-sort-control" data-sort-key="code" data-sort-type="text" data-sort-label="<?= esc_attr($code_label); ?>" aria-pressed="false" title="<?= esc_attr(sprintf($sort_label_text, $code_label)); ?>">
-                                    <span class="qr-sort-label"><?= esc_html($code_label); ?></span>
+                                <button type="button" class="qr-sort-control" data-sort-key="code" data-sort-type="text" data-sort-label="<?php echo esc_attr($code_label); ?>" aria-pressed="false" title="<?php echo esc_attr(sprintf($sort_label_text, $code_label)); ?>">
+                                    <span class="qr-sort-label"><?php echo esc_html($code_label); ?></span>
                                     <span class="sort-indicator" aria-hidden="true">
                                         <span class="sort-arrow sort-arrow-asc"></span>
                                         <span class="sort-arrow sort-arrow-desc"></span>
@@ -302,8 +313,8 @@ class DashboardPage
                                 </button>
                             </span>
                             <span class="qr-user">
-                                <button type="button" class="qr-sort-control" data-sort-key="userId" data-sort-type="number" data-sort-label="<?= esc_attr($user_label); ?>" aria-pressed="false" title="<?= esc_attr(sprintf($sort_label_text, $user_label)); ?>">
-                                    <span class="qr-sort-label"><?= esc_html($user_label); ?></span>
+                                <button type="button" class="qr-sort-control" data-sort-key="userId" data-sort-type="number" data-sort-label="<?php echo esc_attr($user_label); ?>" aria-pressed="false" title="<?php echo esc_attr(sprintf($sort_label_text, $user_label)); ?>">
+                                    <span class="qr-sort-label"><?php echo esc_html($user_label); ?></span>
                                     <span class="sort-indicator" aria-hidden="true">
                                         <span class="sort-arrow sort-arrow-asc"></span>
                                         <span class="sort-arrow sort-arrow-desc"></span>
@@ -311,8 +322,8 @@ class DashboardPage
                                 </button>
                             </span>
                             <span class="qr-name">
-                                <button type="button" class="qr-sort-control" data-sort-key="displayName" data-sort-type="text" data-sort-label="<?= esc_attr($customer_label); ?>" aria-pressed="false" title="<?= esc_attr(sprintf($sort_label_text, $customer_label)); ?>">
-                                    <span class="qr-sort-label"><?= esc_html($customer_label); ?></span>
+                                <button type="button" class="qr-sort-control" data-sort-key="displayName" data-sort-type="text" data-sort-label="<?php echo esc_attr($customer_label); ?>" aria-pressed="false" title="<?php echo esc_attr(sprintf($sort_label_text, $customer_label)); ?>">
+                                    <span class="qr-sort-label"><?php echo esc_html($customer_label); ?></span>
                                     <span class="sort-indicator" aria-hidden="true">
                                         <span class="sort-arrow sort-arrow-asc"></span>
                                         <span class="sort-arrow sort-arrow-desc"></span>
@@ -320,8 +331,8 @@ class DashboardPage
                                 </button>
                             </span>
                             <span class="qr-status">
-                                <button type="button" class="qr-sort-control" data-sort-key="status" data-sort-type="text" data-sort-label="<?= esc_attr($status_label); ?>" aria-pressed="false" title="<?= esc_attr(sprintf($sort_label_text, $status_label)); ?>">
-                                    <span class="qr-sort-label"><?= esc_html($status_label); ?></span>
+                                <button type="button" class="qr-sort-control" data-sort-key="status" data-sort-type="text" data-sort-label="<?php echo esc_attr($status_label); ?>" aria-pressed="false" title="<?php echo esc_attr(sprintf($sort_label_text, $status_label)); ?>">
+                                    <span class="qr-sort-label"><?php echo esc_html($status_label); ?></span>
                                     <span class="sort-indicator" aria-hidden="true">
                                         <span class="sort-arrow sort-arrow-asc"></span>
                                         <span class="sort-arrow sort-arrow-desc"></span>
@@ -329,8 +340,8 @@ class DashboardPage
                                 </button>
                             </span>
                             <span class="qr-assigned">
-                                <button type="button" class="qr-sort-control" data-sort-key="assignedAt" data-sort-type="date" data-sort-label="<?= esc_attr($assigned_label); ?>" aria-pressed="false" title="<?= esc_attr(sprintf($sort_label_text, $assigned_label)); ?>">
-                                    <span class="qr-sort-label"><?= esc_html($assigned_label); ?></span>
+                                <button type="button" class="qr-sort-control" data-sort-key="assignedAt" data-sort-type="date" data-sort-label="<?php echo esc_attr($assigned_label); ?>" aria-pressed="false" title="<?php echo esc_attr(sprintf($sort_label_text, $assigned_label)); ?>">
+                                    <span class="qr-sort-label"><?php echo esc_html($assigned_label); ?></span>
                                     <span class="sort-indicator" aria-hidden="true">
                                         <span class="sort-arrow sort-arrow-asc"></span>
                                         <span class="sort-arrow sort-arrow-desc"></span>
@@ -338,26 +349,26 @@ class DashboardPage
                                 </button>
                             </span>
                         </li>
-                        <?= self::render_qr_items($all_codes); ?>
+                        <?php echo self::render_qr_items($all_codes); ?>
                     </ul>
                     <?php if ($pagination_links) : ?>
                         <div class="qr-pagination" data-pagination-position="bottom">
                             <div class="qr-pagination-controls" aria-live="polite"></div>
                             <div class="tablenav qr-pagination-fallback">
                                 <div class="tablenav-pages">
-                                    <?= $pagination_links; ?>
+                                    <?php echo $pagination_links; ?>
                                 </div>
                             </div>
                         </div>
                     <?php endif; ?>
                 </div>
-                <p class="qr-code-counts">QR Codes: <span class="qr-available-count"><?= esc_html($available_count); ?></span> Available <span class="qr-assigned-count"><?= esc_html($assigned_count); ?></span> Assigned</p>
+                <p class="qr-code-counts">QR Codes: <span class="qr-available-count"><?php echo esc_html($available_count); ?></span> Available <span class="qr-assigned-count"><?php echo esc_html($assigned_count); ?></span> Assigned</p>
                 <select id="bulk-action">
-                    <option value=""><?php esc_html_e('Bulk actions', 'kerbcycle'); ?></option>
-                    <option value="release"><?php esc_html_e('Release', 'kerbcycle'); ?></option>
-                    <option value="delete"><?php esc_html_e('Delete', 'kerbcycle'); ?></option>
+                    <option value=""><?php esc_html_e('Bulk actions', 'kerbcycle-qr-code-manager'); ?></option>
+                    <option value="release"><?php esc_html_e('Release', 'kerbcycle-qr-code-manager'); ?></option>
+                    <option value="delete"><?php esc_html_e('Delete', 'kerbcycle-qr-code-manager'); ?></option>
                 </select>
-                <button id="apply-bulk" class="button" data-target="bulk-action"><?php esc_html_e('Apply', 'kerbcycle'); ?></button>
+                <button id="apply-bulk" class="button" data-target="bulk-action"><?php esc_html_e('Apply', 'kerbcycle-qr-code-manager'); ?></button>
             </form>
         </div>
         <?php
@@ -493,19 +504,19 @@ class DashboardPage
             $status_label  = $status_raw !== '' ? ucfirst($status_raw) : '';
             ?>
             <li class="qr-item"
-                data-code="<?= esc_attr($qr_code_value); ?>"
-                data-id="<?= esc_attr($id_value); ?>"
-                data-user-id="<?= esc_attr($user_id_value); ?>"
-                data-display-name="<?= esc_attr($name_value); ?>"
-                data-status="<?= esc_attr($status_value); ?>"
-                data-assigned-at="<?= esc_attr($assigned_at); ?>">
+                data-code="<?php echo esc_attr($qr_code_value); ?>"
+                data-id="<?php echo esc_attr($id_value); ?>"
+                data-user-id="<?php echo esc_attr($user_id_value); ?>"
+                data-display-name="<?php echo esc_attr($name_value); ?>"
+                data-status="<?php echo esc_attr($status_value); ?>"
+                data-assigned-at="<?php echo esc_attr($assigned_at); ?>">
                 <input type="checkbox" class="qr-select" />
-                <span class="qr-id"><?= esc_html($id_value); ?></span>
-                <span class="qr-text" contenteditable="true"><?= esc_html($qr_code_value); ?></span>
-                <span class="qr-user"><?= $user_id_value !== '' ? esc_html($user_id_value) : '—'; ?></span>
-                <span class="qr-name"><?= $name_value !== '' ? esc_html($name_value) : '—'; ?></span>
-                <span class="qr-status"><?= esc_html($status_label); ?></span>
-                <span class="qr-assigned"><?= $assigned_at !== '' ? esc_html($assigned_at) : '—'; ?></span>
+                <span class="qr-id"><?php echo esc_html($id_value); ?></span>
+                <span class="qr-text" contenteditable="true"><?php echo esc_html($qr_code_value); ?></span>
+                <span class="qr-user"><?php echo $user_id_value !== '' ? esc_html($user_id_value) : '—'; ?></span>
+                <span class="qr-name"><?php echo $name_value !== '' ? esc_html($name_value) : '—'; ?></span>
+                <span class="qr-status"><?php echo esc_html($status_label); ?></span>
+                <span class="qr-assigned"><?php echo $assigned_at !== '' ? esc_html($assigned_at) : '—'; ?></span>
             </li>
             <?php
         }
