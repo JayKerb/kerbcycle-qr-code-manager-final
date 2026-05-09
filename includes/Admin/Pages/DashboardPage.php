@@ -314,12 +314,12 @@ class DashboardPage {
                         <li class="qr-header">
                             <input type="checkbox" class="qr-select" id="qr-select-all" title="<?php esc_attr_e( 'Select all', 'kerbcycle-qr-code-manager' ); ?>" />
                             <?php
-                            $id_label        = __( 'ID', 'kerbcycle-qr-code-manager' );
-							$code_label      = __( 'QR Code', 'kerbcycle-qr-code-manager' );
-							$user_label      = __( 'User ID', 'kerbcycle-qr-code-manager' );
-							$customer_label  = __( 'Customer', 'kerbcycle-qr-code-manager' );
-							$status_label    = __( 'Status', 'kerbcycle-qr-code-manager' );
-							$assigned_label  = __( 'Assigned At', 'kerbcycle-qr-code-manager' );
+                            $id_label       = __( 'ID', 'kerbcycle-qr-code-manager' );
+							$code_label     = __( 'QR Code', 'kerbcycle-qr-code-manager' );
+							$user_label     = __( 'User ID', 'kerbcycle-qr-code-manager' );
+							$customer_label = __( 'Customer', 'kerbcycle-qr-code-manager' );
+							$status_label   = __( 'Status', 'kerbcycle-qr-code-manager' );
+							$assigned_label = __( 'Assigned At', 'kerbcycle-qr-code-manager' );
 		                    /* translators: %s: QR table column label. */
 							$sort_label_text = __( 'Sort by %s', 'kerbcycle-qr-code-manager' );
 							?>
@@ -478,7 +478,7 @@ class DashboardPage {
             $params[] = $like;
         }
 
-        $count_sql   = "SELECT COUNT(*) FROM $table WHERE $where";
+        $count_sql = "SELECT COUNT(*) FROM $table WHERE $where";
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- SQL is assembled from fixed fragments and internally derived table name; dynamic filter values are prepared when present, and the no-params branch has no user-supplied SQL fragments.
         $total_items = (int) ( $params ? $wpdb->get_var( $wpdb->prepare( $count_sql, $params ) ) : $wpdb->get_var( $count_sql ) );
         $total_pages = (int) ceil( $total_items / $per_page );
@@ -486,12 +486,12 @@ class DashboardPage {
         $select_sql = "SELECT id, qr_code, user_id, display_name, status, assigned_at FROM $table WHERE $where ORDER BY assigned_at DESC, id DESC LIMIT %d OFFSET %d";
         $query_args = array_merge( $params, [ $per_page, $offset ] );
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- SQL is assembled from fixed fragments and internally derived table name; dynamic filter, limit, and offset values are prepared before execution.
-        $codes      = $wpdb->get_results( $wpdb->prepare( $select_sql, $query_args ) );
+        $codes = $wpdb->get_results( $wpdb->prepare( $select_sql, $query_args ) );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query has no user-supplied SQL fragments.
         $available_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table WHERE status = 'available'" );
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query has no user-supplied SQL fragments.
-        $assigned_count  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table WHERE status = 'assigned'" );
+        $assigned_count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM $table WHERE status = 'assigned'" );
 
         return [
             'codes'           => $codes,
