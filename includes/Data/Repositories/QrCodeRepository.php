@@ -126,9 +126,9 @@ class QrCodeRepository {
 		global $wpdb;
 		$released_count = 0;
 		foreach ( $codes as $code ) {
-			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query values are prepared.
 			$row = $wpdb->get_row(
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query values are prepared.
 					"SELECT id, user_id FROM $this->table WHERE qr_code = %s AND status = 'assigned' ORDER BY id DESC LIMIT 1",
 					$code
 				)
@@ -165,8 +165,8 @@ class QrCodeRepository {
 		}
 
 		$placeholders = implode( ',', array_fill( 0, count( $codes ), '%s' ) );
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Table name is internally derived; placeholder list is generated from sanitized value count and query values are prepared below.
 		$query = $wpdb->prepare(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Table name is internally derived; placeholder list is generated from value count and query values are prepared.
 			"SELECT qr_code FROM {$this->table} WHERE status = 'available' AND qr_code IN ($placeholders)",
 			$codes
 		);
@@ -178,8 +178,8 @@ class QrCodeRepository {
 		}
 
 		$placeholders = implode( ',', array_fill( 0, count( $existing ), '%s' ) );
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Table name is internally derived; placeholder list is generated from sanitized value count and query values are prepared below.
 		$delete_query = $wpdb->prepare(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Table name is internally derived; placeholder list is generated from value count and query values are prepared.
 			"DELETE FROM {$this->table} WHERE status = 'available' AND qr_code IN ($placeholders)",
 			$existing
 		);
@@ -219,9 +219,9 @@ class QrCodeRepository {
 
 	public function find_latest_by_status( $qr_code, $status ) {
 		global $wpdb;
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query values are prepared.
 		return $wpdb->get_row(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query values are prepared.
 				"SELECT * FROM $this->table WHERE qr_code = %s AND status = %s ORDER BY id DESC LIMIT 1",
 				$qr_code,
 				$status
@@ -231,9 +231,9 @@ class QrCodeRepository {
 
 	public function count_by_status( $qr_code, $status ) {
 		global $wpdb;
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query values are prepared.
 		return (int) $wpdb->get_var(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query values are prepared.
 				"SELECT COUNT(*) FROM $this->table WHERE qr_code = %s AND status = %s",
 				$qr_code,
 				$status
@@ -249,9 +249,9 @@ class QrCodeRepository {
 
 	public function list_assigned_by_user( $user_id ) {
 		global $wpdb;
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query values are prepared.
 		return $wpdb->get_col(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query values are prepared.
 				"SELECT qr_code FROM {$this->table} WHERE status = 'assigned' AND user_id = %d ORDER BY id DESC",
 				$user_id
 			)
@@ -260,8 +260,8 @@ class QrCodeRepository {
 
 	public function list_all() {
 		global $wpdb;
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query has no user-supplied SQL fragments.
 		return $wpdb->get_results(
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query has no user-supplied SQL fragments.
 			"SELECT id, qr_code, user_id, display_name, status, assigned_at FROM $this->table" .
 			' ORDER BY assigned_at DESC, id DESC'
 		);
