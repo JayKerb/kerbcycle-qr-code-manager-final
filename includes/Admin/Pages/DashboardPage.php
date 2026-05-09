@@ -320,6 +320,7 @@ class DashboardPage {
 							$customer_label  = __( 'Customer', 'kerbcycle-qr-code-manager' );
 							$status_label    = __( 'Status', 'kerbcycle-qr-code-manager' );
 							$assigned_label  = __( 'Assigned At', 'kerbcycle-qr-code-manager' );
+		                    /* translators: %s: QR table column label. */
 							$sort_label_text = __( 'Sort by %s', 'kerbcycle-qr-code-manager' );
 							?>
                             <span class="qr-id">
@@ -377,7 +378,7 @@ class DashboardPage {
                                 </button>
                             </span>
                         </li>
-                        <?php echo self::render_qr_items( $all_codes ); ?>
+                        <?php echo wp_kses_post( self::render_qr_items( $all_codes ) ); ?>
                     </ul>
                     <?php if ( $pagination_links ) : ?>
                         <div class="qr-pagination" data-pagination-position="bottom">
