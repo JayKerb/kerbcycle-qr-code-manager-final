@@ -25,7 +25,7 @@ class HistoryPage {
         $per_page     = (int) get_option( 'kerbcycle_history_per_page', 20 );
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only history filter/pagination state; no server-side state is changed here.
         $current_page = isset( $_GET['paged'] ) ? max( 1, absint( wp_unslash( $_GET['paged'] ) ) ) : 1;
-        $offset       = ($current_page - 1) * $per_page;
+        $offset       = ( $current_page - 1 ) * $per_page;
 
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only history filter/pagination state; no server-side state is changed here.
         $status_filter = isset( $_GET['status_filter'] ) ? sanitize_text_field( wp_unslash( $_GET['status_filter'] ) ) : '';
@@ -39,23 +39,23 @@ class HistoryPage {
         $where  = '1=1';
         $params = [];
 
-        if ($status_filter) {
+        if ( $status_filter ) {
             $where   .= ' AND status = %s';
             $params[] = $status_filter;
         }
 
-        if ($start_date) {
+        if ( $start_date ) {
             $where   .= ' AND DATE(changed_at) >= %s';
             $params[] = $start_date;
         }
 
-        if ($end_date) {
+        if ( $end_date ) {
             $where   .= ' AND DATE(changed_at) <= %s';
             $params[] = $end_date;
         }
 
-        if ($search) {
-            $like     = '%' . $wpdb->esc_like($search) . '%';
+        if ( $search ) {
+            $like      = '%' . $wpdb->esc_like( $search ) . '%';
             $where   .= ' AND (CAST(id AS CHAR) LIKE %s OR qr_code LIKE %s OR CAST(user_id AS CHAR) LIKE %s OR CAST(changed_at AS CHAR) LIKE %s)';
             $params[] = $like;
             $params[] = $like;
@@ -63,26 +63,26 @@ class HistoryPage {
             $params[] = $like;
         }
 
-        $count_sql   = "SELECT COUNT(*) FROM $table_name WHERE $where";
+        $count_sql    = "SELECT COUNT(*) FROM $table_name WHERE $where";
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- SQL is assembled from fixed fragments; dynamic values are prepared before execution.
         $total_items = (int) ( $params ? $wpdb->get_var( $wpdb->prepare( $count_sql, $params ) ) : $wpdb->get_var( $count_sql ) );
-        $total_pages  = (int) ceil($total_items / $per_page);
+        $total_pages  = (int) ceil( $total_items / $per_page );
 
         $pagination_links = $total_pages > 1 ? paginate_links(
             [
-            'base'      => add_query_arg( 'paged', '%#%' ),
-            'format'    => '',
-            'prev_text' => '&laquo;',
-            'next_text' => '&raquo;',
-            'total'     => $total_pages,
-            'current'   => $current_page,
+                'base'      => add_query_arg( 'paged', '%#%' ),
+                'format'    => '',
+                'prev_text' => '&laquo;',
+                'next_text' => '&raquo;',
+                'total'     => $total_pages,
+                'current'   => $current_page,
             ]
         ) : '';
 
         $select_sql = "SELECT * FROM $table_name WHERE $where ORDER BY changed_at DESC LIMIT %d OFFSET %d";
         $query_args = array_merge( $params, [ $per_page, $offset ] );
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- SQL is assembled from fixed fragments; dynamic values are prepared before execution.
-        $qr_codes   = $wpdb->get_results( $wpdb->prepare( $select_sql, $query_args ) );
+        $qr_codes    = $wpdb->get_results( $wpdb->prepare( $select_sql, $query_args ) );
         ?>
         <div class="wrap">
             <h1>QR Code History</h1>
@@ -102,7 +102,7 @@ class HistoryPage {
                 <a href="<?php echo esc_url( admin_url( 'admin.php?page=kerbcycle-qr-history' ) ); ?>" class="button"><?php esc_html_e( 'Reset', 'kerbcycle-qr-code-manager' ); ?></a>
             </form>
             <p class="description">Recent QR code activity</p>
-            <?php if ($pagination_links) : ?>
+            <?php if ( $pagination_links ) : ?>
                 <div class="tablenav">
                     <div class="tablenav-pages">
                         <?php echo wp_kses_post( $pagination_links ); ?>
@@ -121,7 +121,7 @@ class HistoryPage {
                 </thead>
                 <tbody>
                     <?php if ( ! empty( $qr_codes ) ) : ?>
-                        <?php foreach ($qr_codes as $qr) : ?>
+                        <?php foreach ( $qr_codes as $qr ) : ?>
                             <tr>
                                 <td><?php echo esc_html( $qr->id ); ?></td>
                                 <td><?php echo esc_html( $qr->qr_code ); ?></td>
@@ -135,7 +135,7 @@ class HistoryPage {
                     <?php endif; ?>
                 </tbody>
             </table>
-            <?php if ($pagination_links) : ?>
+            <?php if ( $pagination_links ) : ?>
                 <div class="tablenav">
                     <div class="tablenav-pages">
                         <?php echo wp_kses_post( $pagination_links ); ?>
