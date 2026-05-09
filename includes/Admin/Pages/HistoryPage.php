@@ -21,8 +21,8 @@ class HistoryPage {
      */
     public function render() {
         global $wpdb;
-        $table_name   = $wpdb->prefix . 'kerbcycle_qr_code_history';
-        $per_page     = (int) get_option( 'kerbcycle_history_per_page', 20 );
+        $table_name = $wpdb->prefix . 'kerbcycle_qr_code_history';
+        $per_page   = (int) get_option( 'kerbcycle_history_per_page', 20 );
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only history filter/pagination state; no server-side state is changed here.
         $current_page = isset( $_GET['paged'] ) ? max( 1, absint( wp_unslash( $_GET['paged'] ) ) ) : 1;
         $offset       = ( $current_page - 1 ) * $per_page;
@@ -63,7 +63,7 @@ class HistoryPage {
             $params[] = $like;
         }
 
-        $count_sql   = "SELECT COUNT(*) FROM $table_name WHERE $where";
+        $count_sql = "SELECT COUNT(*) FROM $table_name WHERE $where";
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- SQL is assembled from fixed fragments; dynamic values are prepared before execution.
         $total_items = (int) ( $params ? $wpdb->get_var( $wpdb->prepare( $count_sql, $params ) ) : $wpdb->get_var( $count_sql ) );
         $total_pages = (int) ceil( $total_items / $per_page );
@@ -82,7 +82,7 @@ class HistoryPage {
         $select_sql = "SELECT * FROM $table_name WHERE $where ORDER BY changed_at DESC LIMIT %d OFFSET %d";
         $query_args = array_merge( $params, [ $per_page, $offset ] );
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- SQL is assembled from fixed fragments; dynamic values are prepared before execution.
-        $qr_codes   = $wpdb->get_results( $wpdb->prepare( $select_sql, $query_args ) );
+        $qr_codes = $wpdb->get_results( $wpdb->prepare( $select_sql, $query_args ) );
         ?>
         <div class="wrap">
             <h1>QR Code History</h1>
