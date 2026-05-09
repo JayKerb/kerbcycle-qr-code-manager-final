@@ -166,9 +166,9 @@ class GeneratorPage {
         $repo   = new QrRepoRepository();
         $user   = get_current_user_id();
         $type   = sanitize_text_field( wp_unslash( $_POST['genType'] ?? 'single' ) );
-        $result = array( 
-            'saved' => array(), 
-            'skipped' => array() 
+        $result = array(
+            'saved'   => array(),
+            'skipped' => array(),
         );
 
         if ( 'single' === $type ) {
