@@ -111,6 +111,7 @@ class Shortcodes {
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query has no user-supplied SQL fragments.
         $query = "SELECT id, qr_code, user_id, display_name, status, assigned_at FROM $table" . ' ORDER BY assigned_at DESC, id DESC';
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- SQL is assembled from fixed fragments and an internally derived table name; query has no user-supplied SQL fragments.
         $codes = $wpdb->get_results( $query );
 
         ob_start();
