@@ -21,30 +21,39 @@ class DashboardPage {
      *
      * @since    1.0.0
      */
-    public function render()
-    {
-        global $wpdb;
+	public function render() {
+		global $wpdb;
 
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
-        $status_filter = isset($_GET['status_filter']) ? sanitize_text_field(wp_unslash($_GET['status_filter'])) : '';
+		$status_filter = isset( $_GET['status_filter'] )
+			? sanitize_text_field( wp_unslash( $_GET['status_filter'] ) )
+			: '';
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
-        $start_date = isset($_GET['start_date']) ? sanitize_text_field(wp_unslash($_GET['start_date'])) : '';
+		$start_date = isset( $_GET['start_date'] )
+			? sanitize_text_field( wp_unslash( $_GET['start_date'] ) )
+			: '';
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
-        $end_date = isset($_GET['end_date']) ? sanitize_text_field(wp_unslash($_GET['end_date'])) : '';
+		$end_date = isset( $_GET['end_date'] )
+			? sanitize_text_field( wp_unslash( $_GET['end_date'] ) )
+			: '';
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
-        $search = isset($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : '';
+		$search = isset( $_GET['s'] )
+			? sanitize_text_field( wp_unslash( $_GET['s'] ) )
+			: '';
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
-        $current_page = isset($_GET['paged']) ? max(1, absint(wp_unslash($_GET['paged']))) : 1;
+		$current_page = isset( $_GET['paged'] )
+			? max( 1, absint( wp_unslash( $_GET['paged'] ) ) )
+			: 1;
 
-        $request_args = [
-            'status_filter' => $status_filter,
-            'start_date'    => $start_date,
-            'end_date'      => $end_date,
-            'search'        => $search,
-            'paged'         => $current_page,
-        ];
+		$request_args = array(
+			'status_filter' => $status_filter,
+			'start_date'    => $start_date,
+			'end_date'      => $end_date,
+			'search'        => $search,
+			'paged'         => $current_page,
+		);
 
-        $listing_data = self::get_listing_data($request_args);
+		$listing_data = self::get_listing_data( $request_args );
 
         $status_filter   = $listing_data['filters']['status_filter'];
         $start_date      = $listing_data['filters']['start_date'];
@@ -58,11 +67,11 @@ class DashboardPage {
         $assigned_count  = $listing_data['assigned_count'];
         $all_codes       = $listing_data['codes'];
 
-        $pagination_links = self::build_pagination_links($current_page, $total_pages, $listing_data['filters']);
+		$pagination_links = self::build_pagination_links( $current_page, $total_pages, $listing_data['filters'] );
 
-        $table = $wpdb->prefix . 'kerbcycle_qr_codes';
+		$table = $wpdb->prefix . 'kerbcycle_qr_codes';
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query has no user-supplied SQL fragments.
-        $available_codes = $wpdb->get_results("SELECT qr_code FROM $table WHERE status = 'available' ORDER BY id DESC");
+		$available_codes = $wpdb->get_results( "SELECT qr_code FROM $table WHERE status = 'available' ORDER BY id DESC" );
         ?>
         <div class="wrap">
             <h1>KerbCycle QR Code Manager</h1>
@@ -92,13 +101,15 @@ class DashboardPage {
                     <div class="qr-scanner-customer">
                         <div class="qr-scanner-customer-select">
                             <?php
-                            wp_dropdown_users(array(
-                                'name'              => 'dashboard_customer_id',
-                                'id'                => 'dashboard-customer-id',
-                                'class'             => 'kc-searchable',
-                                'show_option_none'  => __('Select Customer', 'kerbcycle-qr-code-manager'),
-                                'option_none_value' => ''
-                            ));
+							wp_dropdown_users(
+								array(
+									'name'              => 'dashboard_customer_id',
+									'id'                => 'dashboard-customer-id',
+									'class'             => 'kc-searchable',
+									'show_option_none'  => __( 'Select Customer', 'kerbcycle-qr-code-manager' ),
+									'option_none_value' => '',
+								)
+							);
                     ?>
                             <p class="description"><?php esc_html_e('Customer Search', 'kerbcycle-qr-code-manager'); ?></p>
                         </div>
@@ -189,12 +200,14 @@ class DashboardPage {
                     <div class="qr-select-group">
                         <div>
                             <?php
-            wp_dropdown_users(array(
-                'name'             => 'customer_id',
-                'id'               => 'customer-id',
-                'class'            => 'kc-searchable',
-                'show_option_none' => __('Select Customer', 'kerbcycle-qr-code-manager')
-            ));
+			wp_dropdown_users(
+				array(
+					'name'             => 'customer_id',
+					'id'               => 'customer-id',
+					'class'            => 'kc-searchable',
+					'show_option_none' => __( 'Select Customer', 'kerbcycle-qr-code-manager' ),
+				)
+			);
         ?>
                             <p class="description"><?php esc_html_e('Customer Search', 'kerbcycle-qr-code-manager'); ?></p>
                         </div>
@@ -381,8 +394,7 @@ class DashboardPage {
      *
      * @return array
      */
-    public static function get_listing_data(array $args = [])
-    {
+    public static function get_listing_data( array $args = array() ) {
         global $wpdb;
 
         $table            = $wpdb->prefix . 'kerbcycle_qr_codes';
@@ -485,8 +497,7 @@ class DashboardPage {
      *
      * @return string
      */
-    public static function render_qr_items($codes)
-    {
+    public static function render_qr_items( $codes ) {
         if (empty($codes)) {
             return '';
         }
@@ -533,8 +544,7 @@ class DashboardPage {
      *
      * @return string
      */
-    public static function build_pagination_links($current_page, $total_pages, array $filters = [])
-    {
+    public static function build_pagination_links( $current_page, $total_pages, array $filters = array() ) {
         $total_pages = (int) $total_pages;
 
         if ($total_pages <= 1) {
