@@ -15,15 +15,13 @@ use Kerbcycle\QrCode\Helpers\Capabilities;
  * @package    Kerbcycle\QrCode
  * @subpackage Kerbcycle\QrCode\Public
  */
-class Shortcodes
-{
+class Shortcodes {
     /**
      * Initialize the class and set its properties.
      *
      * @since    1.0.0
      */
-    public function __construct()
-    {
+    public function __construct() {
         add_shortcode( 'kerbcycle_scanner', array( $this, 'generate_frontend_scanner' ) );
         add_shortcode( 'kerbcycle_qr_table', array( $this, 'generate_qr_table' ) );
         add_shortcode( 'kerbcycle_osrm_map', array( $this, 'osrm_map_shortcode' ) );
@@ -34,8 +32,7 @@ class Shortcodes
      *
      * @since    1.0.0
      */
-    public function generate_frontend_scanner()
-    {
+    public function generate_frontend_scanner() {
         if ( ! Capabilities::can( Capabilities::manage_operations() ) ) {
             ob_start();
             ?>
@@ -99,8 +96,7 @@ class Shortcodes
      *
      * @since    1.0.0
      */
-    public function generate_qr_table()
-    {
+    public function generate_qr_table() {
         if ( ! Capabilities::can( Capabilities::manage_operations() ) ) {
             ob_start();
             ?>
@@ -114,10 +110,8 @@ class Shortcodes
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query has no user-supplied SQL fragments.
-        $codes = $wpdb->get_results(
-            "SELECT id, qr_code, user_id, display_name, status, assigned_at FROM $table"
-            . " ORDER BY assigned_at DESC, id DESC"
-        );
+        $query = "SELECT id, qr_code, user_id, display_name, status, assigned_at FROM $table" . ' ORDER BY assigned_at DESC, id DESC';
+        $codes = $wpdb->get_results( $query );
 
         ob_start();
         ?>
@@ -204,8 +198,7 @@ class Shortcodes
     /**
      * Shortcode renderer for the OSRM map.
      */
-    public function osrm_map_shortcode( $atts )
-    {
+    public function osrm_map_shortcode( $atts ) {
         $atts = shortcode_atts(
             array(
                 'start'  => '40.730,-73.990', // lat,lon
@@ -219,20 +212,20 @@ class Shortcodes
         );
 
         // enqueue assets
-        wp_enqueue_style('leaflet');
-        wp_enqueue_style('lrm');
-        wp_enqueue_style('leaflet-geocoder');
-        wp_enqueue_script('leaflet');
-        wp_enqueue_script('lrm');
-        wp_enqueue_script('leaflet-geocoder');
-        wp_enqueue_script('kc-osrm'); // <-- THIS defines KC_OSRM via wp_localize_script
+        wp_enqueue_style( 'leaflet' );
+        wp_enqueue_style( 'lrm' );
+        wp_enqueue_style( 'leaflet-geocoder' );
+        wp_enqueue_script( 'leaflet' );
+        wp_enqueue_script( 'lrm' );
+        wp_enqueue_script( 'leaflet-geocoder' );
+        wp_enqueue_script( 'kc-osrm' ); // <-- THIS defines KC_OSRM via wp_localize_script
 
         // output container only
-        $id     = esc_attr($atts['id']);
-        $start  = esc_js($atts['start']);
-        $end    = esc_js($atts['end']);
+        $id     = esc_attr( $atts['id'] );
+        $start  = esc_js( $atts['start'] );
+        $end    = esc_js( $atts['end'] );
         $zoom   = (int) $atts['zoom'];
-        $height = esc_attr($atts['height']);
+        $height = esc_attr( $atts['height'] );
 
         // push params to a queue that kc-osrm.js will consume
         $payload = wp_json_encode(
