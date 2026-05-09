@@ -2,7 +2,7 @@
 
 namespace Kerbcycle\QrCode\Public;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -24,9 +24,9 @@ class Shortcodes
      */
     public function __construct()
     {
-        add_shortcode('kerbcycle_scanner', [$this, 'generate_frontend_scanner']);
-        add_shortcode('kerbcycle_qr_table', [$this, 'generate_qr_table']);
-        add_shortcode('kerbcycle_osrm_map', [$this, 'osrm_map_shortcode']);
+        add_shortcode( 'kerbcycle_scanner', array( $this, 'generate_frontend_scanner' ) );
+        add_shortcode( 'kerbcycle_qr_table', array( $this, 'generate_qr_table' ) );
+        add_shortcode( 'kerbcycle_osrm_map', array( $this, 'osrm_map_shortcode' ) );
     }
 
     /**
@@ -36,11 +36,11 @@ class Shortcodes
      */
     public function generate_frontend_scanner()
     {
-        if (!Capabilities::can(Capabilities::manage_operations())) {
+        if ( ! Capabilities::can( Capabilities::manage_operations() ) ) {
             ob_start();
             ?>
             <div class="kerbcycle-qr-scanner-container kc-compact">
-                <p><?php esc_html_e('QR scanner is available to authorized staff only.', 'kerbcycle'); ?></p>
+                <p><?php esc_html_e( 'QR scanner is available to authorized staff only.', 'kerbcycle-qr-code-manager' ); ?></p>
             </div>
             <?php
             return ob_get_clean();
@@ -50,15 +50,17 @@ class Shortcodes
         ?>
         <div class="kerbcycle-qr-scanner-container kc-compact">
             <h2>Assign QR Code</h2>
-            <p><?php esc_html_e('Select the customer and scan the QR code to assign it.', 'kerbcycle'); ?></p>
+            <p><?php esc_html_e( 'Select the customer and scan the QR code to assign it.', 'kerbcycle-qr-code-manager' ); ?></p>
         <?php
-        wp_dropdown_users([
-            'name'             => 'customer_id',
-            'id'               => 'customer-id',
-            'class'            => 'kc-searchable',
-            'show_option_none' => __('Select Customer', 'kerbcycle'),
-            'option_none_value' => '',
-        ]);
+        wp_dropdown_users(
+            array(
+                'name'              => 'customer_id',
+                'id'                => 'customer-id',
+                'class'             => 'kc-searchable',
+                'show_option_none'  => __( 'Select Customer', 'kerbcycle-qr-code-manager' ),
+                'option_none_value' => '',
+            )
+        );
         ?>
             <script>
                 (function () {
@@ -67,22 +69,22 @@ class Shortcodes
                         return;
                     }
 
-                    select.setAttribute('data-placeholder', '<?php echo esc_js(__('Select Customer', 'kerbcycle')); ?>');
+                    select.setAttribute('data-placeholder', '<?php echo esc_js( __( 'Select Customer', 'kerbcycle-qr-code-manager' ) ); ?>');
                     select.setAttribute('data-resettable', 'true');
-                    select.setAttribute('data-reset-label', '<?php echo esc_js(__('Reset', 'kerbcycle')); ?>');
+                    select.setAttribute('data-reset-label', '<?php echo esc_js( __( 'Reset', 'kerbcycle-qr-code-manager' ) ); ?>');
                 })();
             </script>
             <div class="kerbcycle-scanner-actions">
                 <button id="assign-qr-btn" class="button button-primary">Assign QR Code</button>
-                <button id="reset-scan-btn" class="button button-primary"><?php esc_html_e('Scan Reset', 'kerbcycle'); ?></button>
-                <button id="report-exception-btn" class="button"><?php esc_html_e('Report Exception', 'kerbcycle'); ?></button>
+                <button id="reset-scan-btn" class="button button-primary"><?php esc_html_e( 'Scan Reset', 'kerbcycle-qr-code-manager' ); ?></button>
+                <button id="report-exception-btn" class="button"><?php esc_html_e( 'Report Exception', 'kerbcycle-qr-code-manager' ); ?></button>
             </div>
             <div id="scanner-exception-form-wrap" style="display:none; margin-top:12px;">
-                <input type="text" id="scanner-exception-qr-code" placeholder="<?php esc_attr_e('QR Code', 'kerbcycle'); ?>" style="width:100%; margin-bottom:8px;" />
-                <input type="number" id="scanner-exception-customer-id" min="1" step="1" placeholder="<?php esc_attr_e('Customer ID', 'kerbcycle'); ?>" style="width:100%; margin-bottom:8px;" />
-                <input type="text" id="scanner-exception-issue" placeholder="<?php esc_attr_e('Issue (required)', 'kerbcycle'); ?>" style="width:100%; margin-bottom:8px;" />
-                <textarea id="scanner-exception-notes" rows="3" placeholder="<?php esc_attr_e('Notes', 'kerbcycle'); ?>" style="width:100%; margin-bottom:8px;"></textarea>
-                <button id="scanner-submit-exception" class="button button-primary"><?php esc_html_e('Submit Exception', 'kerbcycle'); ?></button>
+                <input type="text" id="scanner-exception-qr-code" placeholder="<?php esc_attr_e( 'QR Code', 'kerbcycle-qr-code-manager' ); ?>" style="width:100%; margin-bottom:8px;" />
+                <input type="number" id="scanner-exception-customer-id" min="1" step="1" placeholder="<?php esc_attr_e( 'Customer ID', 'kerbcycle-qr-code-manager' ); ?>" style="width:100%; margin-bottom:8px;" />
+                <input type="text" id="scanner-exception-issue" placeholder="<?php esc_attr_e( 'Issue (required)', 'kerbcycle-qr-code-manager' ); ?>" style="width:100%; margin-bottom:8px;" />
+                <textarea id="scanner-exception-notes" rows="3" placeholder="<?php esc_attr_e( 'Notes', 'kerbcycle-qr-code-manager' ); ?>" style="width:100%; margin-bottom:8px;"></textarea>
+                <button id="scanner-submit-exception" class="button button-primary"><?php esc_html_e( 'Submit Exception', 'kerbcycle-qr-code-manager' ); ?></button>
                 <div id="scanner-exception-status" class="updated" style="display:none; margin-top:10px;"></div>
             </div>
             <div id="reader" style="width: 100%; max-width: 400px; margin-top: 20px;"></div>
@@ -99,11 +101,11 @@ class Shortcodes
      */
     public function generate_qr_table()
     {
-        if (!Capabilities::can(Capabilities::manage_operations())) {
+        if ( ! Capabilities::can( Capabilities::manage_operations() ) ) {
             ob_start();
             ?>
             <div class="kerbcycle-qr-scanner-container kc-compact">
-                <p><?php esc_html_e('QR table is available to authorized staff only.', 'kerbcycle'); ?></p>
+                <p><?php esc_html_e( 'QR table is available to authorized staff only.', 'kerbcycle-qr-code-manager' ); ?></p>
             </div>
             <?php
             return ob_get_clean();
@@ -111,6 +113,7 @@ class Shortcodes
 
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_qr_codes';
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query has no user-supplied SQL fragments.
         $codes = $wpdb->get_results(
             "SELECT id, qr_code, user_id, display_name, status, assigned_at FROM $table"
             . " ORDER BY assigned_at DESC, id DESC"
@@ -154,39 +157,39 @@ class Shortcodes
                 <table class="kerbcycle-qr-table widefat fixed striped">
                     <thead>
                         <tr>
-                            <th data-short="ID"><?php esc_html_e('ID', 'kerbcycle'); ?></th>
-                            <th data-short="QR"><?php esc_html_e('QR Code', 'kerbcycle'); ?></th>
-                            <th data-short="UID"><?php esc_html_e('User ID', 'kerbcycle'); ?></th>
-                            <th data-short="Cust"><?php esc_html_e('Customer', 'kerbcycle'); ?></th>
-                            <th data-short="Sts"><?php esc_html_e('Status', 'kerbcycle'); ?></th>
-                            <th data-short="At"><?php esc_html_e('Assigned At', 'kerbcycle'); ?></th>
+                            <th data-short="ID"><?php esc_html_e( 'ID', 'kerbcycle-qr-code-manager' ); ?></th>
+                            <th data-short="QR"><?php esc_html_e( 'QR Code', 'kerbcycle-qr-code-manager' ); ?></th>
+                            <th data-short="UID"><?php esc_html_e( 'User ID', 'kerbcycle-qr-code-manager' ); ?></th>
+                            <th data-short="Cust"><?php esc_html_e( 'Customer', 'kerbcycle-qr-code-manager' ); ?></th>
+                            <th data-short="Sts"><?php esc_html_e( 'Status', 'kerbcycle-qr-code-manager' ); ?></th>
+                            <th data-short="At"><?php esc_html_e( 'Assigned At', 'kerbcycle-qr-code-manager' ); ?></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php if (!empty($codes)) : ?>
-                            <?php foreach ($codes as $code) : ?>
-                                <tr data-qr-code="<?= esc_attr($code->qr_code); ?>">
-                                    <td><?= esc_html($code->id); ?></td>
-                                    <td title="<?= esc_attr($code->qr_code); ?>"><?= esc_html($code->qr_code); ?></td>
-                                    <td><?= $code->user_id ? esc_html($code->user_id) : '—'; ?></td>
+                        <?php if ( ! empty( $codes ) ) : ?>
+                            <?php foreach ( $codes as $code ) : ?>
+                                <tr data-qr-code="<?php echo esc_attr( $code->qr_code ); ?>">
+                                    <td><?php echo esc_html( $code->id ); ?></td>
+                                    <td title="<?php echo esc_attr( $code->qr_code ); ?>"><?php echo esc_html( $code->qr_code ); ?></td>
+                                    <td><?php echo $code->user_id ? esc_html( $code->user_id ) : '—'; ?></td>
                                     <td
-                                        title="<?= $code->display_name ? esc_attr($code->display_name) : '—'; ?>"
+                                        title="<?php echo $code->display_name ? esc_attr( $code->display_name ) : '—'; ?>"
                                     >
-                                        <?= $code->display_name ? esc_html($code->display_name) : '—'; ?>
+                                        <?php echo $code->display_name ? esc_html( $code->display_name ) : '—'; ?>
                                     </td>
-                                    <td><?= esc_html(ucfirst($code->status)); ?></td>
+                                    <td><?php echo esc_html( ucfirst( $code->status ) ); ?></td>
                                     <td
                                         class="kc-date"
-                                        title="<?= $code->assigned_at ? esc_attr($code->assigned_at) : '—'; ?>"
-                                        data-full="<?= $code->assigned_at ? esc_attr($code->assigned_at) : ''; ?>"
+                                        title="<?php echo $code->assigned_at ? esc_attr( $code->assigned_at ) : '—'; ?>"
+                                        data-full="<?php echo $code->assigned_at ? esc_attr( $code->assigned_at ) : ''; ?>"
                                     >
-                                        <?= $code->assigned_at ? esc_html($code->assigned_at) : '—'; ?>
+                                        <?php echo $code->assigned_at ? esc_html( $code->assigned_at ) : '—'; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php else : ?>
                             <tr>
-                                <td colspan="6" class="description"><?php esc_html_e('No QR codes found', 'kerbcycle'); ?></td>
+                                <td colspan="6" class="description"><?php esc_html_e( 'No QR codes found', 'kerbcycle-qr-code-manager' ); ?></td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
@@ -201,15 +204,19 @@ class Shortcodes
     /**
      * Shortcode renderer for the OSRM map.
      */
-    public function osrm_map_shortcode($atts)
+    public function osrm_map_shortcode( $atts )
     {
-        $atts = shortcode_atts([
-            'start'  => '40.730,-73.990', // lat,lon
-            'end'    => '40.780,-73.970', // lat,lon
-            'height' => '420px',
-            'zoom'   => 12,
-            'id'     => 'kc-osrm-'.wp_generate_uuid4(),
-        ], $atts, 'kerbcycle_osrm_map');
+        $atts = shortcode_atts(
+            array(
+                'start'  => '40.730,-73.990', // lat,lon
+                'end'    => '40.780,-73.970', // lat,lon
+                'height' => '420px',
+                'zoom'   => 12,
+                'id'     => 'kc-osrm-' . wp_generate_uuid4(),
+            ),
+            $atts,
+            'kerbcycle_osrm_map'
+        );
 
         // enqueue assets
         wp_enqueue_style('leaflet');
@@ -224,20 +231,22 @@ class Shortcodes
         $id     = esc_attr($atts['id']);
         $start  = esc_js($atts['start']);
         $end    = esc_js($atts['end']);
-        $zoom   = (int)$atts['zoom'];
+        $zoom   = (int) $atts['zoom'];
         $height = esc_attr($atts['height']);
 
         // push params to a queue that kc-osrm.js will consume
-        $payload = wp_json_encode([
-            'id'    => $id,
-            'start' => $start,
-            'end'   => $end,
-            'zoom'  => $zoom,
-        ]);
+        $payload = wp_json_encode(
+            array(
+                'id'    => $id,
+                'start' => $start,
+                'end'   => $end,
+                'zoom'  => $zoom,
+            )
+        );
 
         // Ensure inline runs AFTER kc-osrm is present
-        wp_add_inline_script('kc-osrm', "window.KC_OSRM_QUEUE=(window.KC_OSRM_QUEUE||[]).concat([$payload]);", 'after');
+        wp_add_inline_script( 'kc-osrm', "window.KC_OSRM_QUEUE=(window.KC_OSRM_QUEUE||[]).concat([$payload]);", 'after' );
 
-        return '<div id="'.$id.'" class="kc-osrm-container" style="height:'.$height.';"></div>';
+        return '<div id="' . $id . '" class="kc-osrm-container" style="height:' . $height . ';"></div>';
     }
 }
