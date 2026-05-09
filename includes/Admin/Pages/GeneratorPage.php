@@ -183,19 +183,19 @@ class GeneratorPage {
             wp_send_json_success( $result );
         }
 
-        $count  = max(1, min(5000, intval(wp_unslash($_POST['count'] ?? 20))));
-        $prefix = sanitize_text_field(wp_unslash($_POST['prefix'] ?? ''));
-        $len    = max(4, min(16, intval(wp_unslash($_POST['length'] ?? 8))));
+        $count  = max( 1, min( 5000, intval( wp_unslash( $_POST['count'] ?? 20 ) ) ) );
+        $prefix = sanitize_text_field( wp_unslash( $_POST['prefix'] ?? '' ) );
+        $len    = max( 4, min( 16, intval( wp_unslash( $_POST['length'] ?? 8 ) ) ) );
 
         if ( '' !== $prefix && ! preg_match( '/^[A-Za-z0-9-]+$/', $prefix ) ) {
             wp_send_json_error( array( 'message' => __( 'Invalid prefix.', 'kerbcycle-qr-code-manager' ) ), 400 );
         }
 
-        $attempts = 0;
+        $attempts   = 0;
         $saved_count = count( $result['saved'] );
         while ( $saved_count < $count ) {
             $rand = wp_generate_password( $len, false, false );
-            $code = $prefix . strtoupper($rand);
+            $code = $prefix . strtoupper( $rand );
             if ( $repo->exists( $code ) ) {
                 $result['skipped'][] = $code;
             } else {
@@ -228,16 +228,16 @@ class GeneratorPage {
             wp_die( esc_html__( 'Bad nonce.', 'kerbcycle-qr-code-manager' ) );
         }
 
-        $from   = sanitize_text_field(wp_unslash($_POST['from'] ?? ''));
-        $to     = sanitize_text_field(wp_unslash($_POST['to'] ?? ''));
-        $format = sanitize_text_field(wp_unslash($_POST['format'] ?? 'csv'));
+        $from   = sanitize_text_field( wp_unslash( $_POST['from'] ?? '' ) );
+        $to     = sanitize_text_field( wp_unslash( $_POST['to'] ?? '' ) );
+        $format = sanitize_text_field( wp_unslash( $_POST['format'] ?? 'csv' ) );
 
         if ( ! $from || ! $to ) {
             wp_die( esc_html__( 'Date range required.', 'kerbcycle-qr-code-manager' ) );
         }
 
         $repo = new QrRepoRepository();
-        $rows = $repo->list_between($from, $to);
+        $rows = $repo->list_between( $from, $to );
 
         if ( 'print' === $format ) {
             $this->render_printable( $rows, $from, $to );
@@ -245,8 +245,8 @@ class GeneratorPage {
         }
 
         nocache_headers();
-        header('Content-Type: text/csv; charset=UTF-8');
-        header('Content-Disposition: attachment; filename=kerbcycle-qr-codes-' . $from . '_to_' . $to . '.csv');
+        header( 'Content-Type: text/csv; charset=UTF-8' );
+        header( 'Content-Disposition: attachment; filename=kerbcycle-qr-codes-' . $from . '_to_' . $to . '.csv' );
 
         $out = fopen( 'php://output', 'w' );
         fputcsv( $out, array( 'ID', 'Code', 'Status', 'Created At' ) );
@@ -263,7 +263,7 @@ class GeneratorPage {
         <html>
         <head>
             <meta charset="utf-8"/>
-            <title>KerbCycle QR Codes: <?php echo esc_html($from); ?> to <?php echo esc_html($to); ?></title>
+            <title>KerbCycle QR Codes: <?php echo esc_html( $from ); ?> to <?php echo esc_html( $to ); ?></title>
             <style>
                 body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
                 .header { display:flex; justify-content:space-between; align-items:center; margin:16px 0; }
@@ -271,28 +271,28 @@ class GeneratorPage {
                 .card { border:1px solid #ddd; padding:12px; border-radius:12px; text-align:center; }
                 .code-text { margin-top:8px; font-weight:600; font-size:14px; word-break:break-all; }
                 @media print {
-                  .no-print { display:none; }
-                  .grid { gap:8px; }
-                  .card { padding:8px; }
+                  .no-print { display: none; }
+                  .grid { gap: 8px; }
+                  .card { padding: 8px; }
                 }
             </style>
         </head>
         <body>
             <div class="header no-print">
-                <h1>QR Codes (<?php echo esc_html($from); ?> → <?php echo esc_html($to); ?>)</h1>
+                <h1>QR Codes (<?php echo esc_html( $from ); ?> → <?php echo esc_html( $to ); ?>)</h1>
                 <button onclick="window.print()">Print</button>
             </div>
             <div class="grid" id="print-grid">
-                <?php foreach ($rows as $r): ?>
+                <?php foreach ( $rows as $r ) : ?>
                     <div class="card">
-                        <div class="qrc" data-code="<?php echo esc_attr($r['code']); ?>"></div>
-                        <div class="code-text"><?php echo esc_html($r['code']); ?></div>
+                        <div class="qrc" data-code="<?php echo esc_attr( $r['code'] ); ?>"></div>
+                        <div class="code-text"><?php echo esc_html( $r['code'] ); ?></div>
                     </div>
                 <?php endforeach; ?>
             </div>
 
             <script>
-            <?php readfile(KERBCYCLE_QR_PATH . 'assets/js/qrcode.min.js'); ?>
+            <?php readfile( KERBCYCLE_QR_PATH . 'assets/js/qrcode.min.js' ); ?>
             document.querySelectorAll('.qrc').forEach(function(el){
                 const code = el.getAttribute('data-code');
                 new QRCode(el, { text: code, width: 128, height: 128, correctLevel: QRCode.CorrectLevel.M });
