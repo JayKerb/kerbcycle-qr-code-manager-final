@@ -30,11 +30,11 @@ class HistoryPage {
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only history filter/pagination state; no server-side state is changed here.
         $status_filter = isset( $_GET['status_filter'] ) ? sanitize_text_field( wp_unslash( $_GET['status_filter'] ) ) : '';
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only history filter/pagination state; no server-side state is changed here.
-        $start_date    = isset( $_GET['start_date'] ) ? sanitize_text_field( wp_unslash( $_GET['start_date'] ) ) : '';
+        $start_date = isset( $_GET['start_date'] ) ? sanitize_text_field( wp_unslash( $_GET['start_date'] ) ) : '';
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only history filter/pagination state; no server-side state is changed here.
-        $end_date      = isset( $_GET['end_date'] ) ? sanitize_text_field( wp_unslash( $_GET['end_date'] ) ) : '';
+        $end_date = isset( $_GET['end_date'] ) ? sanitize_text_field( wp_unslash( $_GET['end_date'] ) ) : '';
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only history filter/pagination state; no server-side state is changed here.
-        $search        = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
+        $search = isset( $_GET['s'] ) ? sanitize_text_field( wp_unslash( $_GET['s'] ) ) : '';
 
         $where  = '1=1';
         $params = [];
