@@ -24,26 +24,36 @@ class DashboardPage {
 	public function render() {
 		global $wpdb;
 
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
-		$status_filter = isset( $_GET['status_filter'] )
-			? sanitize_text_field( wp_unslash( $_GET['status_filter'] ) )
-			: '';
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
-		$start_date = isset( $_GET['start_date'] )
-			? sanitize_text_field( wp_unslash( $_GET['start_date'] ) )
-			: '';
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
-		$end_date = isset( $_GET['end_date'] )
-			? sanitize_text_field( wp_unslash( $_GET['end_date'] ) )
-			: '';
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
-		$search = isset( $_GET['s'] )
-			? sanitize_text_field( wp_unslash( $_GET['s'] ) )
-			: '';
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
-		$current_page = isset( $_GET['paged'] )
-			? max( 1, absint( wp_unslash( $_GET['paged'] ) ) )
-			: 1;
+		$status_filter = '';
+		$start_date    = '';
+		$end_date      = '';
+		$search        = '';
+		$current_page  = 1;
+
+		if ( isset( $_GET['status_filter'] ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
+			$status_filter = sanitize_text_field( wp_unslash( $_GET['status_filter'] ) );
+		}
+
+		if ( isset( $_GET['start_date'] ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
+			$start_date = sanitize_text_field( wp_unslash( $_GET['start_date'] ) );
+		}
+
+		if ( isset( $_GET['end_date'] ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
+			$end_date = sanitize_text_field( wp_unslash( $_GET['end_date'] ) );
+		}
+
+		if ( isset( $_GET['s'] ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
+			$search = sanitize_text_field( wp_unslash( $_GET['s'] ) );
+		}
+
+		if ( isset( $_GET['paged'] ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
+			$current_page = max( 1, absint( wp_unslash( $_GET['paged'] ) ) );
+		}
 
 		$request_args = array(
 			'status_filter' => $status_filter,
@@ -290,7 +300,7 @@ class DashboardPage {
                             <div class="qr-pagination-controls" aria-live="polite"></div>
                             <div class="tablenav qr-pagination-fallback">
                                 <div class="tablenav-pages">
-                                    <?php echo $pagination_links; ?>
+                                    <?php echo wp_kses_post( $pagination_links ); ?>
                                 </div>
                             </div>
                         </div>
@@ -369,7 +379,7 @@ class DashboardPage {
                             <div class="qr-pagination-controls" aria-live="polite"></div>
                             <div class="tablenav qr-pagination-fallback">
                                 <div class="tablenav-pages">
-                                    <?php echo $pagination_links; ?>
+                                    <?php echo wp_kses_post( $pagination_links ); ?>
                                 </div>
                             </div>
                         </div>
