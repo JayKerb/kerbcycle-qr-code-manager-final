@@ -163,10 +163,13 @@ class GeneratorPage {
             wp_send_json_error( array( 'message' => __( 'No permission', 'kerbcycle-qr-code-manager' ) ), 403 );
         }
 
-        $repo = new QrRepoRepository();
+        $repo   = new QrRepoRepository();
         $user   = get_current_user_id();
         $type   = sanitize_text_field( wp_unslash( $_POST['genType'] ?? 'single' ) );
-        $result = array( 'saved' => array(), 'skipped' => array() );
+        $result = array( 
+            'saved' => array(), 
+            'skipped' => array() 
+        );
 
         if ( 'single' === $type ) {
             $code = trim( sanitize_text_field( wp_unslash( $_POST['code'] ?? '' ) ) );
@@ -191,7 +194,7 @@ class GeneratorPage {
             wp_send_json_error( array( 'message' => __( 'Invalid prefix.', 'kerbcycle-qr-code-manager' ) ), 400 );
         }
 
-        $attempts   = 0;
+        $attempts    = 0;
         $saved_count = count( $result['saved'] );
         while ( $saved_count < $count ) {
             $rand = wp_generate_password( $len, false, false );
@@ -271,9 +274,9 @@ class GeneratorPage {
                 .card { border:1px solid #ddd; padding:12px; border-radius:12px; text-align:center; }
                 .code-text { margin-top:8px; font-weight:600; font-size:14px; word-break:break-all; }
                 @media print {
-                  .no-print { display: none; }
-                  .grid { gap: 8px; }
-                  .card { padding: 8px; }
+                    .no-print { display: none; }
+                    .grid { gap: 8px; }
+                    .card { padding: 8px; }
                 }
             </style>
         </head>
