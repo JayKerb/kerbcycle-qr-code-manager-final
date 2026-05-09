@@ -30,26 +30,31 @@ class DashboardPage {
 		$search        = '';
 		$current_page  = 1;
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
 		if ( isset( $_GET['status_filter'] ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
 			$status_filter = sanitize_text_field( wp_unslash( $_GET['status_filter'] ) );
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
 		if ( isset( $_GET['start_date'] ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
 			$start_date = sanitize_text_field( wp_unslash( $_GET['start_date'] ) );
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
 		if ( isset( $_GET['end_date'] ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
 			$end_date = sanitize_text_field( wp_unslash( $_GET['end_date'] ) );
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
 		if ( isset( $_GET['s'] ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
 			$search = sanitize_text_field( wp_unslash( $_GET['s'] ) );
 		}
 
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
 		if ( isset( $_GET['paged'] ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only dashboard filter/search/pagination state; no server-side state is changed here.
 			$current_page = max( 1, absint( wp_unslash( $_GET['paged'] ) ) );
