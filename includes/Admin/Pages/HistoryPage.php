@@ -55,7 +55,7 @@ class HistoryPage {
         }
 
         if ( $search ) {
-            $like      = '%' . $wpdb->esc_like( $search ) . '%';
+            $like     = '%' . $wpdb->esc_like( $search ) . '%';
             $where   .= ' AND (CAST(id AS CHAR) LIKE %s OR qr_code LIKE %s OR CAST(user_id AS CHAR) LIKE %s OR CAST(changed_at AS CHAR) LIKE %s)';
             $params[] = $like;
             $params[] = $like;
@@ -63,10 +63,10 @@ class HistoryPage {
             $params[] = $like;
         }
 
-        $count_sql    = "SELECT COUNT(*) FROM $table_name WHERE $where";
+        $count_sql   = "SELECT COUNT(*) FROM $table_name WHERE $where";
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- SQL is assembled from fixed fragments; dynamic values are prepared before execution.
         $total_items = (int) ( $params ? $wpdb->get_var( $wpdb->prepare( $count_sql, $params ) ) : $wpdb->get_var( $count_sql ) );
-        $total_pages  = (int) ceil( $total_items / $per_page );
+        $total_pages = (int) ceil( $total_items / $per_page );
 
         $pagination_links = $total_pages > 1 ? paginate_links(
             [
@@ -82,7 +82,7 @@ class HistoryPage {
         $select_sql = "SELECT * FROM $table_name WHERE $where ORDER BY changed_at DESC LIMIT %d OFFSET %d";
         $query_args = array_merge( $params, [ $per_page, $offset ] );
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- SQL is assembled from fixed fragments; dynamic values are prepared before execution.
-        $qr_codes    = $wpdb->get_results( $wpdb->prepare( $select_sql, $query_args ) );
+        $qr_codes   = $wpdb->get_results( $wpdb->prepare( $select_sql, $query_args ) );
         ?>
         <div class="wrap">
             <h1>QR Code History</h1>
