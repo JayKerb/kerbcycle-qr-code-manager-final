@@ -165,7 +165,7 @@ class QrCodeRepository {
 		}
 
 		$placeholders = implode( ',', array_fill( 0, count( $codes ), '%s' ) );
-		$query = $wpdb->prepare(
+		$query        = $wpdb->prepare(
 			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare -- Table name is internally derived; placeholder list is generated from value count and query values are prepared.
 			"SELECT qr_code FROM {$this->table} WHERE status = 'available' AND qr_code IN ($placeholders)",
 			$codes
