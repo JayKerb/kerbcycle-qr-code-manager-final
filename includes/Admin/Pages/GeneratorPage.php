@@ -4,7 +4,7 @@ namespace Kerbcycle\QrCode\Admin\Pages;
 
 use Kerbcycle\QrCode\Data\Repositories\QrRepoRepository;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -21,7 +21,7 @@ class GeneratorPage
      */
     public static function instance(): self
     {
-        if (!self::$instance) {
+        if ( ! self::$instance ) {
             self::$instance = new self();
         }
         return self::$instance;
@@ -29,9 +29,9 @@ class GeneratorPage
 
     private function __construct()
     {
-        add_action('admin_enqueue_scripts', [$this, 'assets']);
-        add_action('wp_ajax_kerbcycle_generate_qr', [$this, 'ajax_generate_qr']);
-        add_action('admin_post_kerbcycle_export_qr_csv', [$this, 'handle_export_csv']);
+        add_action( 'admin_enqueue_scripts', array( $this, 'assets' ) );
+        add_action( 'wp_ajax_kerbcycle_generate_qr', array( $this, 'ajax_generate_qr' ) );
+        add_action( 'admin_post_kerbcycle_export_qr_csv', array( $this, 'handle_export_csv' ) );
     }
 
     /**
@@ -78,77 +78,77 @@ class GeneratorPage
     public function render()
     {
         if (!current_user_can('manage_options')) {
-            wp_die(__('Insufficient permissions.', 'kerbcycle'));
+            wp_die( esc_html__( 'Insufficient permissions.', 'kerbcycle-qr-code-manager' ) );
         }
         ?>
         <div class="wrap">
-            <h1><?php esc_html_e('QR Code Generator', 'kerbcycle'); ?></h1>
+            <h1><?php esc_html_e('QR Code Generator', 'kerbcycle-qr-code-manager'); ?></h1>
 
             <div class="kc-card">
-                <h2><?php esc_html_e('Generate Codes', 'kerbcycle'); ?></h2>
+                <h2><?php esc_html_e('Generate Codes', 'kerbcycle-qr-code-manager'); ?></h2>
                 <form id="kc-generate-form" onsubmit="return false;">
                     <div class="kc-row">
-                        <label><?php esc_html_e('Generate Type', 'kerbcycle'); ?></label>
+                        <label><?php esc_html_e('Generate Type', 'kerbcycle-qr-code-manager'); ?></label>
                         <select id="kc-gen-type">
-                            <option value="single"><?php esc_html_e('Single (enter exact code)', 'kerbcycle'); ?></option>
-                            <option value="batch"><?php esc_html_e('Batch (random codes)', 'kerbcycle'); ?></option>
+                            <option value="single"><?php esc_html_e('Single (enter exact code)', 'kerbcycle-qr-code-manager'); ?></option>
+                            <option value="batch"><?php esc_html_e('Batch (random codes)', 'kerbcycle-qr-code-manager'); ?></option>
                         </select>
                     </div>
 
                     <div class="kc-row kc-if-single">
-                        <label><?php esc_html_e('Code', 'kerbcycle'); ?></label>
+                        <label><?php esc_html_e('Code', 'kerbcycle-qr-code-manager'); ?></label>
                         <input type="text" id="kc-code" placeholder="e.g. KC-2025-0001" />
                     </div>
 
                     <div class="kc-row kc-if-batch" style="display:none;">
-                        <label><?php esc_html_e('How many?', 'kerbcycle'); ?></label>
+                        <label><?php esc_html_e('How many?', 'kerbcycle-qr-code-manager'); ?></label>
                         <input type="number" id="kc-count" min="1" max="5000" value="20" />
                     </div>
 
                     <div class="kc-row kc-if-batch" style="display:none;">
-                        <label><?php esc_html_e('Prefix (optional)', 'kerbcycle'); ?></label>
+                        <label><?php esc_html_e('Prefix (optional)', 'kerbcycle-qr-code-manager'); ?></label>
                         <input type="text" id="kc-prefix" placeholder="e.g. KC-2025-" />
                     </div>
 
                     <div class="kc-row kc-if-batch" style="display:none;">
-                        <label><?php esc_html_e('Length (random part)', 'kerbcycle'); ?></label>
+                        <label><?php esc_html_e('Length (random part)', 'kerbcycle-qr-code-manager'); ?></label>
                         <input type="number" id="kc-length" min="4" max="16" value="8" />
                     </div>
 
                     <div class="kc-row">
-                        <button class="button button-primary" id="kc-generate-btn"><?php esc_html_e('Generate & Save', 'kerbcycle'); ?></button>
+                        <button class="button button-primary" id="kc-generate-btn"><?php esc_html_e('Generate & Save', 'kerbcycle-qr-code-manager'); ?></button>
                     </div>
 
-                    <p class="description"><?php esc_html_e('Codes are saved to the repository only if unique. Duplicates are skipped.', 'kerbcycle'); ?></p>
+                    <p class="description"><?php esc_html_e('Codes are saved to the repository only if unique. Duplicates are skipped.', 'kerbcycle-qr-code-manager'); ?></p>
                 </form>
 
                 <div id="kc-generate-result" class="kc-grid"></div>
             </div>
 
             <div class="kc-card">
-                <h2><?php esc_html_e('Export Repository (Date Range)', 'kerbcycle'); ?></h2>
+                <h2><?php esc_html_e('Export Repository (Date Range)', 'kerbcycle-qr-code-manager'); ?></h2>
                 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
                     <?php wp_nonce_field('kerbcycle_export_qr_csv', 'kc_export_nonce'); ?>
                     <input type="hidden" name="action" value="kerbcycle_export_qr_csv" />
                     <div class="kc-row">
-                        <label><?php esc_html_e('From', 'kerbcycle'); ?></label>
+                        <label><?php esc_html_e('From', 'kerbcycle-qr-code-manager'); ?></label>
                         <input type="date" name="from" required />
                     </div>
                     <div class="kc-row">
-                        <label><?php esc_html_e('To', 'kerbcycle'); ?></label>
+                        <label><?php esc_html_e('To', 'kerbcycle-qr-code-manager'); ?></label>
                         <input type="date" name="to" required />
                     </div>
                     <div class="kc-row">
-                        <label><?php esc_html_e('Export Type', 'kerbcycle'); ?></label>
+                        <label><?php esc_html_e('Export Type', 'kerbcycle-qr-code-manager'); ?></label>
                         <select name="format">
-                            <option value="print"><?php esc_html_e('Printable Sheet (browser print)', 'kerbcycle'); ?></option>
-                            <option value="csv"><?php esc_html_e('CSV file', 'kerbcycle'); ?></option>
+                            <option value="print"><?php esc_html_e('Printable Sheet (browser print)', 'kerbcycle-qr-code-manager'); ?></option>
+                            <option value="csv"><?php esc_html_e('CSV file', 'kerbcycle-qr-code-manager'); ?></option>
                         </select>
                     </div>
                     <div class="kc-row">
-                        <button class="button"><?php esc_html_e('Export', 'kerbcycle'); ?></button>
+                        <button class="button"><?php esc_html_e('Export', 'kerbcycle-qr-code-manager'); ?></button>
                     </div>
-                    <p class="description"><?php esc_html_e('“Printable Sheet” opens a formatted page you can print to paper or PDF. “CSV” downloads code data.', 'kerbcycle'); ?></p>
+                    <p class="description"><?php esc_html_e('“Printable Sheet” opens a formatted page you can print to paper or PDF. “CSV” downloads code data.', 'kerbcycle-qr-code-manager'); ?></p>
                 </form>
             </div>
         </div>
@@ -162,7 +162,7 @@ class GeneratorPage
     {
         check_ajax_referer('kerbcycle_generate_qr', 'nonce');
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('No permission', 'kerbcycle')], 403);
+            wp_send_json_error(['message' => __('No permission', 'kerbcycle-qr-code-manager')], 403);
         }
 
         $repo = new QrRepoRepository();
@@ -173,7 +173,7 @@ class GeneratorPage
         if ($type === 'single') {
             $code = trim(sanitize_text_field(wp_unslash($_POST['code'] ?? '')));
             if ($code === '') {
-                wp_send_json_error(['message' => __('Code required.', 'kerbcycle')], 400);
+                wp_send_json_error(['message' => __('Code required.', 'kerbcycle-qr-code-manager')], 400);
             }
 
             if ($repo->exists($code)) {
@@ -190,11 +190,12 @@ class GeneratorPage
         $len    = max(4, min(16, intval(wp_unslash($_POST['length'] ?? 8))));
 
         if ($prefix !== '' && !preg_match('/^[A-Za-z0-9-]+$/', $prefix)) {
-            wp_send_json_error(['message' => __('Invalid prefix.', 'kerbcycle')], 400);
+            wp_send_json_error(['message' => __('Invalid prefix.', 'kerbcycle-qr-code-manager')], 400);
         }
 
         $attempts = 0;
-        while (count($result['saved']) < $count) {
+        $saved_count = count( $result['saved'] );
+        while ( $saved_count < $count ) {
             $rand = wp_generate_password($len, false, false);
             $code = $prefix . strtoupper($rand);
             if ($repo->exists($code)) {
@@ -202,8 +203,9 @@ class GeneratorPage
             } else {
                 $repo->insert($code, $user);
                 $result['saved'][] = $code;
+                ++$saved_count;
             }
-            $attempts++;
+            ++$attempts;
             if ($attempts > $count * 5) {
                 break; // prevent infinite loops on extreme collisions
             }
@@ -218,10 +220,10 @@ class GeneratorPage
     public function handle_export_csv()
     {
         if (!current_user_can('manage_options')) {
-            wp_die(__('No permission.', 'kerbcycle'));
+            wp_die(__('No permission.', 'kerbcycle-qr-code-manager'));
         }
         if (!isset($_POST['kc_export_nonce']) || !wp_verify_nonce($_POST['kc_export_nonce'], 'kerbcycle_export_qr_csv')) {
-            wp_die(__('Bad nonce.', 'kerbcycle'));
+            wp_die(__('Bad nonce.', 'kerbcycle-qr-code-manager'));
         }
 
         $from   = sanitize_text_field(wp_unslash($_POST['from'] ?? ''));
@@ -229,7 +231,7 @@ class GeneratorPage
         $format = sanitize_text_field(wp_unslash($_POST['format'] ?? 'csv'));
 
         if (!$from || !$to) {
-            wp_die(__('Date range required.', 'kerbcycle'));
+            wp_die(__('Date range required.', 'kerbcycle-qr-code-manager'));
         }
 
         $repo = new QrRepoRepository();
