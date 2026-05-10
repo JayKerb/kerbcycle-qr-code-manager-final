@@ -132,10 +132,15 @@ class MessagesHistoryPage
             return;
         }
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only message-history filter/pagination/display state; no server-side state is changed here.
         $active_tab = isset($_GET['tab']) && $_GET['tab'] === 'email' ? 'email' : 'sms';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only message-history filter/pagination/display state; no server-side state is changed here.
         $search     = isset($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only message-history filter/pagination/display state; no server-side state is changed here.
         $from       = isset($_GET['from']) ? sanitize_text_field( wp_unslash( $_GET['from'] ) ) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only message-history filter/pagination/display state; no server-side state is changed here.
         $to         = isset($_GET['to']) ? sanitize_text_field( wp_unslash( $_GET['to'] ) ) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only message-history filter/pagination/display state; no server-side state is changed here.
         $paged      = max(1, isset($_GET['paged']) ? absint( wp_unslash( $_GET['paged'] ) ) : 1);
         $per_page   = $active_tab === 'sms'
             ? (int) get_option('kerbcycle_sms_history_per_page', 20)
@@ -257,6 +262,7 @@ class MessagesHistoryPage
                     </form>
                 <?php endif; ?>
 
+                <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only message-history filter/pagination/display state; no server-side state is changed here. ?>
                 <?php if (!empty($_GET['repaired'])) : ?>
                     <?php
                     Notices::add(
@@ -272,6 +278,7 @@ class MessagesHistoryPage
                     ?>
                 <?php endif; ?>
 
+                <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only message-history filter/pagination/display state; no server-side state is changed here. ?>
                 <?php if (!empty($_GET['repair_failed'])) : ?>
                     <?php
                     Notices::add(
@@ -287,8 +294,10 @@ class MessagesHistoryPage
                     ?>
                 <?php endif; ?>
 
+                <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only message-history filter/pagination/display state; no server-side state is changed here. ?>
                 <?php if (!empty($_GET['deleted'])) : ?>
                     <?php
+                    // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only message-history filter/pagination/display state; no server-side state is changed here.
                     $deleted = absint( wp_unslash( $_GET['deleted'] ) );
                     Notices::add(
                         'success',
@@ -303,6 +312,7 @@ class MessagesHistoryPage
                     ?>
                 <?php endif; ?>
 
+                <?php // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only message-history filter/pagination/display state; no server-side state is changed here. ?>
                 <?php if (!empty($_GET['cleared'])) : ?>
                     <?php
                     Notices::add(
