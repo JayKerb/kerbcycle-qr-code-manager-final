@@ -35,7 +35,7 @@ class MessagesHistoryPage
     public function handle_clear_logs()
     {
         if (!current_user_can('manage_options')) {
-            wp_die(__('Access denied.', 'kerbcycle'));
+            wp_die( esc_html__( 'Access denied.', 'kerbcycle-qr-code-manager' ) );
         }
         Nonces::verify('kerbcycle_clear_logs');
 
@@ -50,7 +50,7 @@ class MessagesHistoryPage
     public function handle_bulk_delete()
     {
         if (!current_user_can('manage_options')) {
-            wp_die(__('Access denied.', 'kerbcycle'));
+            wp_die( esc_html__( 'Access denied.', 'kerbcycle-qr-code-manager' ) );
         }
         Nonces::verify('kerbcycle_delete_logs');
 
@@ -64,7 +64,7 @@ class MessagesHistoryPage
     public function handle_repair_logs()
     {
         if (!current_user_can('manage_options')) {
-            wp_die(__('Access denied.', 'kerbcycle'));
+            wp_die( esc_html__( 'Access denied.', 'kerbcycle-qr-code-manager' ) );
         }
         Nonces::verify('kerbcycle_repair_logs');
 
@@ -133,9 +133,9 @@ class MessagesHistoryPage
 
         $active_tab = isset($_GET['tab']) && $_GET['tab'] === 'email' ? 'email' : 'sms';
         $search     = isset($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : '';
-        $from       = isset($_GET['from']) ? sanitize_text_field($_GET['from']) : '';
-        $to         = isset($_GET['to']) ? sanitize_text_field($_GET['to']) : '';
-        $paged      = max(1, isset($_GET['paged']) ? absint($_GET['paged']) : 1);
+        $from       = isset($_GET['from']) ? sanitize_text_field( wp_unslash( $_GET['from'] ) ) : '';
+        $to         = isset($_GET['to']) ? sanitize_text_field( wp_unslash( $_GET['to'] ) ) : '';
+        $paged      = max(1, isset($_GET['paged']) ? absint( wp_unslash( $_GET['paged'] ) ) : 1);
         $per_page   = $active_tab === 'sms'
             ? (int) get_option('kerbcycle_sms_history_per_page', 20)
             : (int) get_option('kerbcycle_email_history_per_page', 20);
@@ -231,13 +231,13 @@ class MessagesHistoryPage
             </style>
 
             <div class="kc-msg-history">
-                <h1><?php esc_html_e('Messages History', 'kerbcycle'); ?></h1>
+                <h1><?php esc_html_e('Messages History', 'kerbcycle-qr-code-manager'); ?></h1>
 
                 <?php if (!$table_ok) : ?>
                     <?php
-                    $missing_message = esc_html__('The message logs table is missing or incomplete. Click “Repair Table” to (re)create the correct structure.', 'kerbcycle');
+                    $missing_message = esc_html__('The message logs table is missing or incomplete. Click “Repair Table” to (re)create the correct structure.', 'kerbcycle-qr-code-manager');
                     if (!empty($this->last_error)) {
-                        $missing_message .= '<br><strong>' . esc_html__('Last DB error:', 'kerbcycle') . '</strong> ' . esc_html($this->last_error);
+                        $missing_message .= '<br><strong>' . esc_html__('Last DB error:', 'kerbcycle-qr-code-manager') . '</strong> ' . esc_html($this->last_error);
                     }
                     Notices::add(
                         'error',
@@ -252,7 +252,7 @@ class MessagesHistoryPage
                     <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="margin:8px 0;">
                         <?php wp_nonce_field('kerbcycle_repair_logs'); ?>
                         <input type="hidden" name="action" value="kerbcycle_repair_logs" />
-                        <button class="button button-primary"><?php esc_html_e('Repair Table', 'kerbcycle'); ?></button>
+                        <button class="button button-primary"><?php esc_html_e('Repair Table', 'kerbcycle-qr-code-manager'); ?></button>
                     </form>
                 <?php endif; ?>
 
@@ -260,7 +260,7 @@ class MessagesHistoryPage
                     <?php
                     Notices::add(
                         'success',
-                        esc_html__('Logs table repaired.', 'kerbcycle'),
+                        esc_html__('Logs table repaired.', 'kerbcycle-qr-code-manager'),
                         [
                             'dismissible' => true,
                             'log_type'    => 'messages_history_repair',
@@ -275,7 +275,7 @@ class MessagesHistoryPage
                     <?php
                     Notices::add(
                         'error',
-                        esc_html__('Repair failed. Check server error logs or DB permissions.', 'kerbcycle'),
+                        esc_html__('Repair failed. Check server error logs or DB permissions.', 'kerbcycle-qr-code-manager'),
                         [
                             'dismissible' => true,
                             'log_type'    => 'messages_history_repair',
@@ -288,10 +288,10 @@ class MessagesHistoryPage
 
                 <?php if (!empty($_GET['deleted'])) : ?>
                     <?php
-                    $deleted = absint($_GET['deleted']);
+                    $deleted = absint( wp_unslash( $_GET['deleted'] ) );
                     Notices::add(
                         'success',
-                        sprintf(esc_html__('%d log(s) deleted.', 'kerbcycle'), $deleted),
+                        sprintf(esc_html__('%d log(s) deleted.', 'kerbcycle-qr-code-manager'), $deleted),
                         [
                             'dismissible' => true,
                             'log_type'    => 'messages_history_deleted',
@@ -306,7 +306,7 @@ class MessagesHistoryPage
                     <?php
                     Notices::add(
                         'success',
-                        esc_html__('All logs cleared.', 'kerbcycle'),
+                        esc_html__('All logs cleared.', 'kerbcycle-qr-code-manager'),
                         [
                             'dismissible' => true,
                             'log_type'    => 'messages_history_cleared',
@@ -319,22 +319,22 @@ class MessagesHistoryPage
 
                 <h2 class="nav-tab-wrapper" style="margin-top:12px;">
                     <a href="<?php echo esc_url(add_query_arg(['tab' => 'sms', 'paged' => 1], $base_url)); ?>" class="nav-tab <?php echo $active_tab === 'sms' ? 'nav-tab-active' : ''; ?>">
-                        <?php esc_html_e('SMS', 'kerbcycle'); ?>
+                        <?php esc_html_e('SMS', 'kerbcycle-qr-code-manager'); ?>
                     </a>
                     <a href="<?php echo esc_url(add_query_arg(['tab' => 'email', 'paged' => 1], $base_url)); ?>" class="nav-tab <?php echo $active_tab === 'email' ? 'nav-tab-active' : ''; ?>">
-                        <?php esc_html_e('Email', 'kerbcycle'); ?>
+                        <?php esc_html_e('Email', 'kerbcycle-qr-code-manager'); ?>
                     </a>
                 </h2>
 
                 <form class="filters" method="get" style="margin:12px 0;">
                     <input type="hidden" name="page" value="<?php echo esc_attr($this->page_slug); ?>" />
                     <input type="hidden" name="tab" value="<?php echo esc_attr($active_tab); ?>" />
-                    <input type="search" name="s" value="<?php echo esc_attr($search); ?>" placeholder="<?php esc_attr_e('Search recipient, subject, body, status…', 'kerbcycle'); ?>" />
+                    <input type="search" name="s" value="<?php echo esc_attr($search); ?>" placeholder="<?php esc_attr_e('Search recipient, subject, body, status…', 'kerbcycle-qr-code-manager'); ?>" />
                     <input type="date" name="from" value="<?php echo esc_attr($from); ?>" />
                     <input type="date" name="to" value="<?php echo esc_attr($to); ?>" />
-                    <button class="button"><?php esc_html_e('Filter', 'kerbcycle'); ?></button>
+                    <button class="button"><?php esc_html_e('Filter', 'kerbcycle-qr-code-manager'); ?></button>
                     <a class="button" href="<?php echo esc_url(add_query_arg(['s' => null, 'from' => null, 'to' => null, 'paged' => 1], $base_url)); ?>">
-                        <?php esc_html_e('Reset', 'kerbcycle'); ?>
+                        <?php esc_html_e('Reset', 'kerbcycle-qr-code-manager'); ?>
                     </a>
                 </form>
 
@@ -347,8 +347,8 @@ class MessagesHistoryPage
                                         'format'    => '',
                                         'current'   => $paged,
                                         'total'     => $pages,
-                                        'prev_text' => __('« Prev', 'kerbcycle'),
-                                        'next_text' => __('Next »', 'kerbcycle'),
+                                        'prev_text' => __('« Prev', 'kerbcycle-qr-code-manager'),
+                                        'next_text' => __('Next »', 'kerbcycle-qr-code-manager'),
                                     ]);
                     ?>
                         </div>
@@ -363,20 +363,20 @@ class MessagesHistoryPage
                         <thead>
                             <tr>
                                 <td class="col-cb"><input type="checkbox" id="kc-select-all" /></td>
-                                <th class="col-id"><?php esc_html_e('ID', 'kerbcycle'); ?></th>
-                                <th class="col-date"><?php esc_html_e('Date (UTC)', 'kerbcycle'); ?></th>
-                                <th class="col-type"><?php esc_html_e('Type', 'kerbcycle'); ?></th>
-                                <th class="col-recipient"><?php esc_html_e('Recipient', 'kerbcycle'); ?></th>
-                                <th class="col-subject"><?php esc_html_e('Subject', 'kerbcycle'); ?></th>
-                                <th class="col-body"><?php esc_html_e('Body', 'kerbcycle'); ?></th>
-                                <th class="col-status"><?php esc_html_e('Status', 'kerbcycle'); ?></th>
-                                <th class="col-provider"><?php esc_html_e('Provider', 'kerbcycle'); ?></th>
+                                <th class="col-id"><?php esc_html_e('ID', 'kerbcycle-qr-code-manager'); ?></th>
+                                <th class="col-date"><?php esc_html_e('Date (UTC)', 'kerbcycle-qr-code-manager'); ?></th>
+                                <th class="col-type"><?php esc_html_e('Type', 'kerbcycle-qr-code-manager'); ?></th>
+                                <th class="col-recipient"><?php esc_html_e('Recipient', 'kerbcycle-qr-code-manager'); ?></th>
+                                <th class="col-subject"><?php esc_html_e('Subject', 'kerbcycle-qr-code-manager'); ?></th>
+                                <th class="col-body"><?php esc_html_e('Body', 'kerbcycle-qr-code-manager'); ?></th>
+                                <th class="col-status"><?php esc_html_e('Status', 'kerbcycle-qr-code-manager'); ?></th>
+                                <th class="col-provider"><?php esc_html_e('Provider', 'kerbcycle-qr-code-manager'); ?></th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (empty($results)) : ?>
                                 <tr>
-                                    <td colspan="9"><?php esc_html_e('No logs found.', 'kerbcycle'); ?></td>
+                                    <td colspan="9"><?php esc_html_e('No logs found.', 'kerbcycle-qr-code-manager'); ?></td>
                                 </tr>
                             <?php else : ?>
                                 <?php foreach ($results as $row) : ?>
@@ -403,7 +403,7 @@ class MessagesHistoryPage
 
                     <div class="actions-row">
                         <button type="submit" class="button button-secondary" <?php disabled(empty($results)); ?>>
-                            <?php esc_html_e('Delete Selected', 'kerbcycle'); ?>
+                            <?php esc_html_e('Delete Selected', 'kerbcycle-qr-code-manager'); ?>
                         </button>
                     </div>
                 </form>
@@ -412,8 +412,8 @@ class MessagesHistoryPage
                 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>" style="display:inline; margin-top:8px;">
                     <?php wp_nonce_field('kerbcycle_clear_logs'); ?>
                     <input type="hidden" name="action" value="kerbcycle_clear_logs" />
-                    <button class="button button-link-delete" onclick="return confirm('<?php echo esc_js(__('Clear ALL logs? This cannot be undone.', 'kerbcycle')); ?>')">
-                        <?php esc_html_e('Clear All', 'kerbcycle'); ?>
+                    <button class="button button-link-delete" onclick="return confirm('<?php echo esc_js(__('Clear ALL logs? This cannot be undone.', 'kerbcycle-qr-code-manager')); ?>')">
+                        <?php esc_html_e('Clear All', 'kerbcycle-qr-code-manager'); ?>
                     </button>
                 </form>
 
@@ -426,8 +426,8 @@ class MessagesHistoryPage
                         'format'    => '',
                         'current'   => $paged,
                         'total'     => $pages,
-                        'prev_text' => __('« Prev', 'kerbcycle'),
-                        'next_text' => __('Next »', 'kerbcycle'),
+                        'prev_text' => __('« Prev', 'kerbcycle-qr-code-manager'),
+                        'next_text' => __('Next »', 'kerbcycle-qr-code-manager'),
                     ]);
                     ?>
                         </div>
