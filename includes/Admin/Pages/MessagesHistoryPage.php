@@ -302,6 +302,7 @@ class MessagesHistoryPage
                     $deleted = absint( wp_unslash( $_GET['deleted'] ) );
                     Notices::add(
                         'success',
+                        /* translators: %d: Number of message logs deleted. */
                         sprintf(esc_html__('%d log(s) deleted.', 'kerbcycle-qr-code-manager'), $deleted),
                         [
                             'dismissible' => true,
@@ -354,14 +355,14 @@ class MessagesHistoryPage
                     <div class="tablenav top" style="margin-bottom:12px;">
                         <div class="tablenav-pages">
                             <?php
-                                    echo paginate_links([
+                                    echo wp_kses_post( paginate_links([
                                         'base'      => esc_url(add_query_arg(['paged' => '%#%', 'tab' => $active_tab, 's' => $search, 'from' => $from, 'to' => $to], $base_url)),
                                         'format'    => '',
                                         'current'   => $paged,
                                         'total'     => $pages,
                                         'prev_text' => __('« Prev', 'kerbcycle-qr-code-manager'),
                                         'next_text' => __('Next »', 'kerbcycle-qr-code-manager'),
-                                    ]);
+                                    ] ) );
                     ?>
                         </div>
                     </div>
@@ -433,14 +434,14 @@ class MessagesHistoryPage
                     <div class="tablenav bottom" style="margin-top:12px;">
                         <div class="tablenav-pages">
                             <?php
-                    echo paginate_links([
+                    echo wp_kses_post( paginate_links([
                         'base'      => esc_url(add_query_arg(['paged' => '%#%', 'tab' => $active_tab, 's' => $search, 'from' => $from, 'to' => $to], $base_url)),
                         'format'    => '',
                         'current'   => $paged,
                         'total'     => $pages,
                         'prev_text' => __('« Prev', 'kerbcycle-qr-code-manager'),
                         'next_text' => __('Next »', 'kerbcycle-qr-code-manager'),
-                    ]);
+                    ] ) );
                     ?>
                         </div>
                     </div>
