@@ -43,7 +43,7 @@ class MessagesHistoryPage
         $table = $wpdb->prefix . 'kerbcycle_message_logs';
         $wpdb->query("TRUNCATE TABLE $table");
 
-        wp_redirect(add_query_arg(['page' => $this->page_slug, 'cleared' => 1], admin_url('admin.php')));
+        wp_safe_redirect(add_query_arg(['page' => $this->page_slug, 'cleared' => 1], admin_url('admin.php')));
         exit;
     }
 
@@ -57,7 +57,7 @@ class MessagesHistoryPage
         $ids = isset($_POST['log_ids']) && is_array($_POST['log_ids']) ? array_map('absint', $_POST['log_ids']) : [];
         $deleted = $this->repository->delete_by_ids($ids);
 
-        wp_redirect(add_query_arg(['page' => $this->page_slug, 'deleted' => (int)$deleted], admin_url('admin.php')));
+        wp_safe_redirect(add_query_arg(['page' => $this->page_slug, 'deleted' => (int)$deleted], admin_url('admin.php')));
         exit;
     }
 
@@ -77,7 +77,7 @@ class MessagesHistoryPage
         } else {
             $args['repair_failed'] = 1;
         }
-        wp_redirect(add_query_arg($args, admin_url('admin.php')));
+        wp_safe_redirect(add_query_arg($args, admin_url('admin.php')));
         exit;
     }
 
