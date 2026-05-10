@@ -55,6 +55,7 @@ class MessagesHistoryPage
         }
         Nonces::verify('kerbcycle_delete_logs');
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce is verified immediately before this POST access via Nonces::verify( 'kerbcycle_delete_logs' ).
         $ids = isset($_POST['log_ids']) && is_array($_POST['log_ids']) ? array_map('absint', $_POST['log_ids']) : [];
         $deleted = $this->repository->delete_by_ids($ids);
 
