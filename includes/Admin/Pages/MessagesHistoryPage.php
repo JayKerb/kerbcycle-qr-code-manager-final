@@ -41,6 +41,7 @@ class MessagesHistoryPage
 
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_message_logs';
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query has no user-supplied SQL fragments.
         $wpdb->query("TRUNCATE TABLE $table");
 
         wp_safe_redirect(add_query_arg(['page' => $this->page_slug, 'cleared' => 1], admin_url('admin.php')));
