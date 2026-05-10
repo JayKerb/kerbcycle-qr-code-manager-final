@@ -2,7 +2,7 @@
 
 namespace Kerbcycle\QrCode\Admin\Pages;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -26,60 +26,60 @@ class MessagesHistoryPage
     public function __construct()
     {
         $this->repository = new MessageLogRepository();
-        add_action('admin_post_kerbcycle_clear_logs', [$this, 'handle_clear_logs']);
-        add_action('admin_post_kerbcycle_delete_logs', [$this, 'handle_bulk_delete']);
-        add_action('admin_post_kerbcycle_repair_logs', [$this, 'handle_repair_logs']);
+        add_action( 'admin_post_kerbcycle_clear_logs', array( $this, 'handle_clear_logs' ) );
+        add_action( 'admin_post_kerbcycle_delete_logs', array( $this, 'handle_bulk_delete' ) );
+        add_action( 'admin_post_kerbcycle_repair_logs', array( $this, 'handle_repair_logs' ) );
     }
 
     /** Actions */
     public function handle_clear_logs()
     {
-        if (!current_user_can('manage_options')) {
+        if ( ! current_user_can( 'manage_options' ) ) {
             wp_die( esc_html__( 'Access denied.', 'kerbcycle-qr-code-manager' ) );
         }
-        Nonces::verify('kerbcycle_clear_logs');
+        Nonces::verify( 'kerbcycle_clear_logs' );
 
         global $wpdb;
         $table = $wpdb->prefix . 'kerbcycle_message_logs';
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; query has no user-supplied SQL fragments.
-        $wpdb->query("TRUNCATE TABLE $table");
+        $wpdb->query( "TRUNCATE TABLE $table" );
 
-        wp_safe_redirect(add_query_arg(['page' => $this->page_slug, 'cleared' => 1], admin_url('admin.php')));
+        wp_safe_redirect( add_query_arg( array( 'page' => $this->page_slug, 'cleared' => 1 ), admin_url( 'admin.php' ) ) );
         exit;
     }
 
     public function handle_bulk_delete()
     {
-        if (!current_user_can('manage_options')) {
+        if ( ! current_user_can( 'manage_options' ) ) {
             wp_die( esc_html__( 'Access denied.', 'kerbcycle-qr-code-manager' ) );
         }
-        Nonces::verify('kerbcycle_delete_logs');
+        Nonces::verify( 'kerbcycle_delete_logs' );
 
         // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce is verified immediately before this POST access via Nonces::verify( 'kerbcycle_delete_logs' ).
-        $ids = isset($_POST['log_ids']) && is_array($_POST['log_ids']) ? array_map('absint', $_POST['log_ids']) : [];
+        $ids = isset( $_POST['log_ids'] ) && is_array( $_POST['log_ids'] ) ? array_map( 'absint', $_POST['log_ids'] ) : array();
         $deleted = $this->repository->delete_by_ids($ids);
 
-        wp_safe_redirect(add_query_arg(['page' => $this->page_slug, 'deleted' => (int)$deleted], admin_url('admin.php')));
+        wp_safe_redirect( add_query_arg( array( 'page' => $this->page_slug, 'deleted' => (int) $deleted ), admin_url( 'admin.php' ) ) );
         exit;
     }
 
     public function handle_repair_logs()
     {
-        if (!current_user_can('manage_options')) {
+        if ( ! current_user_can( 'manage_options' ) ) {
             wp_die( esc_html__( 'Access denied.', 'kerbcycle-qr-code-manager' ) );
         }
-        Nonces::verify('kerbcycle_repair_logs');
+        Nonces::verify( 'kerbcycle_repair_logs' );
 
         // The activation logic will handle the repair
         \Kerbcycle\QrCode\Install\Activator::activate();
 
-        $args = ['page' => $this->page_slug];
+        $args = array( 'page' => $this->page_slug );
         if ($this->repository->table_is_valid()) {
             $args['repaired'] = 1;
         } else {
             $args['repair_failed'] = 1;
         }
-        wp_safe_redirect(add_query_arg($args, admin_url('admin.php')));
+        wp_safe_redirect( add_query_arg( $args, admin_url( 'admin.php' ) ) );
         exit;
     }
 
@@ -129,7 +129,7 @@ class MessagesHistoryPage
      */
     public function render()
     {
-        if (!current_user_can('manage_options')) {
+        if ( ! current_user_can( 'manage_options' ) ) {
             return;
         }
 
@@ -149,13 +149,13 @@ class MessagesHistoryPage
 
         // Validate table; provide repair notice if needed
         $table_ok = $this->repository->table_is_valid();
-        if (!$table_ok) {
+        if ( ! $table_ok ) {
             \Kerbcycle\QrCode\Install\Activator::activate(); // one more try during render
         }
 
         $results = $table_ok ? $this->repository->get_logs($active_tab, $search, $from, $to, $paged, $per_page) : [];
         $total   = $table_ok ? $this->repository->count_logs($active_tab, $search, $from, $to) : 0;
-        $pages   = max(1, (int)ceil($total / $per_page));
+        $pages   = max( 1, (int) ceil( $total / $per_page ) );
         $base_url = remove_query_arg(['paged', 'deleted', 'cleared', 'repaired', 'repair_failed'], admin_url('admin.php?page=' . $this->page_slug));
         ?>
         <div class="wrap">
