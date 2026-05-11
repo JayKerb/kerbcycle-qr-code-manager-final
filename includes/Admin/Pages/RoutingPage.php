@@ -55,29 +55,29 @@ class RoutingPage
             && false !== strpos($endpoint, 'router.project-osrm.org'));
         ?>
         <div class="wrap">
-            <h1><?php esc_html_e('OSRM Settings', 'kerbcycle'); ?></h1>
+            <h1><?php esc_html_e('OSRM Settings', 'kerbcycle-qr-code-manager'); ?></h1>
             <?php if ($demo_in_prod) : ?>
                 <div class="notice notice-error">
-                    <p><strong><?php esc_html_e('Production cannot use the public demo endpoint.', 'kerbcycle'); ?></strong></p>
+                    <p><strong><?php esc_html_e('Production cannot use the public demo endpoint.', 'kerbcycle-qr-code-manager'); ?></strong></p>
                 </div>
             <?php endif; ?>
             <form method="post" action="options.php">
                 <?php
                 settings_fields(self::OPTION_KEY);
         do_settings_sections(self::OPTION_KEY);
-        submit_button(__('Save OSRM Settings', 'kerbcycle'));
+        submit_button(__('Save OSRM Settings', 'kerbcycle-qr-code-manager'));
         ?>
             </form>
 
-            <h2><?php esc_html_e('Quick Test', 'kerbcycle'); ?></h2>
+            <h2><?php esc_html_e('Quick Test', 'kerbcycle-qr-code-manager'); ?></h2>
             <p>
-                <?php esc_html_e('Current endpoint:', 'kerbcycle'); ?>
+                <?php esc_html_e('Current endpoint:', 'kerbcycle-qr-code-manager'); ?>
                 <code><?php echo esc_html($endpoint); ?></code>
-                (<?php esc_html_e('profile:', 'kerbcycle'); ?>
+                (<?php esc_html_e('profile:', 'kerbcycle-qr-code-manager'); ?>
                 <code><?php echo esc_html($options['profile']); ?></code>)
             </p>
             <p>
-                <button class="button" id="kc-osrm-test"><?php esc_html_e('Ping /route', 'kerbcycle'); ?></button>
+                <button class="button" id="kc-osrm-test"><?php esc_html_e('Ping /route', 'kerbcycle-qr-code-manager'); ?></button>
                 <span id="kc-osrm-test-out" style="margin-left:8px;"></span>
             </p>
             <script>
@@ -88,11 +88,11 @@ class RoutingPage
                     return;
                 }
                 btn.addEventListener('click', function(){
-                    out.textContent = '<?php echo esc_js(__('Testing...', 'kerbcycle')); ?>';
+                    out.textContent = '<?php echo esc_js(__('Testing...', 'kerbcycle-qr-code-manager')); ?>';
                     fetch(ajaxurl, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                        body: 'action=kc_osrm_test&_wpnonce=<?php echo wp_create_nonce('kc_osrm_test'); ?>'
+                        body: 'action=kc_osrm_test&_wpnonce=<?php echo esc_js( wp_create_nonce( 'kc_osrm_test' ) ); ?>'
                     })
                         .then(function(response){ return response.json(); })
                         .then(function(payload){
@@ -121,14 +121,14 @@ class RoutingPage
 
         add_settings_section(
             'kc_osrm_main',
-            __('OSRM Configuration', 'kerbcycle'),
+            __('OSRM Configuration', 'kerbcycle-qr-code-manager'),
             '__return_false',
             self::OPTION_KEY
         );
 
         add_settings_field(
             'env',
-            __('Environment', 'kerbcycle'),
+            __('Environment', 'kerbcycle-qr-code-manager'),
             [$this, 'render_environment_field'],
             self::OPTION_KEY,
             'kc_osrm_main'
@@ -136,7 +136,7 @@ class RoutingPage
 
         add_settings_field(
             'endpoint_dev',
-            __('Dev endpoint', 'kerbcycle'),
+            __('Dev endpoint', 'kerbcycle-qr-code-manager'),
             function () {
                 $this->render_endpoint_field('endpoint_dev');
             },
@@ -146,7 +146,7 @@ class RoutingPage
 
         add_settings_field(
             'endpoint_stage',
-            __('Staging endpoint', 'kerbcycle'),
+            __('Staging endpoint', 'kerbcycle-qr-code-manager'),
             function () {
                 $this->render_endpoint_field('endpoint_stage');
             },
@@ -156,7 +156,7 @@ class RoutingPage
 
         add_settings_field(
             'endpoint_prod',
-            __('Production endpoint', 'kerbcycle'),
+            __('Production endpoint', 'kerbcycle-qr-code-manager'),
             function () {
                 $this->render_endpoint_field('endpoint_prod');
             },
@@ -166,7 +166,7 @@ class RoutingPage
 
         add_settings_field(
             'profile',
-            __('Default profile', 'kerbcycle'),
+            __('Default profile', 'kerbcycle-qr-code-manager'),
             [$this, 'render_profile_field'],
             self::OPTION_KEY,
             'kc_osrm_main'
@@ -174,7 +174,7 @@ class RoutingPage
 
         add_settings_field(
             'tile_url',
-            __('Tile URL', 'kerbcycle'),
+            __('Tile URL', 'kerbcycle-qr-code-manager'),
             [$this, 'render_tile_url_field'],
             self::OPTION_KEY,
             'kc_osrm_main'
@@ -182,7 +182,7 @@ class RoutingPage
 
         add_settings_field(
             'tile_attrib',
-            __('Tile attribution', 'kerbcycle'),
+            __('Tile attribution', 'kerbcycle-qr-code-manager'),
             [$this, 'render_tile_attribution_field'],
             self::OPTION_KEY,
             'kc_osrm_main'
@@ -190,7 +190,7 @@ class RoutingPage
 
         add_settings_field(
             'default_start',
-            __('Default start (lat,lon)', 'kerbcycle'),
+            __('Default start (lat,lon)', 'kerbcycle-qr-code-manager'),
             [$this, 'render_default_start_field'],
             self::OPTION_KEY,
             'kc_osrm_main'
@@ -198,7 +198,7 @@ class RoutingPage
 
         add_settings_field(
             'timeout',
-            __('HTTP timeout (s)', 'kerbcycle'),
+            __('HTTP timeout (s)', 'kerbcycle-qr-code-manager'),
             [$this, 'render_timeout_field'],
             self::OPTION_KEY,
             'kc_osrm_main'
@@ -206,7 +206,7 @@ class RoutingPage
 
         add_settings_field(
             'deny_demo_in_prod',
-            __('Block demo in prod', 'kerbcycle'),
+            __('Block demo in prod', 'kerbcycle-qr-code-manager'),
             [$this, 'render_deny_demo_field'],
             self::OPTION_KEY,
             'kc_osrm_main'
@@ -252,7 +252,7 @@ class RoutingPage
                     add_settings_error(
                         self::OPTION_KEY,
                         'default_start_oob',
-                        __('Latitude must be between -90 and 90 and longitude between -180 and 180.', 'kerbcycle')
+                        __('Latitude must be between -90 and 90 and longitude between -180 and 180.', 'kerbcycle-qr-code-manager')
                     );
                     $output['default_start'] = '';
                 } else {
@@ -262,7 +262,7 @@ class RoutingPage
                 add_settings_error(
                     self::OPTION_KEY,
                     'default_start_invalid',
-                    __('Default start must be in the format "lat,lon" (e.g. 40.730000,-73.990000).', 'kerbcycle')
+                    __('Default start must be in the format "lat,lon" (e.g. 40.730000,-73.990000).', 'kerbcycle-qr-code-manager')
                 );
                 $output['default_start'] = '';
             }
@@ -281,9 +281,9 @@ class RoutingPage
         $options = OsrmService::get_options();
         ?>
         <select name="<?php echo esc_attr(self::OPTION_KEY); ?>[env]">
-            <option value="dev" <?php selected($options['env'], 'dev'); ?>><?php esc_html_e('Development', 'kerbcycle'); ?></option>
-            <option value="stage" <?php selected($options['env'], 'stage'); ?>><?php esc_html_e('Staging', 'kerbcycle'); ?></option>
-            <option value="prod" <?php selected($options['env'], 'prod'); ?>><?php esc_html_e('Production', 'kerbcycle'); ?></option>
+            <option value="dev" <?php selected($options['env'], 'dev'); ?>><?php esc_html_e('Development', 'kerbcycle-qr-code-manager'); ?></option>
+            <option value="stage" <?php selected($options['env'], 'stage'); ?>><?php esc_html_e('Staging', 'kerbcycle-qr-code-manager'); ?></option>
+            <option value="prod" <?php selected($options['env'], 'prod'); ?>><?php esc_html_e('Production', 'kerbcycle-qr-code-manager'); ?></option>
         </select>
         <?php
     }
@@ -302,7 +302,7 @@ class RoutingPage
         );
 
         if ('endpoint_dev' === $key) {
-            echo '<p class="description">' . esc_html__('Demo server is OK for development, not for production.', 'kerbcycle') . '</p>';
+            echo '<p class="description">' . esc_html__('Demo server is OK for development, not for production.', 'kerbcycle-qr-code-manager') . '</p>';
         }
     }
 
@@ -314,9 +314,9 @@ class RoutingPage
         $options = OsrmService::get_options();
         ?>
         <select name="<?php echo esc_attr(self::OPTION_KEY); ?>[profile]">
-            <option value="driving" <?php selected($options['profile'], 'driving'); ?>><?php esc_html_e('driving', 'kerbcycle'); ?></option>
-            <option value="cycling" <?php selected($options['profile'], 'cycling'); ?>><?php esc_html_e('cycling', 'kerbcycle'); ?></option>
-            <option value="walking" <?php selected($options['profile'], 'walking'); ?>><?php esc_html_e('walking', 'kerbcycle'); ?></option>
+            <option value="driving" <?php selected($options['profile'], 'driving'); ?>><?php esc_html_e('driving', 'kerbcycle-qr-code-manager'); ?></option>
+            <option value="cycling" <?php selected($options['profile'], 'cycling'); ?>><?php esc_html_e('cycling', 'kerbcycle-qr-code-manager'); ?></option>
+            <option value="walking" <?php selected($options['profile'], 'walking'); ?>><?php esc_html_e('walking', 'kerbcycle-qr-code-manager'); ?></option>
         </select>
         <?php
     }
@@ -358,7 +358,7 @@ class RoutingPage
             esc_attr(self::OPTION_KEY),
             esc_attr($options['default_start'])
         );
-        echo '<p class="description">' . esc_html__('Format: latitude,longitude (example: 40.730000,-73.990000). Leave blank to disable.', 'kerbcycle') . '</p>';
+        echo '<p class="description">' . esc_html__('Format: latitude,longitude (example: 40.730000,-73.990000). Leave blank to disable.', 'kerbcycle-qr-code-manager') . '</p>';
     }
 
     /**
@@ -384,7 +384,7 @@ class RoutingPage
             '<label><input type="checkbox" name="%1$s[deny_demo_in_prod]" value="1" %2$s /> %3$s</label>',
             esc_attr(self::OPTION_KEY),
             checked($options['deny_demo_in_prod'], 1, false),
-            esc_html__('Prevent saving router.project-osrm.org while env = Production', 'kerbcycle')
+            esc_html__('Prevent saving router.project-osrm.org while env = Production', 'kerbcycle-qr-code-manager')
         );
     }
 
@@ -395,14 +395,14 @@ class RoutingPage
     {
         check_ajax_referer('kc_osrm_test');
         if (!current_user_can('manage_options')) {
-            wp_send_json(['ok' => false, 'error' => __('Unauthorized', 'kerbcycle')], 403);
+            wp_send_json(['ok' => false, 'error' => __('Unauthorized', 'kerbcycle-qr-code-manager')], 403);
         }
 
         $options = OsrmService::get_options();
         $endpoint = OsrmService::current_endpoint($options);
 
         if (empty($endpoint)) {
-            wp_send_json(['ok' => false, 'error' => __('No endpoint configured', 'kerbcycle')]);
+            wp_send_json(['ok' => false, 'error' => __('No endpoint configured', 'kerbcycle-qr-code-manager')]);
         }
 
         if (
@@ -410,7 +410,7 @@ class RoutingPage
             && $options['deny_demo_in_prod']
             && false !== strpos($endpoint, 'router.project-osrm.org')
         ) {
-            wp_send_json(['ok' => false, 'error' => __('Demo endpoint blocked in production', 'kerbcycle')]);
+            wp_send_json(['ok' => false, 'error' => __('Demo endpoint blocked in production', 'kerbcycle-qr-code-manager')]);
         }
 
         $profile = $options['profile'];
