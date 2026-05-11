@@ -31,7 +31,7 @@ class QrService
 	{
 		// Prevent duplicates regardless of current status (available or assigned)
 		if ($this->repository->find_by_qr_code($qr_code)) {
-			return new \WP_Error('duplicate_qr_code', __('This QR code already exists.', 'kerbcycle'));
+			return new \WP_Error('duplicate_qr_code', __('This QR code already exists.', 'kerbcycle-qr-code-manager'));
 		}
 		$inserted = $this->repository->insert_available($qr_code);
 		if ($inserted === false) {
@@ -40,11 +40,12 @@ class QrService
 		return $this->repository->find_by_qr_code($qr_code);
 	}
 
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Reserved for backwards-compatible assign() signature; reminder behavior is not implemented in this method yet.
 	public function assign($qr_code, $user_id, $send_email, $send_sms, $send_reminder)
 	{
 		$user_id = (int) $user_id;
 		if ($user_id < 1 || !get_userdata($user_id)) {
-			return new \WP_Error('invalid_customer', __('Invalid customer selected.', 'kerbcycle'));
+			return new \WP_Error('invalid_customer', __('Invalid customer selected.', 'kerbcycle-qr-code-manager'));
 		}
 
 		$latest = $this->repository->find_by_qr_code($qr_code);
@@ -54,22 +55,22 @@ class QrService
 			if ($active_assigned && (int) $active_assigned->user_id === (int) $user_id) {
 				return new \WP_Error(
 					'qr_code_already_assigned',
-					__('This QR code is already assigned to the selected customer.', 'kerbcycle')
+					__('This QR code is already assigned to the selected customer.', 'kerbcycle-qr-code-manager')
 				);
 			}
 
-			$message = __('This QR code is already assigned. Release it before assigning it to another customer.', 'kerbcycle');
+			$message = __('This QR code is already assigned. Release it before assigning it to another customer.', 'kerbcycle-qr-code-manager');
 
 			if ($active_assigned && !empty($active_assigned->display_name)) {
-				/* translators: %s is the customer's display name. */
 				$message = sprintf(
-					__('This QR code is already assigned to %s. Release it before assigning it to another customer.', 'kerbcycle'),
+					/* translators: %s is the customer's display name. */
+					__('This QR code is already assigned to %s. Release it before assigning it to another customer.', 'kerbcycle-qr-code-manager'),
 					$active_assigned->display_name
 				);
 			} elseif ($active_assigned && !empty($active_assigned->user_id)) {
-				/* translators: %d is the customer's ID. */
 				$message = sprintf(
-					__('This QR code is already assigned to customer #%d. Release it before assigning it to another customer.', 'kerbcycle'),
+					/* translators: %d is the customer's ID. */
+					__('This QR code is already assigned to customer #%d. Release it before assigning it to another customer.', 'kerbcycle-qr-code-manager'),
 					(int) $active_assigned->user_id
 				);
 			}
@@ -85,7 +86,7 @@ class QrService
 				$qr_code,
 				['customer_id' => $user_id]
 			);
-			return new \WP_Error('qr_code_not_available', __('QR code is not available for assignment.', 'kerbcycle'));
+			return new \WP_Error('qr_code_not_available', __('QR code is not available for assignment.', 'kerbcycle-qr-code-manager'));
 		}
 
 		$user = get_userdata($user_id);
@@ -101,12 +102,12 @@ class QrService
 				if ((int) $latest_after_update->user_id === $user_id) {
 					return new \WP_Error(
 						'qr_code_already_assigned',
-						__('This QR code is already assigned to the selected customer.', 'kerbcycle')
+						__('This QR code is already assigned to the selected customer.', 'kerbcycle-qr-code-manager')
 					);
 				}
 				return new \WP_Error(
 					'qr_code_already_assigned',
-					__('This QR code was assigned by another request. Refresh and try again.', 'kerbcycle')
+					__('This QR code was assigned by another request. Refresh and try again.', 'kerbcycle-qr-code-manager')
 				);
 			}
 			return new \WP_Error('db_error', 'Failed to assign QR code in database.');
@@ -145,7 +146,7 @@ class QrService
 				'QR code is not currently assigned.',
 				$qr_code
 			);
-			return new \WP_Error('invalid_state', __('QR code is not currently assigned.', 'kerbcycle'));
+			return new \WP_Error('invalid_state', __('QR code is not currently assigned.', 'kerbcycle-qr-code-manager'));
 		}
 		if ($assigned_count > 1) {
 			$this->log_qr_state_event(
@@ -155,7 +156,7 @@ class QrService
 				$qr_code,
 				['assigned_count' => (int) $assigned_count]
 			);
-			return new \WP_Error('conflicting_state', __('QR code assignment state is ambiguous. Resolve duplicates before release.', 'kerbcycle'));
+			return new \WP_Error('conflicting_state', __('QR code assignment state is ambiguous. Resolve duplicates before release.', 'kerbcycle-qr-code-manager'));
 		}
 
 		$row = $this->repository->find_latest_by_status($qr_code, 'assigned');
@@ -166,7 +167,7 @@ class QrService
 				'Assigned row missing or invalid during release.',
 				$qr_code
 			);
-			return new \WP_Error('invalid_state', __('QR code is not currently assigned.', 'kerbcycle'));
+			return new \WP_Error('invalid_state', __('QR code is not currently assigned.', 'kerbcycle-qr-code-manager'));
 		}
 
 		$result = $this->repository->release_latest_assigned($qr_code);
@@ -221,7 +222,7 @@ class QrService
 
 		$webhook_url = is_string($webhook_url) ? trim($webhook_url) : '';
 		if ($webhook_url === '') {
-			return new \WP_Error('pickup_exception_webhook_missing', __('Pickup exception webhook URL is not configured.', 'kerbcycle'));
+			return new \WP_Error('pickup_exception_webhook_missing', __('Pickup exception webhook URL is not configured.', 'kerbcycle-qr-code-manager'));
 		}
 
 		$payload = [
@@ -243,6 +244,7 @@ class QrService
 		]);
 
 		if (is_wp_error($response)) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Pickup exception webhook diagnostics are intentionally logged for failed delivery troubleshooting.
 			error_log('KerbCycle pickup_exception webhook WP_Error: ' . $response->get_error_message());
 			return $response;
 		}
@@ -250,6 +252,7 @@ class QrService
 		$status_code = (int) wp_remote_retrieve_response_code($response);
 		if ($status_code < 200 || $status_code >= 300) {
 			$body = wp_remote_retrieve_body($response);
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Pickup exception webhook diagnostics are intentionally logged for failed delivery troubleshooting.
 			error_log('KerbCycle pickup_exception webhook HTTP ' . $status_code . ' Body: ' . $body);
 			return [
 				'success'     => false,
@@ -280,7 +283,7 @@ class QrService
 	public function update($old_code, $new_code)
 	{
 		if ($this->repository->find_by_qr_code($new_code)) {
-			return new \WP_Error('duplicate_qr_code', __('This QR code already exists.', 'kerbcycle'));
+			return new \WP_Error('duplicate_qr_code', __('This QR code already exists.', 'kerbcycle-qr-code-manager'));
 		}
 		return $this->repository->update_code($old_code, $new_code);
 	}
