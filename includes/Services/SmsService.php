@@ -199,7 +199,7 @@ class SmsService
 			$out[$k] = is_string($val) ? wp_kses_post($val) : $val;
 		}
 		// Handle in-page test send
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce is verified immediately before this POST access via Nonces::verify( 'kc_sms_test', 'kc_sms_test_nonce' ).
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only submit-button presence check before nonce verification; state-changing test send is gated by Nonces::verify( 'kc_sms_test', 'kc_sms_test_nonce' ) immediately inside this block.
 		if (!empty($_POST['kc_sms_do_test'])) {
 			Nonces::verify('kc_sms_test', 'kc_sms_test_nonce');
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce is verified immediately before this POST access via Nonces::verify( 'kc_sms_test', 'kc_sms_test_nonce' ).
@@ -256,6 +256,7 @@ class SmsService
 		// 1) Auth method helpers
 		switch ($opts['auth_method']) {
 			case 'basic':
+				// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Required for HTTP Basic Auth header encoding, not code obfuscation.
 				$headers['Authorization'] = 'Basic ' . base64_encode($opts['api_key'] . ':' . $opts['api_secret']);
 				break;
 			case 'bearer':
@@ -351,6 +352,7 @@ class SmsService
 
 		if (is_wp_error($response)) {
 			if ($opts['debug'] === '1') {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only SMS gateway diagnostics gated by the plugin debug option.
 				error_log('KerbCycle SMS WP_Error: ' . $response->get_error_message());
 			}
 			return $response;
@@ -360,6 +362,7 @@ class SmsService
 		$resp_body = wp_remote_retrieve_body($response);
 
 		if ($opts['debug'] === '1') {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug-only SMS gateway diagnostics gated by the plugin debug option.
 			error_log('KerbCycle SMS Response: HTTP ' . $code . ' Body: ' . $resp_body);
 		}
 
@@ -422,6 +425,7 @@ class SmsService
 /**
  * Public helper your plugin can call anywhere.
  */
+// phpcs:ignore Squiz.Classes.ValidClassName.NotCamelCaps, Squiz.Classes.ClassFileName.NoMatch, Generic.Files.OneObjectStructurePerFile.MultipleFound -- Intentional global helper preserved for backwards-compatible plugin access.
 function kerbcycle_sms_send($to, $message, $args = [])
 {
 	return SmsService::send($to, $message, $args);
