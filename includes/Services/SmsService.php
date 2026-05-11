@@ -425,7 +425,7 @@ class SmsService
 /**
  * Public helper your plugin can call anywhere.
  */
-// phpcs:ignore Squiz.Classes.ValidClassName.NotCamelCaps, Squiz.Classes.ClassFileName.NoMatch, Generic.Files.OneObjectStructurePerFile.MultipleFound -- Intentional global helper preserved for backwards-compatible plugin access.
+// phpcs:ignore Universal.Files.SeparateFunctionsFromOO.Mixed -- Intentional global helper preserved for backwards-compatible plugin access.
 function kerbcycle_sms_send($to, $message, $args = [])
 {
 	return SmsService::send($to, $message, $args);
