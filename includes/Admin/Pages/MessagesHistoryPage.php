@@ -340,35 +340,38 @@ class MessagesHistoryPage {
                     ?>
                 <?php endif; ?>
 
+                <?php
+                $sms_tab_url = add_query_arg(
+                    array(
+                        'tab'   => 'sms',
+                        'paged' => 1,
+                    ),
+                    $base_url
+                );
+
+                $email_tab_url = add_query_arg(
+                    array(
+                        'tab'   => 'email',
+                        'paged' => 1,
+                    ),
+                    $base_url
+                );
+
+                $reset_url = add_query_arg(
+                    array(
+                        's'     => null,
+                        'from'  => null,
+                        'to'    => null,
+                        'paged' => 1,
+                    ),
+                    $base_url
+                );
+                ?>
                 <h2 class="nav-tab-wrapper" style="margin-top:12px;">
-                    <a href="
-                    <?php
-                    echo esc_url(
-                        add_query_arg(
-                            [
-								'tab'   => 'sms',
-								'paged' => 1,
-							],
-							$base_url
-                        )
-                    );
-					?>
-                                " class="nav-tab <?php echo $active_tab === 'sms' ? 'nav-tab-active' : ''; ?>">
+                    <a href="<?php echo esc_url( $sms_tab_url ); ?>" class="nav-tab <?php echo $active_tab === 'sms' ? 'nav-tab-active' : ''; ?>">
                         <?php esc_html_e( 'SMS', 'kerbcycle-qr-code-manager' ); ?>
                     </a>
-                    <a href="
-                    <?php
-                    echo esc_url(
-                        add_query_arg(
-                            [
-								'tab'   => 'email',
-								'paged' => 1,
-							],
-							$base_url
-                        )
-                    );
-					?>
-                                " class="nav-tab <?php echo $active_tab === 'email' ? 'nav-tab-active' : ''; ?>">
+                    <a href="<?php echo esc_url( $email_tab_url ); ?>" class="nav-tab <?php echo $active_tab === 'email' ? 'nav-tab-active' : ''; ?>">
                         <?php esc_html_e( 'Email', 'kerbcycle-qr-code-manager' ); ?>
                     </a>
                 </h2>
@@ -380,21 +383,7 @@ class MessagesHistoryPage {
                     <input type="date" name="from" value="<?php echo esc_attr( $from ); ?>" />
                     <input type="date" name="to" value="<?php echo esc_attr( $to ); ?>" />
                     <button class="button"><?php esc_html_e( 'Filter', 'kerbcycle-qr-code-manager' ); ?></button>
-                    <a class="button" href="
-                    <?php
-                    echo esc_url(
-                        add_query_arg(
-                            [
-								's'     => null,
-								'from'  => null,
-								'to'    => null,
-								'paged' => 1,
-							],
-							$base_url
-                        )
-                    );
-					?>
-                                            ">
+                    <a class="button" href="<?php echo esc_url( $reset_url ); ?>">
                         <?php esc_html_e( 'Reset', 'kerbcycle-qr-code-manager' ); ?>
                     </a>
                 </form>
