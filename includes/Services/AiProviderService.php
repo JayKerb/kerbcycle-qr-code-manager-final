@@ -46,7 +46,7 @@ class AiProviderService
         $provider = $provider !== '' ? $provider : 'ollama';
 
         if (!in_array($provider, ['ollama', 'render'], true)) {
-            return new \WP_Error('kerbcycle_ai_provider_unsupported', __('Unsupported AI provider configured.', 'kerbcycle'), ['status' => 500]);
+            return new \WP_Error('kerbcycle_ai_provider_unsupported', __('Unsupported AI provider configured.', 'kerbcycle-qr-code-manager'), ['status' => 500]);
         }
 
         return $provider;
@@ -67,7 +67,7 @@ class AiProviderService
         $model    = is_string($model) ? trim($model) : 'llama3.1:8b';
 
         if ($base_url === '' || $model === '') {
-            return new \WP_Error('kerbcycle_ai_provider_misconfigured', __('AI provider configuration is incomplete.', 'kerbcycle'), ['status' => 500]);
+            return new \WP_Error('kerbcycle_ai_provider_misconfigured', __('AI provider configuration is incomplete.', 'kerbcycle-qr-code-manager'), ['status' => 500]);
         }
 
         $request_payload = [
@@ -92,7 +92,7 @@ class AiProviderService
         if (is_wp_error($response)) {
             $this->log_provider_event('ollama', $action, $elapsed_ms, 'failure', $response->get_error_message());
 
-            return new \WP_Error('kerbcycle_ai_provider_unreachable', __('AI provider is unreachable.', 'kerbcycle'), ['status' => 502]);
+            return new \WP_Error('kerbcycle_ai_provider_unreachable', __('AI provider is unreachable.', 'kerbcycle-qr-code-manager'), ['status' => 502]);
         }
 
         $status_code = (int) wp_remote_retrieve_response_code($response);
@@ -101,19 +101,19 @@ class AiProviderService
         if ($status_code < 200 || $status_code >= 300) {
             $this->log_provider_event('ollama', $action, $elapsed_ms, 'failure', sprintf('http_status=%d', $status_code));
 
-            return new \WP_Error('kerbcycle_ai_provider_http_error', __('AI provider returned an unexpected response.', 'kerbcycle'), ['status' => 502]);
+            return new \WP_Error('kerbcycle_ai_provider_http_error', __('AI provider returned an unexpected response.', 'kerbcycle-qr-code-manager'), ['status' => 502]);
         }
 
         $decoded = json_decode($body, true);
         if (!is_array($decoded) || !isset($decoded['response']) || !is_string($decoded['response'])) {
-            return new \WP_Error('kerbcycle_ai_provider_invalid_response', __('AI provider response could not be parsed.', 'kerbcycle'), ['status' => 502]);
+            return new \WP_Error('kerbcycle_ai_provider_invalid_response', __('AI provider response could not be parsed.', 'kerbcycle-qr-code-manager'), ['status' => 502]);
         }
 
         $parsed_output = json_decode(trim($decoded['response']), true);
         if (!is_array($parsed_output)) {
             $this->log_provider_event('ollama', $action, $elapsed_ms, 'failure', 'invalid_json_output');
 
-            return new \WP_Error('kerbcycle_ai_output_invalid_json', __('AI output was not valid JSON.', 'kerbcycle'), ['status' => 422]);
+            return new \WP_Error('kerbcycle_ai_output_invalid_json', __('AI output was not valid JSON.', 'kerbcycle-qr-code-manager'), ['status' => 422]);
         }
 
         $this->log_provider_event('ollama', $action, $elapsed_ms, 'success');
@@ -139,7 +139,7 @@ class AiProviderService
         $model    = $this->get_render_model();
 
         if ($endpoint === '' || $api_key === '') {
-            return new \WP_Error('kerbcycle_ai_provider_misconfigured', __('AI provider configuration is incomplete.', 'kerbcycle'), ['status' => 500]);
+            return new \WP_Error('kerbcycle_ai_provider_misconfigured', __('AI provider configuration is incomplete.', 'kerbcycle-qr-code-manager'), ['status' => 500]);
         }
 
         $started = microtime(true);
@@ -159,7 +159,7 @@ class AiProviderService
         if (is_wp_error($response)) {
             $this->log_provider_event('render', $action, $elapsed_ms, 'failure', $response->get_error_message());
 
-            return new \WP_Error('kerbcycle_ai_provider_unreachable', __('AI provider is unreachable.', 'kerbcycle'), ['status' => 502]);
+            return new \WP_Error('kerbcycle_ai_provider_unreachable', __('AI provider is unreachable.', 'kerbcycle-qr-code-manager'), ['status' => 502]);
         }
 
         $status_code = (int) wp_remote_retrieve_response_code($response);
@@ -168,12 +168,12 @@ class AiProviderService
         if ($status_code < 200 || $status_code >= 300) {
             $this->log_provider_event('render', $action, $elapsed_ms, 'failure', sprintf('http_status=%d', $status_code));
 
-            return new \WP_Error('kerbcycle_ai_provider_http_error', __('AI provider returned an unexpected response.', 'kerbcycle'), ['status' => 502]);
+            return new \WP_Error('kerbcycle_ai_provider_http_error', __('AI provider returned an unexpected response.', 'kerbcycle-qr-code-manager'), ['status' => 502]);
         }
 
         $decoded = json_decode($body, true);
         if (!is_array($decoded)) {
-            return new \WP_Error('kerbcycle_ai_provider_invalid_response', __('AI provider response could not be parsed.', 'kerbcycle'), ['status' => 502]);
+            return new \WP_Error('kerbcycle_ai_provider_invalid_response', __('AI provider response could not be parsed.', 'kerbcycle-qr-code-manager'), ['status' => 502]);
         }
 
         $raw_output = null;
@@ -195,7 +195,7 @@ class AiProviderService
         if (!is_array($raw_output)) {
             $this->log_provider_event('render', $action, $elapsed_ms, 'failure', 'invalid_json_output');
 
-            return new \WP_Error('kerbcycle_ai_output_invalid_json', __('AI output was not valid JSON.', 'kerbcycle'), ['status' => 422]);
+            return new \WP_Error('kerbcycle_ai_output_invalid_json', __('AI output was not valid JSON.', 'kerbcycle-qr-code-manager'), ['status' => 422]);
         }
 
         $this->log_provider_event('render', $action, $elapsed_ms, 'success');
