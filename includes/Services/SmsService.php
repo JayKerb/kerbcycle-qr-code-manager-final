@@ -24,14 +24,14 @@ class SmsService
 	public static function defaults()
 	{
 		return [
-			'provider'       => 'webex', // webex|twilio|textbelt|messagebird|webhook|email2sms
+			'provider'       => 'webex', // Supported providers include Webex, Twilio, Textbelt, MessageBird, webhook, and email-to-SMS.
 			'api_key'        => '',
 			'api_secret'     => '',
-			'auth_method'    => 'key_header', // none|basic|bearer|key_header|custom
+			'auth_method'    => 'key_header', // Supported auth methods include none, basic, bearer, key header, and custom.
 			'from_number'    => '',
 			'country_code'   => '+1',
 			'gateway_url'    => 'https://api.us.webexconnect.io/v1/sms/messages',
-			'method'         => 'POST', // POST|GET
+			'method'         => 'POST', // Supported HTTP methods are POST and GET.
 			// JSON with placeholders {to},{from},{message},{api_key},{api_secret}
 			'body_template'  => "{\n  \"from\": \"{from}\",\n  \"to\": \"{to}\",\n  \"content\": \"{message}\",\n  \"contentType\": \"text\"\n}",
 			// One per line: Header-Name: value (placeholders allowed)
@@ -132,7 +132,7 @@ class SmsService
 		$this->add_field('method', 'HTTP Method', function ($o) {
 			echo '<select name="' . esc_attr(self::OPT) . '[method]">';
 			foreach (['POST', 'GET'] as $m) {
-				printf('<option %s>%s</option>', selected($o['method'], $m, false), $m);
+				printf('<option %s>%s</option>', selected($o['method'], $m, false), esc_html($m));
 			}
 			echo '</select>';
 		});
