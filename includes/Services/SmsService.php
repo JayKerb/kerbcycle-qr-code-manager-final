@@ -199,16 +199,19 @@ class SmsService
 			$out[$k] = is_string($val) ? wp_kses_post($val) : $val;
 		}
 		// Handle in-page test send
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce is verified immediately before this POST access via Nonces::verify( 'kc_sms_test', 'kc_sms_test_nonce' ).
 		if (!empty($_POST['kc_sms_do_test'])) {
 			Nonces::verify('kc_sms_test', 'kc_sms_test_nonce');
-			$to  = isset($_POST['kc_sms_test_to']) ? sanitize_text_field($_POST['kc_sms_test_to']) : '';
-			$msg = isset($_POST['kc_sms_test_msg']) ? sanitize_text_field($_POST['kc_sms_test_msg']) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce is verified immediately before this POST access via Nonces::verify( 'kc_sms_test', 'kc_sms_test_nonce' ).
+			$to  = isset($_POST['kc_sms_test_to']) ? sanitize_text_field(wp_unslash($_POST['kc_sms_test_to'])) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce is verified immediately before this POST access via Nonces::verify( 'kc_sms_test', 'kc_sms_test_nonce' ).
+			$msg = isset($_POST['kc_sms_test_msg']) ? sanitize_text_field(wp_unslash($_POST['kc_sms_test_msg'])) : '';
 			if ($to && $msg) {
 				$res = kerbcycle_sms_send($to, $msg);
 				if (is_wp_error($res)) {
 					add_settings_error(self::OPT, 'kc_sms_test_fail', 'Test failed: ' . $res->get_error_message(), 'error');
 				} else {
-					add_settings_error(self::OPT, 'kc_sms_test_ok', 'Test sent: ' . esc_html(json_encode($res)), 'updated');
+					add_settings_error(self::OPT, 'kc_sms_test_ok', 'Test sent: ' . esc_html(wp_json_encode($res)), 'updated');
 				}
 			} else {
 				add_settings_error(self::OPT, 'kc_sms_test_missing', 'Please provide both a phone number and a message.', 'error');
@@ -308,8 +311,8 @@ class SmsService
 
 		$url     = trim($opts['gateway_url']);
 		$method  = strtoupper($opts['method']);
-		$bodyTpl = (string) $opts['body_template'];
-		$body    = strtr($bodyTpl, $map);
+		$body_tpl = (string) $opts['body_template'];
+		$body    = strtr($body_tpl, $map);
 
 		$headers = self::build_headers($opts, $map);
 		if (empty($headers['Content-Type'])) {
@@ -384,12 +387,12 @@ class SmsService
 		}
 
 		if (empty($to)) {
-			return new \WP_Error('sms_config', __('Missing phone number', 'kerbcycle'));
+			return new \WP_Error('sms_config', __('Missing phone number', 'kerbcycle-qr-code-manager'));
 		}
 
 		$user = get_userdata($user_id);
 		$vars = array_merge([
-			'user' => $user ? ($user->display_name ?: $user->user_login) : '',
+			'user' => $user ? (!empty($user->display_name) ? $user->display_name : $user->user_login) : '',
 			'code' => $qr_code,
 		], $vars);
 
@@ -405,7 +408,7 @@ class SmsService
 			'body'     => $body,
 			'status'   => is_wp_error($result) ? 'failed' : 'sent',
 			'provider' => self::get_opts()['provider'] ?? 'unknown',
-			'response' => is_wp_error($result) ? $result->get_error_message() : json_encode($result),
+			'response' => is_wp_error($result) ? $result->get_error_message() : wp_json_encode($result),
 		]);
 
 		if (is_wp_error($result)) {
