@@ -27,9 +27,13 @@ class ErrorsPage
             return;
         }
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin filter/search/pagination state; no server-side state is changed by this GET value.
         $search   = isset($_GET['s']) ? sanitize_text_field(wp_unslash($_GET['s'])) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin filter/search/pagination state; no server-side state is changed by this GET value.
         $status   = isset($_GET['status']) ? sanitize_text_field(wp_unslash($_GET['status'])) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin filter/search/pagination state; no server-side state is changed by this GET value.
         $page_f   = isset($_GET['log_page']) ? sanitize_text_field(wp_unslash($_GET['log_page'])) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin filter/search/pagination state; no server-side state is changed by this GET value.
         $paged    = max(1, isset($_GET['paged']) ? absint($_GET['paged']) : 1);
         $per_page = 20;
 
@@ -45,41 +49,41 @@ class ErrorsPage
         $base_url = remove_query_arg(['paged'], admin_url('admin.php?page=' . $this->page_slug));
         ?>
         <div class="wrap">
-            <h1><?php esc_html_e('Errors', 'kerbcycle'); ?></h1>
+            <h1><?php esc_html_e('Errors', 'kerbcycle-qr-code-manager'); ?></h1>
             <form method="get" action="<?php echo esc_url(admin_url('admin.php')); ?>">
                 <input type="hidden" name="page" value="<?php echo esc_attr($this->page_slug); ?>" />
                 <p class="search-box" style="display:flex; gap:8px; align-items:center;">
-                    <label class="screen-reader-text" for="search-input"><?php esc_html_e('Search Logs', 'kerbcycle'); ?></label>
-                    <input type="search" id="search-input" name="s" value="<?php echo esc_attr($search); ?>" placeholder="<?php esc_attr_e('Search'); ?>" />
+                    <label class="screen-reader-text" for="search-input"><?php esc_html_e('Search Logs', 'kerbcycle-qr-code-manager'); ?></label>
+                    <input type="search" id="search-input" name="s" value="<?php echo esc_attr($search); ?>" placeholder="<?php esc_attr_e('Search', 'kerbcycle-qr-code-manager'); ?>" />
                     <select name="status">
-                        <option value="" <?php selected($status, ''); ?>><?php esc_html_e('All Statuses', 'kerbcycle'); ?></option>
-                        <option value="success" <?php selected($status, 'success'); ?>><?php esc_html_e('Success', 'kerbcycle'); ?></option>
-                        <option value="failure" <?php selected($status, 'failure'); ?>><?php esc_html_e('Failure', 'kerbcycle'); ?></option>
+                        <option value="" <?php selected($status, ''); ?>><?php esc_html_e('All Statuses', 'kerbcycle-qr-code-manager'); ?></option>
+                        <option value="success" <?php selected($status, 'success'); ?>><?php esc_html_e('Success', 'kerbcycle-qr-code-manager'); ?></option>
+                        <option value="failure" <?php selected($status, 'failure'); ?>><?php esc_html_e('Failure', 'kerbcycle-qr-code-manager'); ?></option>
                     </select>
                     <select name="log_page">
-                        <option value="" <?php selected($page_f, ''); ?>><?php esc_html_e('All Pages', 'kerbcycle'); ?></option>
+                        <option value="" <?php selected($page_f, ''); ?>><?php esc_html_e('All Pages', 'kerbcycle-qr-code-manager'); ?></option>
                         <?php foreach ($available_pages as $p) : ?>
                             <option value="<?php echo esc_attr($p); ?>" <?php selected($page_f, $p); ?>><?php echo esc_html($p); ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <input type="submit" class="button" value="<?php esc_attr_e('Filter'); ?>" />
-                    <a href="<?php echo esc_url(admin_url('admin.php?page=' . $this->page_slug)); ?>" class="button"><?php esc_html_e('Reset', 'kerbcycle'); ?></a>
+                    <input type="submit" class="button" value="<?php esc_attr_e('Filter', 'kerbcycle-qr-code-manager'); ?>" />
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=' . $this->page_slug)); ?>" class="button"><?php esc_html_e('Reset', 'kerbcycle-qr-code-manager'); ?></a>
                 </p>
             </form>
             <table class="wp-list-table widefat fixed striped">
                 <thead>
                     <tr>
-                        <th><?php esc_html_e('ID', 'kerbcycle'); ?></th>
-                        <th><?php esc_html_e('Type', 'kerbcycle'); ?></th>
-                        <th><?php esc_html_e('Message', 'kerbcycle'); ?></th>
-                        <th><?php esc_html_e('Page', 'kerbcycle'); ?></th>
-                        <th><?php esc_html_e('Status', 'kerbcycle'); ?></th>
-                        <th><?php esc_html_e('Date', 'kerbcycle'); ?></th>
+                        <th><?php esc_html_e('ID', 'kerbcycle-qr-code-manager'); ?></th>
+                        <th><?php esc_html_e('Type', 'kerbcycle-qr-code-manager'); ?></th>
+                        <th><?php esc_html_e('Message', 'kerbcycle-qr-code-manager'); ?></th>
+                        <th><?php esc_html_e('Page', 'kerbcycle-qr-code-manager'); ?></th>
+                        <th><?php esc_html_e('Status', 'kerbcycle-qr-code-manager'); ?></th>
+                        <th><?php esc_html_e('Date', 'kerbcycle-qr-code-manager'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
                 <?php if (empty($logs)) : ?>
-                    <tr><td colspan="6"><?php esc_html_e('No errors found.', 'kerbcycle'); ?></td></tr>
+                    <tr><td colspan="6"><?php esc_html_e('No errors found.', 'kerbcycle-qr-code-manager'); ?></td></tr>
                 <?php else : ?>
                     <?php foreach ($logs as $log) : ?>
                     <?php $structured = $this->parse_structured_message($log->message); ?>
@@ -91,28 +95,33 @@ class ErrorsPage
                                 <?php
                                 $summary_parts = [];
                                 if (!empty($structured['action'])) {
-                                    $summary_parts[] = sprintf(__('Action: %s', 'kerbcycle'), $structured['action']);
+                                    /* translators: %s is the structured log action label. */
+                                    $summary_parts[] = sprintf(__('Action: %s', 'kerbcycle-qr-code-manager'), $structured['action']);
                                 }
                                 if (!empty($structured['status'])) {
-                                    $summary_parts[] = sprintf(__('Status: %s', 'kerbcycle'), $structured['status']);
+                                    /* translators: %s is the structured log status value. */
+                                    $summary_parts[] = sprintf(__('Status: %s', 'kerbcycle-qr-code-manager'), $structured['status']);
                                 }
                                 if (!empty($structured['qr_code'])) {
-                                    $summary_parts[] = sprintf(__('QR: %s', 'kerbcycle'), $structured['qr_code']);
+                                    /* translators: %s is the structured log QR code value. */
+                                    $summary_parts[] = sprintf(__('QR: %s', 'kerbcycle-qr-code-manager'), $structured['qr_code']);
                                 }
                                 if (!empty($structured['exception_id'])) {
-                                    $summary_parts[] = sprintf(__('Exception: %s', 'kerbcycle'), $structured['exception_id']);
+                                    /* translators: %s is the structured log exception identifier. */
+                                    $summary_parts[] = sprintf(__('Exception: %s', 'kerbcycle-qr-code-manager'), $structured['exception_id']);
                                 }
                                 if (!empty($structured['actor_user_id'])) {
-                                    $summary_parts[] = sprintf(__('Actor: #%s', 'kerbcycle'), $structured['actor_user_id']);
+                                    /* translators: %s is the structured log actor user ID. */
+                                    $summary_parts[] = sprintf(__('Actor: #%s', 'kerbcycle-qr-code-manager'), $structured['actor_user_id']);
                                 }
                                 $summary = implode(' | ', $summary_parts);
                                 ?>
                                 <div><?php echo esc_html($summary); ?></div>
                                 <?php if (!empty($structured['reason'])) : ?>
-                                    <div><strong><?php esc_html_e('Reason:', 'kerbcycle'); ?></strong> <?php echo esc_html($structured['reason']); ?></div>
+                                    <div><strong><?php esc_html_e('Reason:', 'kerbcycle-qr-code-manager'); ?></strong> <?php echo esc_html($structured['reason']); ?></div>
                                 <?php endif; ?>
                                 <details>
-                                    <summary><?php esc_html_e('Raw payload', 'kerbcycle'); ?></summary>
+                                    <summary><?php esc_html_e('Raw payload', 'kerbcycle-qr-code-manager'); ?></summary>
                                     <code style="white-space: pre-wrap; word-break: break-word;"><?php echo esc_html($log->message); ?></code>
                                 </details>
                             <?php else : ?>
@@ -130,14 +139,16 @@ class ErrorsPage
             <?php if ($pages > 1) : ?>
                 <div class="tablenav"><div class="tablenav-pages">
                 <?php
-                            echo paginate_links([
+                            echo wp_kses_post(
+                                paginate_links([
                                 'base'      => add_query_arg('paged', '%#%', $base_url),
                                 'format'    => '',
                                 'current'   => $paged,
                                 'total'     => $pages,
-                                'prev_text' => __('&laquo;'),
-                                'next_text' => __('&raquo;'),
-                            ]);
+                                'prev_text' => __('&laquo;', 'kerbcycle-qr-code-manager'),
+                                'next_text' => __('&raquo;', 'kerbcycle-qr-code-manager'),
+                                ])
+                            );
                 ?>
                 </div></div>
             <?php endif; ?>
