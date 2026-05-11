@@ -29,7 +29,7 @@ class PickupExceptionsPage
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin filter state; no server-side state is changed by this GET value.
         $status_filter = isset($_GET['status_filter']) ? sanitize_key(wp_unslash($_GET['status_filter'])) : '';
         if ($status_filter === 'failed') {
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; values are prepared below.
+            // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; values are prepared below.
             $sql = $wpdb->prepare(
                 "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, source, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body, retry_count, last_retry_at
                 FROM {$table_name}
@@ -39,8 +39,9 @@ class PickupExceptionsPage
                 'failed',
                 $limit
             );
+            // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         } else {
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; values are prepared below.
+            // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; values are prepared below.
             $sql = $wpdb->prepare(
                 "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, source, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body, retry_count, last_retry_at
                 FROM {$table_name}
@@ -48,6 +49,7 @@ class PickupExceptionsPage
                 LIMIT %d",
                 $limit
             );
+            // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         }
 
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is built with $wpdb->prepare() immediately above; table name is fixed plugin table derived from $wpdb->prefix.
