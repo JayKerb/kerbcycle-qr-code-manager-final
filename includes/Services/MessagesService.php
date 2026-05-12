@@ -14,7 +14,7 @@ class MessagesService
 	public const OPT = 'kerbcycle_messages'; // stores an array of message templates
 
 	public static function defaults() {
-		// Each type has: ['sms' => '', 'email' => '']
+		// Each message type stores separate SMS and email template strings.
 		return [
 			'assigned'   => [
 				'sms'   => 'KerbCycle: QR {code} has been assigned to your account.',
@@ -84,10 +84,13 @@ class MessagesService
 		 *  ========================= */
 		if (!empty($_POST['kc_msgs_save'])) {
 			Nonces::verify('kc_msgs_save_nonce', 'kc_msgs_nonce');
-			$sel = sanitize_text_field($_POST['kc_msg_type'] ?? 'assigned');
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Save handler is protected by Nonces::verify( 'kc_msgs_save_nonce', 'kc_msgs_nonce' ) above.
+			$sel = isset( $_POST['kc_msg_type'] ) ? sanitize_text_field( wp_unslash( $_POST['kc_msg_type'] ) ) : 'assigned';
 
-			$sms   = isset($_POST['kc_sms']) ? wp_unslash($_POST['kc_sms']) : '';
-			$email = isset($_POST['kc_email']) ? wp_unslash($_POST['kc_email']) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Save handler nonce verified above; template text is sanitized with wp_strip_all_tags() before persistence below.
+			$sms   = isset( $_POST['kc_sms'] ) ? wp_unslash( $_POST['kc_sms'] ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Save handler nonce verified above; template text is sanitized with wp_strip_all_tags() before persistence below.
+			$email = isset( $_POST['kc_email'] ) ? wp_unslash( $_POST['kc_email'] ) : '';
 
 			$sms   = is_string($sms) ? trim($sms) : '';
 			$email = is_string($email) ? trim($email) : '';
@@ -118,24 +121,41 @@ class MessagesService
 		$test_preview_sms   = '';
 		$test_preview_email = '';
 		$test_type          = 'assigned';
-		$t_user = $t_code = $t_amount = $t_wallet = '';
-		$t_to_sms = $t_to_email = '';
-		$send_sms_checked = $send_email_checked = false;
-		$do_send_sms = $do_send_email = false;
+		$t_user = '';
+		$t_code = '';
+		$t_amount = '';
+		$t_wallet = '';
+		$t_to_sms = '';
+		$t_to_email = '';
+		$send_sms_checked = false;
+		$send_email_checked = false;
+		$do_send_sms = false;
+		$do_send_email = false;
 		if (!empty($_POST['kc_msgs_render']) || !empty($_POST['kc_msgs_send'])) {
 			Nonces::verify('kc_msgs_test_nonce', 'kc_msgs_test_nonce_f');
-			$t_type   = sanitize_text_field($_POST['kc_test_type'] ?? 'assigned');
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Test handler is protected by Nonces::verify( 'kc_msgs_test_nonce', 'kc_msgs_test_nonce_f' ) above.
+			$t_type   = isset( $_POST['kc_test_type'] ) ? sanitize_text_field( wp_unslash( $_POST['kc_test_type'] ) ) : 'assigned';
 			$test_type = $t_type;
-			$t_user   = sanitize_text_field($_POST['kc_test_user'] ?? '');
-			$t_code   = sanitize_text_field($_POST['kc_test_code'] ?? '');
-			$t_amount = sanitize_text_field($_POST['kc_test_amount'] ?? '');
-			$t_wallet = sanitize_text_field($_POST['kc_test_wallet'] ?? '');
-			$t_to_sms = sanitize_text_field($_POST['kc_test_to_sms'] ?? '');
-			$t_to_email = sanitize_email($_POST['kc_test_to_email'] ?? '');
-			$send_sms_checked   = !empty($_POST['kc_test_send_sms']);
-			$send_email_checked = !empty($_POST['kc_test_send_email']);
-			$do_send_sms   = !empty($_POST['kc_msgs_send']) && $send_sms_checked;
-			$do_send_email = !empty($_POST['kc_msgs_send']) && $send_email_checked;
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Test handler is protected by Nonces::verify( 'kc_msgs_test_nonce', 'kc_msgs_test_nonce_f' ) above.
+			$t_user   = isset( $_POST['kc_test_user'] ) ? sanitize_text_field( wp_unslash( $_POST['kc_test_user'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Test handler is protected by Nonces::verify( 'kc_msgs_test_nonce', 'kc_msgs_test_nonce_f' ) above.
+			$t_code   = isset( $_POST['kc_test_code'] ) ? sanitize_text_field( wp_unslash( $_POST['kc_test_code'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Test handler is protected by Nonces::verify( 'kc_msgs_test_nonce', 'kc_msgs_test_nonce_f' ) above.
+			$t_amount = isset( $_POST['kc_test_amount'] ) ? sanitize_text_field( wp_unslash( $_POST['kc_test_amount'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Test handler is protected by Nonces::verify( 'kc_msgs_test_nonce', 'kc_msgs_test_nonce_f' ) above.
+			$t_wallet = isset( $_POST['kc_test_wallet'] ) ? sanitize_text_field( wp_unslash( $_POST['kc_test_wallet'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Test handler is protected by Nonces::verify( 'kc_msgs_test_nonce', 'kc_msgs_test_nonce_f' ) above.
+			$t_to_sms = isset( $_POST['kc_test_to_sms'] ) ? sanitize_text_field( wp_unslash( $_POST['kc_test_to_sms'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Test handler is protected by Nonces::verify( 'kc_msgs_test_nonce', 'kc_msgs_test_nonce_f' ) above.
+			$t_to_email = isset( $_POST['kc_test_to_email'] ) ? sanitize_email( wp_unslash( $_POST['kc_test_to_email'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Test handler is protected by Nonces::verify( 'kc_msgs_test_nonce', 'kc_msgs_test_nonce_f' ) above.
+			$send_sms_checked   = ! empty( $_POST['kc_test_send_sms'] );
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Test handler is protected by Nonces::verify( 'kc_msgs_test_nonce', 'kc_msgs_test_nonce_f' ) above.
+			$send_email_checked = ! empty( $_POST['kc_test_send_email'] );
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Test handler is protected by Nonces::verify( 'kc_msgs_test_nonce', 'kc_msgs_test_nonce_f' ) above.
+			$do_send_sms   = ! empty( $_POST['kc_msgs_send'] ) && $send_sms_checked;
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Test handler is protected by Nonces::verify( 'kc_msgs_test_nonce', 'kc_msgs_test_nonce_f' ) above.
+			$do_send_email = ! empty( $_POST['kc_msgs_send'] ) && $send_email_checked;
 
 			$rendered = self::render($t_type, [
 				'user'   => $t_user,
@@ -153,7 +173,7 @@ class MessagesService
 				if (is_wp_error($r)) {
 					$d = $r->get_error_data();
 					$http = (is_array($d) && isset($d['http'])) ? ' HTTP=' . $d['http'] : '';
-					$body = (is_array($d) && isset($d['body'])) ? ' Body=' . substr(is_string($d['body']) ? $d['body'] : json_encode($d['body']), 0, 300) : '';
+					$body = (is_array($d) && isset($d['body'])) ? ' Body=' . substr(is_string($d['body']) ? $d['body'] : wp_json_encode($d['body']), 0, 300) : '';
 					Notices::add(
 						'error',
 						'<strong>Test SMS failed:</strong> ' . esc_html($r->get_error_message() . $http . $body),
@@ -166,7 +186,7 @@ class MessagesService
 				} else {
 					Notices::add(
 						'success',
-						'<strong>Test SMS sent.</strong> ' . esc_html(json_encode($r)),
+						'<strong>Test SMS sent.</strong> ' . esc_html(wp_json_encode($r)),
 						[
 							'dismissible' => true,
 							'log_type'    => 'test_sms',
@@ -207,7 +227,8 @@ class MessagesService
 		}
 
 		// Active type for editor (default assigned)
-		$active = isset($_POST['kc_msg_type']) ? sanitize_text_field($_POST['kc_msg_type']) : 'assigned';
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Active editor state is display-only; save handling is protected by Nonces::verify() above.
+		$active = isset( $_POST['kc_msg_type'] ) ? sanitize_text_field( wp_unslash( $_POST['kc_msg_type'] ) ) : 'assigned';
 		if (!isset($messages[$active])) {
 			$active = 'assigned';
 		}
