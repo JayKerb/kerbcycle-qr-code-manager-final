@@ -33,7 +33,7 @@ class Autoloader {
      *
      * @param string $class The class name.
      */
-    public static function autoload( $class ) {
+    public static function autoload( $class_name ) {
         // Project-specific namespace prefix
         $prefix = 'Kerbcycle\\QrCode\\';
 
@@ -42,13 +42,13 @@ class Autoloader {
 
         // Does the class use the namespace prefix?
         $len = strlen( $prefix );
-        if ( strncmp( $prefix, $class, $len ) !== 0 ) {
+        if ( strncmp( $prefix, $class_name, $len ) !== 0 ) {
             // No, move to the next registered autoloader
             return;
         }
 
         // Get the relative class name
-        $relative_class = substr( $class, $len );
+        $relative_class = substr( $class_name, $len );
 
         // Replace the namespace prefix with the base directory, replace namespace
         // separators with directory separators in the relative class name, append
