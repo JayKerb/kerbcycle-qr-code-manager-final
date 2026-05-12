@@ -214,8 +214,8 @@ class AdminAjax {
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Comma-separated QR codes are unslashed here, then sanitized field-by-field immediately below.
         $raw_codes = explode( ',', wp_unslash( $_POST['qr_codes'] ) );
         // phpcs:enable WordPress.Security.NonceVerification.Missing
-        $codes     = array_map( 'trim', array_map( 'sanitize_text_field', $raw_codes ) );
-        $codes     = array_filter( $codes );
+        $codes = array_map( 'trim', array_map( 'sanitize_text_field', $raw_codes ) );
+        $codes = array_filter( $codes );
 
         if ( empty( $codes ) ) {
             wp_send_json_error( [ 'message' => 'No valid QR codes provided.' ] );
@@ -254,8 +254,8 @@ class AdminAjax {
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Comma-separated QR codes are unslashed here, then sanitized field-by-field immediately below.
         $raw_codes = explode( ',', wp_unslash( $_POST['qr_codes'] ) );
         // phpcs:enable WordPress.Security.NonceVerification.Missing
-        $codes     = array_map( 'trim', array_map( 'sanitize_text_field', $raw_codes ) );
-        $codes     = array_filter( $codes );
+        $codes = array_map( 'trim', array_map( 'sanitize_text_field', $raw_codes ) );
+        $codes = array_filter( $codes );
 
         if ( empty( $codes ) ) {
             wp_send_json_error( [ 'message' => 'No valid QR codes provided.' ] );
@@ -829,8 +829,8 @@ class AdminAjax {
         \Kerbcycle\QrCode\Install\Activator::activate();
 
         global $wpdb;
-        $table_name    = $wpdb->prefix . 'kerbcycle_pickup_exceptions';
-        $limit         = 50;
+        $table_name = $wpdb->prefix . 'kerbcycle_pickup_exceptions';
+        $limit      = 50;
         // phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified via Nonces::verify above before reading status filter.
         $status_filter = isset( $_POST['status_filter'] ) ? sanitize_key( wp_unslash( $_POST['status_filter'] ) ) : '';
         // phpcs:enable WordPress.Security.NonceVerification.Missing
