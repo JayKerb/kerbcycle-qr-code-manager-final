@@ -256,6 +256,7 @@ class GeneratorPage {
         foreach ( $rows as $r ) {
             fputcsv( $out, array( $r['id'], $r['code'], $r['status'], $r['created_at'] ) );
         }
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closing plugin-generated CSV export file handle.
         fclose( $out );
         exit;
     }
@@ -295,6 +296,7 @@ class GeneratorPage {
             </div>
 
             <script>
+            <?php // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile -- Streaming plugin-generated printable export script to the browser. ?>
             <?php readfile( KERBCYCLE_QR_PATH . 'assets/js/qrcode.min.js' ); ?>
             document.querySelectorAll('.qrc').forEach(function(el){
                 const code = el.getAttribute('data-code');
