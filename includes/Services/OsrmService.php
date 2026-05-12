@@ -48,11 +48,12 @@ class OsrmService {
 			'stage' => $options['endpoint_stage'],
 			'prod'  => $options['endpoint_prod'],
 		);
-		$url        = isset( $map[ $environment ] ) ? rtrim( (string) $map[ $environment ], '/' ) : '';
+		$url         = isset( $map[ $environment ] ) ? rtrim( (string) $map[ $environment ], '/' ) : '';
 
 		/**
 		 * Filter the resolved endpoint URL.
 		 */
+		// phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores -- Existing plugin integration hook uses slash-separated namespace-style name; preserve backward compatibility.
 		return apply_filters( 'kerbcycle/osrm/endpoint', $url, $options );
 	}
 }
