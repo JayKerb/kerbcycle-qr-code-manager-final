@@ -211,6 +211,7 @@ class AdminAjax {
             wp_send_json_error( [ 'message' => __( 'No QR codes were selected.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Comma-separated QR codes are unslashed here, then sanitized field-by-field immediately below.
         $raw_codes = explode( ',', wp_unslash( $_POST['qr_codes'] ) );
         // phpcs:enable WordPress.Security.NonceVerification.Missing
         $codes     = array_map( 'trim', array_map( 'sanitize_text_field', $raw_codes ) );
@@ -250,6 +251,7 @@ class AdminAjax {
             wp_send_json_error( [ 'message' => __( 'No QR codes were selected.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Comma-separated QR codes are unslashed here, then sanitized field-by-field immediately below.
         $raw_codes = explode( ',', wp_unslash( $_POST['qr_codes'] ) );
         // phpcs:enable WordPress.Security.NonceVerification.Missing
         $codes     = array_map( 'trim', array_map( 'sanitize_text_field', $raw_codes ) );
@@ -351,7 +353,7 @@ class AdminAjax {
             wp_send_json_error( [ 'message' => __( 'No file uploaded.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
-        // tmp_name is a PHP-generated upload path; safety is enforced with is_uploaded_file().
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- tmp_name is a PHP-generated upload path and is validated with is_uploaded_file() before use.
         $tmp_name = isset( $_FILES['import_file']['tmp_name'] ) && is_string( $_FILES['import_file']['tmp_name'] ) ? wp_unslash( $_FILES['import_file']['tmp_name'] ) : '';
         if ( '' === $tmp_name || ! is_uploaded_file( $tmp_name ) ) {
             wp_send_json_error( [ 'message' => __( 'No file uploaded.', 'kerbcycle-qr-code-manager' ) ] );
@@ -359,6 +361,7 @@ class AdminAjax {
 
         $file_name = '';
         if ( ! empty( $_FILES['import_file']['name'] ) && is_string( $_FILES['import_file']['name'] ) ) {
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Original filename is unslashed here, then normalized and sanitized with sanitize_file_name() before use.
             $file_name = substr(
                 sanitize_file_name(
                     preg_replace(
@@ -381,6 +384,7 @@ class AdminAjax {
             wp_send_json_error( [ 'message' => __( 'Invalid file size.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Reading a validated uploaded CSV temp file for streaming parse.
         $handle = fopen( $tmp_name, 'r' );
         // phpcs:enable WordPress.Security.NonceVerification.Missing
         if ( ! $handle ) {
@@ -389,18 +393,22 @@ class AdminAjax {
 
         $header = fgetcsv( $handle );
         if ( $header === false ) {
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closing validated uploaded CSV temp file handle.
             fclose( $handle );
             wp_send_json_error( [ 'message' => __( 'Invalid CSV file.', 'kerbcycle-qr-code-manager' ) ] );
         }
-        $code_index = array_search( 'Code', $header );
+        $code_index = array_search( 'Code', $header, true );
         if ( $code_index === false ) {
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closing validated uploaded CSV temp file handle.
             fclose( $handle );
             wp_send_json_error( [ 'message' => __( 'Could not find Code column.', 'kerbcycle-qr-code-manager' ) ] );
         }
 
         $added = 0;
-        while ( ( $data = fgetcsv( $handle ) ) !== false ) {
+        $data  = fgetcsv( $handle );
+        while ( false !== $data ) {
             if ( empty( $data[ $code_index ] ) ) {
+                $data = fgetcsv( $handle );
                 continue;
             }
             $code   = sanitize_text_field( $data[ $code_index ] );
@@ -408,12 +416,15 @@ class AdminAjax {
             if ( ! is_wp_error( $result ) && $result !== false ) {
                 ++$added;
             }
+            $data = fgetcsv( $handle );
         }
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closing validated uploaded CSV temp file handle.
         fclose( $handle );
 
         if ( $added > 0 ) {
             wp_send_json_success(
                 [
+					/* translators: %d is the number of imported QR codes. */
 					'message' => sprintf( __( 'Imported %d QR code(s).', 'kerbcycle-qr-code-manager' ), $added ),
 					'added'   => $added,
 				]
@@ -431,13 +442,13 @@ class AdminAjax {
 
         // phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified via Nonces::verify above.
         $args = [
-            'status_filter' => isset( $_POST['status_filter'] ) ? wp_unslash( $_POST['status_filter'] ) : '',
-            'start_date'    => isset( $_POST['start_date'] ) ? wp_unslash( $_POST['start_date'] ) : '',
-            'end_date'      => isset( $_POST['end_date'] ) ? wp_unslash( $_POST['end_date'] ) : '',
-            'search'        => isset( $_POST['search'] ) ? wp_unslash( $_POST['search'] ) : '',
-            's'             => isset( $_POST['s'] ) ? wp_unslash( $_POST['s'] ) : '',
-            'per_page'      => isset( $_POST['per_page'] ) ? wp_unslash( $_POST['per_page'] ) : '',
-            'paged'         => isset( $_POST['paged'] ) ? wp_unslash( $_POST['paged'] ) : 1,
+            'status_filter' => isset( $_POST['status_filter'] ) ? sanitize_key( wp_unslash( $_POST['status_filter'] ) ) : '',
+            'start_date'    => isset( $_POST['start_date'] ) ? sanitize_text_field( wp_unslash( $_POST['start_date'] ) ) : '',
+            'end_date'      => isset( $_POST['end_date'] ) ? sanitize_text_field( wp_unslash( $_POST['end_date'] ) ) : '',
+            'search'        => isset( $_POST['search'] ) ? sanitize_text_field( wp_unslash( $_POST['search'] ) ) : '',
+            's'             => isset( $_POST['s'] ) ? sanitize_text_field( wp_unslash( $_POST['s'] ) ) : '',
+            'per_page'      => isset( $_POST['per_page'] ) ? absint( wp_unslash( $_POST['per_page'] ) ) : '',
+            'paged'         => isset( $_POST['paged'] ) ? absint( wp_unslash( $_POST['paged'] ) ) : 1,
         ];
         // phpcs:enable WordPress.Security.NonceVerification.Missing
 
@@ -518,11 +529,15 @@ class AdminAjax {
     private function handle_pickup_exception_submission( $source ) {
         \Kerbcycle\QrCode\Install\Activator::activate();
 
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce is verified in caller methods before this private helper reads POST data.
+        // phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Values are unslashed here and sanitized immediately below before use.
         $qr_code_raw     = isset( $_POST['qr_code'] ) ? wp_unslash( $_POST['qr_code'] ) : '';
         $customer_id_raw = isset( $_POST['customer_id'] ) ? wp_unslash( $_POST['customer_id'] ) : '';
         $issue_raw       = isset( $_POST['issue'] ) ? wp_unslash( $_POST['issue'] ) : '';
         $notes_raw       = isset( $_POST['notes'] ) ? wp_unslash( $_POST['notes'] ) : '';
         $timestamp_raw   = isset( $_POST['timestamp'] ) ? wp_unslash( $_POST['timestamp'] ) : '';
+        // phpcs:enable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         $qr_code     = sanitize_text_field( $qr_code_raw );
         $customer_id = absint( $customer_id_raw );
@@ -814,8 +829,10 @@ class AdminAjax {
         global $wpdb;
         $table_name    = $wpdb->prefix . 'kerbcycle_pickup_exceptions';
         $limit         = 50;
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via Nonces::verify above before reading status filter.
         $status_filter = isset( $_POST['status_filter'] ) ? sanitize_key( wp_unslash( $_POST['status_filter'] ) ) : '';
         if ( $status_filter === 'failed' ) {
+            // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; dynamic values are prepared below.
             $sql = $wpdb->prepare(
                 "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, source, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body, retry_count, last_retry_at
                 FROM {$table_name}
@@ -825,7 +842,9 @@ class AdminAjax {
                 'failed',
                 $limit
             );
+            // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         } else {
+            // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; dynamic values are prepared below.
             $sql = $wpdb->prepare(
                 "SELECT id, submitted_at, updated_at, qr_code, customer_id, issue, notes, source, ai_severity, ai_category, webhook_sent, status, ai_recommended_action, ai_summary, webhook_status_code, webhook_response_body, retry_count, last_retry_at
                 FROM {$table_name}
@@ -833,7 +852,9 @@ class AdminAjax {
                 LIMIT %d",
                 $limit
             );
+            // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
         }
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is built with $wpdb->prepare() immediately above; table name is fixed plugin table derived from $wpdb->prefix.
         $records = $wpdb->get_results( $sql );
         $rows    = [];
 
@@ -891,6 +912,7 @@ class AdminAjax {
         }
         \Kerbcycle\QrCode\Install\Activator::activate();
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via Nonces::verify above before reading retry exception ID.
         $exception_id = isset( $_POST['exception_id'] ) ? absint( wp_unslash( $_POST['exception_id'] ) ) : 0;
         if ( $exception_id < 1 ) {
             $this->log_action(
