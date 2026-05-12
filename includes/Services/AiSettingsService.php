@@ -49,6 +49,7 @@ class AiSettingsService {
         /**
          * Filter the resolved pickup exception webhook URL.
          */
+		// phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores -- Existing plugin integration hook uses slash-separated namespace-style name; preserve backward compatibility.
 		return apply_filters( 'kerbcycle/ai/pickup_exception_webhook_url', $url, $options );
 	}
 
