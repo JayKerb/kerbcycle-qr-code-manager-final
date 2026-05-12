@@ -48,7 +48,7 @@ class OsrmService {
 			'stage' => $options['endpoint_stage'],
 			'prod'  => $options['endpoint_prod'],
 		);
-		$url        = isset( $map[ $environment ] ) ? rtrim( (string) $map[ $environment ], '/' ) : '';
+		$url         = isset( $map[ $environment ] ) ? rtrim( (string) $map[ $environment ], '/' ) : '';
 
 		/**
 		 * Filter the resolved endpoint URL.
