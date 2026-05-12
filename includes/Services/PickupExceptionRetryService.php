@@ -24,19 +24,21 @@ class PickupExceptionRetryService
         if ($exception_id < 1) {
             return [
                 'state' => 'invalid_id',
-                'message' => __('Invalid pickup exception ID.', 'kerbcycle'),
+                'message' => __('Invalid pickup exception ID.', 'kerbcycle-qr-code-manager'),
                 'status_code' => 400,
             ];
         }
 
         global $wpdb;
         $table_name = $wpdb->prefix . 'kerbcycle_pickup_exceptions';
+        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; dynamic values are prepared below.
         $record = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table_name} WHERE id = %d", $exception_id));
+        // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
         if (!$record) {
             return [
                 'state' => 'not_found',
-                'message' => __('Pickup exception record not found.', 'kerbcycle'),
+                'message' => __('Pickup exception record not found.', 'kerbcycle-qr-code-manager'),
                 'status_code' => 404,
             ];
         }
@@ -44,7 +46,7 @@ class PickupExceptionRetryService
         if ((int) $record->webhook_sent === 1) {
             return [
                 'state' => 'ineligible',
-                'message' => __('This pickup exception is not eligible for retry.', 'kerbcycle'),
+                'message' => __('This pickup exception is not eligible for retry.', 'kerbcycle-qr-code-manager'),
                 'status_code' => 400,
             ];
         }
@@ -52,7 +54,7 @@ class PickupExceptionRetryService
         if (!$this->acquire_retry_lock($exception_id)) {
             return [
                 'state' => 'lock_conflict',
-                'message' => __('Retry already in progress for this pickup exception.', 'kerbcycle'),
+                'message' => __('Retry already in progress for this pickup exception.', 'kerbcycle-qr-code-manager'),
                 'status_code' => 409,
             ];
         }
@@ -92,7 +94,7 @@ class PickupExceptionRetryService
 
                 return [
                     'state' => 'webhook_error',
-                    'message' => __('Retry failed. The record remains saved locally.', 'kerbcycle'),
+                    'message' => __('Retry failed. The record remains saved locally.', 'kerbcycle-qr-code-manager'),
                     'status_code' => 500,
                     'error_code' => $result->get_error_code(),
                 ];
@@ -120,7 +122,7 @@ class PickupExceptionRetryService
 
                 return [
                     'state' => 'success',
-                    'message' => __('Pickup exception resent successfully.', 'kerbcycle'),
+                    'message' => __('Pickup exception resent successfully.', 'kerbcycle-qr-code-manager'),
                     'status_code' => 200,
                     'webhook_status_code' => isset($result['status_code']) ? (int) $result['status_code'] : 0,
                 ];
@@ -141,7 +143,7 @@ class PickupExceptionRetryService
 
             return [
                 'state' => 'webhook_non_success',
-                'message' => __('Retry failed. The record remains saved locally.', 'kerbcycle'),
+                'message' => __('Retry failed. The record remains saved locally.', 'kerbcycle-qr-code-manager'),
                 'status_code' => 500,
                 'webhook_status_code' => isset($result['status_code']) ? (int) $result['status_code'] : 0,
             ];
