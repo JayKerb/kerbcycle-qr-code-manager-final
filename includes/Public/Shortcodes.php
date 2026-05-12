@@ -1,5 +1,6 @@
 <?php
 
+// phpcs:ignore PHPCompatibility.Keywords.ForbiddenNames.publicFound -- Existing plugin namespace segment; supported PHP target allows this usage.
 namespace Kerbcycle\QrCode\Public;
 
 if ( ! defined( 'ABSPATH' ) ) {
