@@ -15,17 +15,17 @@ class Plugin {
     /**
      * The single instance of the class.
      */
-    private static $_instance = null;
+    private static $instance = null;
 
     /**
      * Main Plugin Instance.
      * Ensures only one instance of the plugin is loaded.
      */
     public static function instance() {
-        if ( is_null( self::$_instance ) ) {
-            self::$_instance = new self();
+        if ( is_null( self::$instance ) ) {
+            self::$instance = new self();
         }
-        return self::$_instance;
+        return self::$instance;
     }
 
     /**
