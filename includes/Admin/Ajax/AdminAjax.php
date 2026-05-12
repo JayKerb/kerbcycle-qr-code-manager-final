@@ -361,7 +361,7 @@ class AdminAjax {
 
         $file_name = '';
         if ( ! empty( $_FILES['import_file']['name'] ) && is_string( $_FILES['import_file']['name'] ) ) {
-            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Original filename is unslashed here, then normalized and sanitized with sanitize_file_name() before use.
+            // phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Original filename is unslashed here, then normalized and sanitized with sanitize_file_name() before use.
             $file_name = substr(
                 sanitize_file_name(
                     preg_replace(
@@ -373,6 +373,7 @@ class AdminAjax {
                 0,
                 255
             );
+            // phpcs:enable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
         }
         $extension = strtolower( pathinfo( $file_name, PATHINFO_EXTENSION ) );
         if ( $extension !== 'csv' ) {
@@ -495,10 +496,11 @@ class AdminAjax {
             wp_send_json_error( [ 'message' => __( 'Unauthorized', 'kerbcycle-qr-code-manager' ) ], 403 );
         }
 
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via Nonces::verify above.
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified via Nonces::verify above before reading selected log IDs.
         $ids = isset( $_POST['log_ids'] ) && is_array( $_POST['log_ids'] )
             ? array_map( 'absint', wp_unslash( $_POST['log_ids'] ) )
             : [];
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
         if ( ! $ids ) {
             wp_send_json_error( [ 'message' => __( 'No logs selected', 'kerbcycle-qr-code-manager' ) ] );
         }
@@ -829,8 +831,9 @@ class AdminAjax {
         global $wpdb;
         $table_name    = $wpdb->prefix . 'kerbcycle_pickup_exceptions';
         $limit         = 50;
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via Nonces::verify above before reading status filter.
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified via Nonces::verify above before reading status filter.
         $status_filter = isset( $_POST['status_filter'] ) ? sanitize_key( wp_unslash( $_POST['status_filter'] ) ) : '';
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
         if ( $status_filter === 'failed' ) {
             // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is derived from the WordPress table prefix and fixed plugin table suffix; dynamic values are prepared below.
             $sql = $wpdb->prepare(
@@ -912,8 +915,9 @@ class AdminAjax {
         }
         \Kerbcycle\QrCode\Install\Activator::activate();
 
-        // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified via Nonces::verify above before reading retry exception ID.
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- Nonce verified via Nonces::verify above before reading retry exception ID.
         $exception_id = isset( $_POST['exception_id'] ) ? absint( wp_unslash( $_POST['exception_id'] ) ) : 0;
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
         if ( $exception_id < 1 ) {
             $this->log_action(
                 'pickup_exception_retry',
