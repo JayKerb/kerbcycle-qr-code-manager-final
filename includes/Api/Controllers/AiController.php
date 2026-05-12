@@ -2,7 +2,7 @@
 
 namespace Kerbcycle\QrCode\Api\Controllers;
 
-if (!defined('ABSPATH')) {
+if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
@@ -17,8 +17,8 @@ use Kerbcycle\QrCode\Services\AiProviderService;
  * @package    Kerbcycle\QrCode
  * @subpackage Kerbcycle\QrCode\Api\Controllers
  */
-class AiController
-{
+class AiController {
+
     /**
      * Validate endpoint permissions for admin-only access.
      *
@@ -26,15 +26,14 @@ class AiController
      *
      * @return true|\WP_Error
      */
-    public function permissions(WP_REST_Request $request)
-    {
-        if (!current_user_can('manage_options')) {
-            return new \WP_Error('rest_forbidden', __('Unauthorized', 'kerbcycle-qr-code-manager'), ['status' => 403]);
+    public function permissions( WP_REST_Request $request ) {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return new \WP_Error( 'rest_forbidden', __( 'Unauthorized', 'kerbcycle-qr-code-manager' ), [ 'status' => 403 ] );
         }
 
-        $nonce = sanitize_text_field($request->get_header('X-WP-Nonce'));
-        if (!wp_verify_nonce($nonce, 'wp_rest')) {
-            return new \WP_Error('rest_nonce_invalid', __('Security check failed', 'kerbcycle-qr-code-manager'), ['status' => 403]);
+        $nonce = sanitize_text_field( $request->get_header( 'X-WP-Nonce' ) );
+        if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+            return new \WP_Error( 'rest_nonce_invalid', __( 'Security check failed', 'kerbcycle-qr-code-manager' ), [ 'status' => 403 ] );
         }
 
         return true;
@@ -47,67 +46,75 @@ class AiController
      *
      * @return WP_REST_Response|\WP_Error
      */
-    public function dispatch_action(WP_REST_Request $request)
-    {
-        $action = sanitize_key($request->get_param('action'));
+    public function dispatch_action( WP_REST_Request $request ) {
+        $action = sanitize_key( $request->get_param( 'action' ) );
 
-        if (empty($action)) {
-            return new \WP_Error('kerbcycle_ai_action_missing', __('Missing action parameter.', 'kerbcycle-qr-code-manager'), ['status' => 400]);
+        if ( empty( $action ) ) {
+            return new \WP_Error( 'kerbcycle_ai_action_missing', __( 'Missing action parameter.', 'kerbcycle-qr-code-manager' ), [ 'status' => 400 ] );
         }
 
         $ai_service = new AiProviderService();
 
-        switch ($action) {
+        switch ( $action ) {
             case 'pickup_summary':
                 $pickup_payload = [
-                    'from_date' => sanitize_text_field($request->get_param('from_date')),
-                    'to_date'   => sanitize_text_field($request->get_param('to_date')),
-                    'context'   => sanitize_textarea_field($request->get_param('context')),
+                    'from_date' => sanitize_text_field( $request->get_param( 'from_date' ) ),
+                    'to_date'   => sanitize_text_field( $request->get_param( 'to_date' ) ),
+                    'context'   => sanitize_textarea_field( $request->get_param( 'context' ) ),
                 ];
-                $pickup_result = $ai_service->generate($action, $pickup_payload);
-                if (is_wp_error($pickup_result)) {
+                $pickup_result  = $ai_service->generate( $action, $pickup_payload );
+                if ( is_wp_error( $pickup_result ) ) {
                     return $pickup_result;
                 }
 
-                return new WP_REST_Response([
-                    'success' => true,
-                    'action'  => $action,
-                    'data'    => $pickup_result['output'],
-                    'meta'    => $this->build_ai_meta($pickup_result),
-                ], 200);
+                return new WP_REST_Response(
+                    [
+						'success' => true,
+						'action'  => $action,
+						'data'    => $pickup_result['output'],
+						'meta'    => $this->build_ai_meta( $pickup_result ),
+					],
+                    200
+                );
             case 'qr_exceptions':
-                $qr_payload = $this->get_qr_exceptions_data($request);
-                $qr_result = $ai_service->generate($action, $qr_payload);
-                if (is_wp_error($qr_result)) {
+                $qr_payload = $this->get_qr_exceptions_data( $request );
+                $qr_result  = $ai_service->generate( $action, $qr_payload );
+                if ( is_wp_error( $qr_result ) ) {
                     return $qr_result;
                 }
 
-                return new WP_REST_Response([
-                    'success' => true,
-                    'action'  => $action,
-                    'data'    => $qr_result['output'],
-                    'source'  => $qr_payload,
-                    'meta'    => $this->build_ai_meta($qr_result),
-                ], 200);
+                return new WP_REST_Response(
+                    [
+						'success' => true,
+						'action'  => $action,
+						'data'    => $qr_result['output'],
+						'source'  => $qr_payload,
+						'meta'    => $this->build_ai_meta( $qr_result ),
+					],
+                    200
+                );
             case 'draft_template':
                 $draft_payload = [
-                    'topic'   => sanitize_text_field($request->get_param('topic')),
-                    'tone'    => sanitize_text_field($request->get_param('tone')),
-                    'details' => sanitize_textarea_field($request->get_param('details')),
+                    'topic'   => sanitize_text_field( $request->get_param( 'topic' ) ),
+                    'tone'    => sanitize_text_field( $request->get_param( 'tone' ) ),
+                    'details' => sanitize_textarea_field( $request->get_param( 'details' ) ),
                 ];
-                $draft_result = $ai_service->generate($action, $draft_payload);
-                if (is_wp_error($draft_result)) {
+                $draft_result  = $ai_service->generate( $action, $draft_payload );
+                if ( is_wp_error( $draft_result ) ) {
                     return $draft_result;
                 }
 
-                return new WP_REST_Response([
-                    'success'  => true,
-                    'action'   => $action,
-                    'data'     => $draft_result['output'],
-                    'meta'     => $this->build_ai_meta($draft_result),
-                ], 200);
+                return new WP_REST_Response(
+                    [
+						'success' => true,
+						'action'  => $action,
+						'data'    => $draft_result['output'],
+						'meta'    => $this->build_ai_meta( $draft_result ),
+					],
+                    200
+                );
             default:
-                return new \WP_Error('kerbcycle_ai_action_invalid', __('Invalid action parameter.', 'kerbcycle-qr-code-manager'), ['status' => 400]);
+                return new \WP_Error( 'kerbcycle_ai_action_invalid', __( 'Invalid action parameter.', 'kerbcycle-qr-code-manager' ), [ 'status' => 400 ] );
         }
     }
 
@@ -118,37 +125,36 @@ class AiController
      *
      * @return array<string,mixed>
      */
-    private function get_qr_exceptions_data(WP_REST_Request $request)
-    {
+    private function get_qr_exceptions_data( WP_REST_Request $request ) {
         global $wpdb;
 
-        $from_date = sanitize_text_field($request->get_param('from_date'));
-        $to_date   = sanitize_text_field($request->get_param('to_date'));
+        $from_date = sanitize_text_field( $request->get_param( 'from_date' ) );
+        $to_date   = sanitize_text_field( $request->get_param( 'to_date' ) );
 
-        if (empty($from_date) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $from_date)) {
-            $from_date = gmdate('Y-m-d', strtotime('-30 days'));
+        if ( empty( $from_date ) || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $from_date ) ) {
+            $from_date = gmdate( 'Y-m-d', strtotime( '-30 days' ) );
         }
-        if (empty($to_date) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $to_date)) {
-            $to_date = gmdate('Y-m-d');
+        if ( empty( $to_date ) || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $to_date ) ) {
+            $to_date = gmdate( 'Y-m-d' );
         }
 
         $qr_table      = $wpdb->prefix . 'kerbcycle_qr_codes';
         $history_table = $wpdb->prefix . 'kerbcycle_qr_code_history';
         $repo_table    = $wpdb->prefix . 'kerbcycle_qr_repo';
 
-        $notes = [];
-        $groups = [];
+        $notes          = [];
+        $groups         = [];
         $sample_records = [];
 
-        $qr_table_exists = $this->table_exists($qr_table);
-        $history_exists  = $this->table_exists($history_table);
-        $repo_exists     = $this->table_exists($repo_table);
+        $qr_table_exists = $this->table_exists( $qr_table );
+        $history_exists  = $this->table_exists( $history_table );
+        $repo_exists     = $this->table_exists( $repo_table );
 
-        if (!$qr_table_exists) {
-            $notes[] = __('QR codes table is missing; core QR exception checks were skipped.', 'kerbcycle-qr-code-manager');
+        if ( ! $qr_table_exists ) {
+            $notes[] = __( 'QR codes table is missing; core QR exception checks were skipped.', 'kerbcycle-qr-code-manager' );
         }
 
-        if ($qr_table_exists) {
+        if ( $qr_table_exists ) {
             // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names are derived from the WordPress table prefix and fixed plugin table suffixes; dynamic values are prepared below.
             $duplicates = (int) $wpdb->get_var(
                 $wpdb->prepare(
@@ -181,7 +187,7 @@ class AiController
                 'count' => $duplicates,
             ];
 
-            if (!empty($duplicate_samples)) {
+            if ( ! empty( $duplicate_samples ) ) {
                 $sample_records['duplicate_qr_codes'] = $duplicate_samples;
             }
 
@@ -218,7 +224,7 @@ class AiController
                 'count' => $assigned_without_user,
             ];
 
-            if (!empty($assigned_without_user_samples)) {
+            if ( ! empty( $assigned_without_user_samples ) ) {
                 $sample_records['assigned_without_user'] = $assigned_without_user_samples;
             }
 
@@ -255,12 +261,12 @@ class AiController
                 'count' => $available_with_assignment_data,
             ];
 
-            if (!empty($available_with_assignment_samples)) {
+            if ( ! empty( $available_with_assignment_samples ) ) {
                 $sample_records['available_with_assignment_data'] = $available_with_assignment_samples;
             }
         }
 
-        if ($history_exists && $qr_table_exists) {
+        if ( $history_exists && $qr_table_exists ) {
             // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names are derived from the WordPress table prefix and fixed plugin table suffixes; dynamic values are prepared below.
             $orphan_history = (int) $wpdb->get_var(
                 $wpdb->prepare(
@@ -294,14 +300,14 @@ class AiController
                 'count' => $orphan_history,
             ];
 
-            if (!empty($orphan_history_samples)) {
+            if ( ! empty( $orphan_history_samples ) ) {
                 $sample_records['history_without_current_code'] = $orphan_history_samples;
             }
         } else {
-            $notes[] = __('QR history table missing or unavailable; history consistency checks were skipped.', 'kerbcycle-qr-code-manager');
+            $notes[] = __( 'QR history table missing or unavailable; history consistency checks were skipped.', 'kerbcycle-qr-code-manager' );
         }
 
-        if ($repo_exists && $qr_table_exists) {
+        if ( $repo_exists && $qr_table_exists ) {
             // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names are derived from the WordPress table prefix and fixed plugin table suffixes; dynamic values are prepared below.
             $repo_status_mismatches = (int) $wpdb->get_var(
                 $wpdb->prepare(
@@ -336,36 +342,39 @@ class AiController
                 'count' => $repo_status_mismatches,
             ];
 
-            if (!empty($repo_status_mismatch_samples)) {
+            if ( ! empty( $repo_status_mismatch_samples ) ) {
                 $sample_records['repo_status_mismatch'] = $repo_status_mismatch_samples;
             }
         } else {
-            $notes[] = __('QR repository table missing or unavailable; repository consistency checks were skipped.', 'kerbcycle-qr-code-manager');
+            $notes[] = __( 'QR repository table missing or unavailable; repository consistency checks were skipped.', 'kerbcycle-qr-code-manager' );
         }
 
-        $notes[] = __('No QR scan log table detected in current plugin schema; invalid/failed scan exceptions were not computed.', 'kerbcycle-qr-code-manager');
+        $notes[] = __( 'No QR scan log table detected in current plugin schema; invalid/failed scan exceptions were not computed.', 'kerbcycle-qr-code-manager' );
 
-        usort($groups, static function ($a, $b) {
-            return (int) $b['count'] <=> (int) $a['count'];
-        });
+        usort(
+            $groups,
+            static function ( $a, $b ) {
+				return (int) $b['count'] <=> (int) $a['count'];
+			}
+        );
 
         $total_exceptions = 0;
-        foreach ($groups as $group) {
+        foreach ( $groups as $group ) {
             $total_exceptions += (int) $group['count'];
         }
 
         return [
-            'window' => [
+            'window'               => [
                 'from' => $from_date,
                 'to'   => $to_date,
             ],
-            'counts' => [
-                'exception_groups' => count($groups),
+            'counts'               => [
+                'exception_groups' => count( $groups ),
                 'total_exceptions' => $total_exceptions,
             ],
-            'top_exception_groups' => array_slice($groups, 0, 5),
+            'top_exception_groups' => array_slice( $groups, 0, 5 ),
             'sample_records'       => $sample_records,
-            'notes'                => array_values(array_unique($notes)),
+            'notes'                => array_values( array_unique( $notes ) ),
         ];
     }
 
@@ -376,11 +385,10 @@ class AiController
      *
      * @return bool
      */
-    private function table_exists($table_name)
-    {
+    private function table_exists( $table_name ) {
         global $wpdb;
 
-        $found = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table_name));
+        $found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) );
         return $found === $table_name;
     }
 
@@ -389,12 +397,11 @@ class AiController
      *
      * @return array<string,mixed>
      */
-    private function build_ai_meta(array $result)
-    {
+    private function build_ai_meta( array $result ) {
         return [
-            'provider'   => isset($result['provider']) ? $result['provider'] : 'unknown',
-            'model'      => isset($result['model']) ? $result['model'] : '',
-            'latency_ms' => isset($result['latency_ms']) ? (int) $result['latency_ms'] : 0,
+            'provider'   => isset( $result['provider'] ) ? $result['provider'] : 'unknown',
+            'model'      => isset( $result['model'] ) ? $result['model'] : '',
+            'latency_ms' => isset( $result['latency_ms'] ) ? (int) $result['latency_ms'] : 0,
         ];
     }
 }
