@@ -77,11 +77,13 @@ class MessagesService
 		}
 
 		$messages = self::get_all();
-		$tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'edit';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin tab state; no server-side state is changed by this GET value.
+		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'edit';
 
 		/** =========================
 		 *  SAVE HANDLER (Templates)
 		 *  ========================= */
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- This only detects the save action before entering the handler; the handler is protected by Nonces::verify( 'kc_msgs_save_nonce', 'kc_msgs_nonce' ).
 		if (!empty($_POST['kc_msgs_save'])) {
 			Nonces::verify('kc_msgs_save_nonce', 'kc_msgs_nonce');
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Save handler is protected by Nonces::verify( 'kc_msgs_save_nonce', 'kc_msgs_nonce' ) above.
@@ -131,6 +133,7 @@ class MessagesService
 		$send_email_checked = false;
 		$do_send_sms = false;
 		$do_send_email = false;
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- This only detects the test action before entering the handler; the handler is protected by Nonces::verify( 'kc_msgs_test_nonce', 'kc_msgs_test_nonce_f' ).
 		if (!empty($_POST['kc_msgs_render']) || !empty($_POST['kc_msgs_send'])) {
 			Nonces::verify('kc_msgs_test_nonce', 'kc_msgs_test_nonce_f');
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Test handler is protected by Nonces::verify( 'kc_msgs_test_nonce', 'kc_msgs_test_nonce_f' ) above.
