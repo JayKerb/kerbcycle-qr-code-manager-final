@@ -29,12 +29,12 @@ class AiController
     public function permissions(WP_REST_Request $request)
     {
         if (!current_user_can('manage_options')) {
-            return new \WP_Error('rest_forbidden', __('Unauthorized', 'kerbcycle'), ['status' => 403]);
+            return new \WP_Error('rest_forbidden', __('Unauthorized', 'kerbcycle-qr-code-manager'), ['status' => 403]);
         }
 
         $nonce = sanitize_text_field($request->get_header('X-WP-Nonce'));
         if (!wp_verify_nonce($nonce, 'wp_rest')) {
-            return new \WP_Error('rest_nonce_invalid', __('Security check failed', 'kerbcycle'), ['status' => 403]);
+            return new \WP_Error('rest_nonce_invalid', __('Security check failed', 'kerbcycle-qr-code-manager'), ['status' => 403]);
         }
 
         return true;
@@ -52,7 +52,7 @@ class AiController
         $action = sanitize_key($request->get_param('action'));
 
         if (empty($action)) {
-            return new \WP_Error('kerbcycle_ai_action_missing', __('Missing action parameter.', 'kerbcycle'), ['status' => 400]);
+            return new \WP_Error('kerbcycle_ai_action_missing', __('Missing action parameter.', 'kerbcycle-qr-code-manager'), ['status' => 400]);
         }
 
         $ai_service = new AiProviderService();
@@ -107,7 +107,7 @@ class AiController
                     'meta'     => $this->build_ai_meta($draft_result),
                 ], 200);
             default:
-                return new \WP_Error('kerbcycle_ai_action_invalid', __('Invalid action parameter.', 'kerbcycle'), ['status' => 400]);
+                return new \WP_Error('kerbcycle_ai_action_invalid', __('Invalid action parameter.', 'kerbcycle-qr-code-manager'), ['status' => 400]);
         }
     }
 
@@ -145,10 +145,11 @@ class AiController
         $repo_exists     = $this->table_exists($repo_table);
 
         if (!$qr_table_exists) {
-            $notes[] = __('QR codes table is missing; core QR exception checks were skipped.', 'kerbcycle');
+            $notes[] = __('QR codes table is missing; core QR exception checks were skipped.', 'kerbcycle-qr-code-manager');
         }
 
         if ($qr_table_exists) {
+            // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names are derived from the WordPress table prefix and fixed plugin table suffixes; dynamic values are prepared below.
             $duplicates = (int) $wpdb->get_var(
                 $wpdb->prepare(
                     "SELECT COUNT(*) FROM (SELECT qr_code FROM {$qr_table} WHERE DATE(created_at) BETWEEN %s AND %s GROUP BY qr_code HAVING COUNT(*) > 1) d",
@@ -156,7 +157,9 @@ class AiController
                     $to_date
                 )
             );
+            // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
+            // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names are derived from the WordPress table prefix and fixed plugin table suffixes; dynamic values are prepared below.
             $duplicate_samples = $wpdb->get_results(
                 $wpdb->prepare(
                     "SELECT qr_code, COUNT(*) AS duplicate_count
@@ -171,6 +174,7 @@ class AiController
                 ),
                 ARRAY_A
             );
+            // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
             $groups[] = [
                 'type'  => 'duplicate_qr_codes',
@@ -181,6 +185,7 @@ class AiController
                 $sample_records['duplicate_qr_codes'] = $duplicate_samples;
             }
 
+            // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names are derived from the WordPress table prefix and fixed plugin table suffixes; dynamic values are prepared below.
             $assigned_without_user = (int) $wpdb->get_var(
                 $wpdb->prepare(
                     "SELECT COUNT(*) FROM {$qr_table}
@@ -206,6 +211,7 @@ class AiController
                 ),
                 ARRAY_A
             );
+            // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
             $groups[] = [
                 'type'  => 'assigned_without_user',
@@ -216,6 +222,7 @@ class AiController
                 $sample_records['assigned_without_user'] = $assigned_without_user_samples;
             }
 
+            // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names are derived from the WordPress table prefix and fixed plugin table suffixes; dynamic values are prepared below.
             $available_with_assignment_data = (int) $wpdb->get_var(
                 $wpdb->prepare(
                     "SELECT COUNT(*) FROM {$qr_table}
@@ -241,6 +248,7 @@ class AiController
                 ),
                 ARRAY_A
             );
+            // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
             $groups[] = [
                 'type'  => 'available_with_assignment_data',
@@ -253,6 +261,7 @@ class AiController
         }
 
         if ($history_exists && $qr_table_exists) {
+            // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names are derived from the WordPress table prefix and fixed plugin table suffixes; dynamic values are prepared below.
             $orphan_history = (int) $wpdb->get_var(
                 $wpdb->prepare(
                     "SELECT COUNT(*) FROM {$history_table} h
@@ -278,6 +287,7 @@ class AiController
                 ),
                 ARRAY_A
             );
+            // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
             $groups[] = [
                 'type'  => 'history_without_current_code',
@@ -288,10 +298,11 @@ class AiController
                 $sample_records['history_without_current_code'] = $orphan_history_samples;
             }
         } else {
-            $notes[] = __('QR history table missing or unavailable; history consistency checks were skipped.', 'kerbcycle');
+            $notes[] = __('QR history table missing or unavailable; history consistency checks were skipped.', 'kerbcycle-qr-code-manager');
         }
 
         if ($repo_exists && $qr_table_exists) {
+            // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table names are derived from the WordPress table prefix and fixed plugin table suffixes; dynamic values are prepared below.
             $repo_status_mismatches = (int) $wpdb->get_var(
                 $wpdb->prepare(
                     "SELECT COUNT(*)
@@ -318,6 +329,7 @@ class AiController
                 ),
                 ARRAY_A
             );
+            // phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
             $groups[] = [
                 'type'  => 'repo_status_mismatch',
@@ -328,10 +340,10 @@ class AiController
                 $sample_records['repo_status_mismatch'] = $repo_status_mismatch_samples;
             }
         } else {
-            $notes[] = __('QR repository table missing or unavailable; repository consistency checks were skipped.', 'kerbcycle');
+            $notes[] = __('QR repository table missing or unavailable; repository consistency checks were skipped.', 'kerbcycle-qr-code-manager');
         }
 
-        $notes[] = __('No QR scan log table detected in current plugin schema; invalid/failed scan exceptions were not computed.', 'kerbcycle');
+        $notes[] = __('No QR scan log table detected in current plugin schema; invalid/failed scan exceptions were not computed.', 'kerbcycle-qr-code-manager');
 
         usort($groups, static function ($a, $b) {
             return (int) $b['count'] <=> (int) $a['count'];
