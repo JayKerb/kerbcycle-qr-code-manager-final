@@ -417,7 +417,7 @@
 
     function sendNative(msg) {
       try {
-        var targetOrigin =
+        const targetOrigin =
           window.location && typeof window.location.origin === "string"
             ? window.location.origin
             : undefined;
@@ -1413,7 +1413,7 @@
     window.kcHandlePosition = onPosition;
     if (!window._kcPositionListenerBound) {
       window.addEventListener("message", function (e) {
-        var allowedOrigin =
+        const allowedOrigin =
           window.location && typeof window.location.origin === "string"
             ? window.location.origin
             : "";
@@ -1421,7 +1421,7 @@
           return;
         }
         if (e.data && e.data.type === "kc:position" && e.data.detail) {
-          var c = e.data.detail;
+          const c = e.data.detail;
           if (
             typeof window.kcHandlePosition === "function" &&
             typeof c.latitude === "number" &&
