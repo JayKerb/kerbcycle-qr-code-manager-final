@@ -1,0 +1,10 @@
+vendor/
+node_modules/
+.wordpress-org/
+coverage/
+dist/
+build/
+tmp/
+.cache/
+*.min.js
+*.min.css
