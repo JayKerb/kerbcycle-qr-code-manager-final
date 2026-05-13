@@ -48,7 +48,7 @@ jobs:
           HEAD_SHA="${{ github.sha }}"
 
           git diff --name-only --diff-filter=ACMRT "$BASE_SHA" "$HEAD_SHA" \
-            | grep -E '\\.php$' \
+            | grep -E '\.php$' \
             | grep -v '^vendor/' \
             | grep -v '^node_modules/' \
             > changed-php-files.txt || true
