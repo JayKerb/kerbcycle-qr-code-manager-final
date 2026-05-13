@@ -38,27 +38,35 @@ jobs:
         #run: |
           #vendor/bin/phpcs --standard=phpcs.xml.dist --report=checkstyle > phpcs-report.xml
 
-      - name: Run PHPCS repo-wide summary
-        id: phpcs
+      - name: Collect changed PHP files for drift-prevention gate
+        id: changed_php
+        shell: bash
         run: |
-          set +e
-          vendor/bin/phpcs --standard=phpcs.xml.dist --report=summary
-          PHPCS_EXIT_CODE=$?
-          set -e
+          set -euo pipefail
 
-          echo "exit_code=${PHPCS_EXIT_CODE}" >> "$GITHUB_OUTPUT"
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.sha }}"
 
-          if [ "$PHPCS_EXIT_CODE" != "0" ]; then
-            echo "⚠️ Repo-wide PHPCS violations found."
-            echo "⚠️ Repo-wide PHPCS is report-only during staged cleanup."
-            echo "⚠️ Future passes should add changed-files or selected-clean-files gating."
+          git diff --name-only --diff-filter=ACMRT "$BASE_SHA" "$HEAD_SHA" \
+            | grep -E '\\.php$' \
+            | grep -v '^vendor/' \
+            | grep -v '^node_modules/' \
+            > changed-php-files.txt || true
+
+          if [ ! -s changed-php-files.txt ]; then
+            echo "has_php_files=false" >> "$GITHUB_OUTPUT"
+            echo "No changed PHP files to check."
           else
-            echo "✅ Repo-wide PHPCS passed with no violations."
+            echo "has_php_files=true" >> "$GITHUB_OUTPUT"
+            echo "Changed PHP files to scan:"
+            cat changed-php-files.txt
           fi
 
-      - name: Placeholder for future staged blocking gate
+      - name: Run PHPCS changed-files blocking gate
+        if: steps.changed_php.outputs.has_php_files == 'true'
         run: |
-          echo "ℹ️ Placeholder: future pass should add changed-files or selected-clean-files PHPCS blocking gate."
+          set -euo pipefail
+          vendor/bin/phpcs --standard=phpcs.xml.dist $(cat changed-php-files.txt)
 
       #- name: Annotate PHPCS results
         #if: always()
