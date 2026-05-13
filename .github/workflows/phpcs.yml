@@ -8,7 +8,6 @@ on:
       - 'composer.lock'
       - 'phpcs.xml.dist'
       - '.github/workflows/phpcs.yml'
-  workflow_dispatch:
 
 permissions:
   contents: read
