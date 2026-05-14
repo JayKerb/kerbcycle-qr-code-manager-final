@@ -417,7 +417,13 @@
 
     function sendNative(msg) {
       try {
-        window.postMessage(msg, "*");
+        const targetOrigin =
+          window.location && typeof window.location.origin === "string"
+            ? window.location.origin
+            : undefined;
+        if (targetOrigin) {
+          window.postMessage(msg, targetOrigin);
+        }
       } catch (error) {
         // ignore
       }
@@ -1407,8 +1413,15 @@
     window.kcHandlePosition = onPosition;
     if (!window._kcPositionListenerBound) {
       window.addEventListener("message", function (e) {
-        if (e && e.data && e.data.type === "kc:position" && e.data.detail) {
-          var c = e.data.detail;
+        const allowedOrigin =
+          window.location && typeof window.location.origin === "string"
+            ? window.location.origin
+            : "";
+        if (!e || e.origin !== allowedOrigin || e.source !== window) {
+          return;
+        }
+        if (e.data && e.data.type === "kc:position" && e.data.detail) {
+          const c = e.data.detail;
           if (
             typeof window.kcHandlePosition === "function" &&
             typeof c.latitude === "number" &&
