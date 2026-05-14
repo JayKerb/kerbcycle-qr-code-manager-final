@@ -732,7 +732,7 @@ function initKerbcycleAdmin() {
           .map((row) => {
             const actionHtml =
               row.can_retry && row.retry_url
-                ? `<a href="${escapeHtml(row.retry_url)}" class="button button-small kerbcycle-retry-webhook" data-exception-id="${escapeHtml(row.id)}">Retry Webhook</a>`
+                ? `<a href="#" class="button button-small kerbcycle-retry-webhook" data-exception-id="${escapeHtml(row.id)}">Retry Webhook</a>`
                 : "";
 
             return `<tr data-exception-id="${escapeHtml(row.id)}">
