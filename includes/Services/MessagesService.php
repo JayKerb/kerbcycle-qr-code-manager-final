@@ -369,8 +369,8 @@ class MessagesService {
 			const $email= document.getElementById('kc_email');
 			const $desc = document.getElementById('kc_msg_desc');
 
-			const ALL   = <?php echo wp_json_encode( $messages ); ?>;
-			const DESCS = <?php echo wp_json_encode( self::descriptions_map() ); ?>;
+			const ALL   = <?php echo wp_json_encode( $messages, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ); ?>;
+			const DESCS = <?php echo wp_json_encode( self::descriptions_map(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ); ?>;
 
 			function updateFields() {
 				const key = $type.value;
