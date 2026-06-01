@@ -1,1 +1,20 @@
 /vendor/
+# Local environment / secrets
+.env
+.env.*
+!.env.example
+
+# WordPress local config
+wp-config.php
+wp-config-local.php
+
+# Local credentials / keys
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+
+# Local tool output
+trufflehog-results.json
