@@ -31,7 +31,7 @@ class Autoloader {
      *
      * For a given class name, require the file that contains it.
      *
-     * @param string $class The class name.
+     * @param string $class_name Class name.
      */
     public static function autoload( $class_name ) {
         // Project-specific namespace prefix

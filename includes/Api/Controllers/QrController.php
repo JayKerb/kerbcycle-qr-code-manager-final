@@ -27,7 +27,7 @@ class QrController {
 	 *
 	 * @param WP_REST_Request $request The request object.
 	 *
-	 * @return WP_REST_Response The response object.
+	 * @return WP_REST_Response|\WP_Error The response object or REST error.
 	 */
 	public function handle_qr_code_scan( WP_REST_Request $request ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -96,7 +96,7 @@ class QrController {
 	 *
 	 * @param WP_REST_Request $request The request object.
 	 *
-	 * @return WP_REST_Response The response object.
+	 * @return WP_REST_Response|\WP_Error The response object or REST error.
 	 */
 	public function get_qr_status( WP_REST_Request $request ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
