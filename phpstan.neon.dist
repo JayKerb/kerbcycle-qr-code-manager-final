@@ -1,0 +1,26 @@
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+    level: 3
+
+    bootstrapFiles:
+        - phpstan-bootstrap.php
+
+    paths:
+        - includes
+
+    excludePaths:
+        analyse:
+            - vendor
+            - node_modules (?)
+            - tests (?)
+            - build (?)
+            - dist (?)
+
+    scanFiles:
+        - kerbcycle-qr-code-manager.php
+
+    treatPhpDocTypesAsCertain: false
+
+    reportUnmatchedIgnoredErrors: false
