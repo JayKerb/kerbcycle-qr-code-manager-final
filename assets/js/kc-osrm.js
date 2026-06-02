@@ -335,7 +335,7 @@
         window.speechSynthesis.getVoices().length === 0
       ) {
         if (typeof window.speechSynthesis.addEventListener === "function") {
-          var handleVoicesReady = function handleVoicesReady() {
+          var handleVoicesReady = function () {
             window.speechSynthesis.removeEventListener(
               "voiceschanged",
               handleVoicesReady,
@@ -2092,7 +2092,7 @@
           clearItinerary();
         });
         observer.observe(container, { childList: true, subtree: true });
-        setTimeout(function () {
+        setTimeout(() => {
           try {
             observer.disconnect();
           } catch {
