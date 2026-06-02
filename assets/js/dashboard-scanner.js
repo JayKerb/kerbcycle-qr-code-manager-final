@@ -65,7 +65,7 @@ async function createQrScannerAdapter({
             onResult(String(text));
           }
         }
-      } catch (e) {
+      } catch {
         // ignore frame-level errors
       }
       rafId = requestAnimationFrame(loop);
@@ -87,13 +87,13 @@ async function createQrScannerAdapter({
 
     // Use decodeFromVideoDevice for continuous scanning.
     zxingReader = new ZXingBrowser.BrowserQRCodeReader();
-    await zxingReader.decodeFromVideoDevice(null, videoEl, (result, err) => {
+    await zxingReader.decodeFromVideoDevice(null, videoEl, (result, _err) => {
       if (paused) return;
       if (result && result.getText) {
         paused = true;
         onResult(String(result.getText()));
       }
-      // err is normal per frame; ignore
+      // _err is normal per frame; ignore
     });
 
     return true;
@@ -159,7 +159,7 @@ async function createQrScannerAdapter({
     stop() {
       try {
         if (zxingReader && zxingReader.reset) zxingReader.reset();
-      } catch (e) {
+      } catch {
         // ignore errors when resetting reader
       }
       zxingReader = null;

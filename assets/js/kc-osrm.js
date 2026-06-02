@@ -49,7 +49,7 @@
     var start = parseLatLon(storedStart) ||
       parseLatLon(cfg.start) ||
       parseLatLon(KC_OSRM.defaultStart) || [40.73, -73.99];
-    var end = parseLatLon(cfg.end) || [40.78, -73.97];
+    var _end = parseLatLon(cfg.end) || [40.78, -73.97];
 
     var parent = el.parentNode;
     if (!parent) return;
@@ -161,7 +161,7 @@
     var addStopMode = false;
     var map;
     var routingControl;
-    var geocoderControl;
+    var _geocoderControl;
     var tripBase = getTripBase(KC_OSRM.base);
     var stepQueue = [];
     var stepIndex = 0;
@@ -249,7 +249,7 @@
           window.speechSynthesis.speak(utterance);
           return true;
         }
-      } catch (error) {
+      } catch {
         // ignore
       }
       return false;
@@ -264,7 +264,7 @@
           return !!window.Capacitor.isNativePlatform();
         }
         return !!window.Capacitor.isNativePlatform;
-      } catch (error) {
+      } catch {
         return false;
       }
     }
@@ -276,14 +276,14 @@
             return window.Capacitor.Plugins.TextToSpeech;
           }
         }
-      } catch (error) {
+      } catch {
         // ignore
       }
       try {
         if (window.TextToSpeech) {
           return window.TextToSpeech;
         }
-      } catch (error2) {
+      } catch {
         // ignore
       }
       return null;
@@ -318,7 +318,7 @@
             });
         }
         return Promise.resolve(true);
-      } catch (error) {
+      } catch {
         return Promise.resolve(false);
       }
     }
@@ -399,7 +399,7 @@
           if (cap.isPluginAvailable("Geolocation")) {
             return true;
           }
-        } catch (error) {
+        } catch {
           // ignore
         }
       }
@@ -424,7 +424,7 @@
         if (targetOrigin) {
           window.postMessage(msg, targetOrigin);
         }
-      } catch (error) {
+      } catch {
         // ignore
       }
     }
@@ -696,7 +696,7 @@
           var ok = false;
           try {
             ok = await geocodeAndAdd(addresses[i]);
-          } catch (error) {
+          } catch {
             ok = false;
           }
           if (ok) {
@@ -942,7 +942,7 @@
       var data;
       try {
         data = JSON.parse(String(text || ""));
-      } catch (error) {
+      } catch {
         setStatus("Invalid JSON.", "error");
         updateErrorReportButton();
         return;
@@ -1144,7 +1144,7 @@
         if (typeof window !== "undefined" && window.localStorage) {
           return window.localStorage.getItem("kc_default_start") || "";
         }
-      } catch (error) {
+      } catch {
         // localStorage can throw in private browsing; ignore.
       }
       return "";
@@ -1299,7 +1299,7 @@
         }
         try {
           sendNative({ type: "kc:tts", text: text });
-        } catch (error) {
+        } catch {
           // ignore
         }
         speakWeb(text);
@@ -1967,7 +1967,7 @@
         L.Control.Geocoder &&
         typeof L.Control.geocoder === "function"
       ) {
-        geocoderControl = L.Control.geocoder({
+        _geocoderControl = L.Control.geocoder({
           defaultMarkGeocode: false,
           geocoder: L.Control.Geocoder.nominatim({
             serviceUrl: "https://nominatim.openstreetmap.org/",
@@ -2096,7 +2096,7 @@
         setTimeout(function () {
           try {
             observer.disconnect();
-          } catch (error) {}
+          } catch {}
         }, 1000);
       })();
 
