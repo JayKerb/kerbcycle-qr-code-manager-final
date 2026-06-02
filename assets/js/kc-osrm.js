@@ -45,11 +45,10 @@
       return;
     }
 
-    var storedStart = readStoredDefaultStart();
-    var start = parseLatLon(storedStart) ||
+    const storedStart = readStoredDefaultStart();
+    const start = parseLatLon(storedStart) ||
       parseLatLon(cfg.start) ||
       parseLatLon(KC_OSRM.defaultStart) || [40.73, -73.99];
-    var _end = parseLatLon(cfg.end) || [40.78, -73.97];
 
     var parent = el.parentNode;
     if (!parent) return;
@@ -158,11 +157,11 @@
     wrapper.appendChild(mapHolder);
     mapHolder.appendChild(el);
 
-    var addStopMode = false;
-    var map;
-    var routingControl;
-    var _geocoderControl;
-    var tripBase = getTripBase(KC_OSRM.base);
+    let addStopMode = false;
+    let map;
+    let routingControl;
+    let _geocoderControl = null;
+    const tripBase = getTripBase(KC_OSRM.base);
     var stepQueue = [];
     var stepIndex = 0;
     var following = true;
@@ -336,7 +335,7 @@
         window.speechSynthesis.getVoices().length === 0
       ) {
         if (typeof window.speechSynthesis.addEventListener === "function") {
-          var handleVoicesReady = function handleVoicesReady() {
+          var handleVoicesReady = function () {
             window.speechSynthesis.removeEventListener(
               "voiceschanged",
               handleVoicesReady,
@@ -2093,10 +2092,12 @@
           clearItinerary();
         });
         observer.observe(container, { childList: true, subtree: true });
-        setTimeout(function () {
+        setTimeout(() => {
           try {
             observer.disconnect();
-          } catch {}
+          } catch {
+            // Ignore disconnect errors while allowing cleanup to continue.
+          }
         }, 1000);
       })();
 
