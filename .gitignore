@@ -18,3 +18,4 @@ id_ed25519
 
 # Local tool output
 trufflehog-results.json
+node_modules/

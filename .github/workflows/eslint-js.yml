@@ -1,0 +1,38 @@
+name: ESLint JS
+
+on:
+  pull_request:
+    paths:
+      - 'assets/js/**/*.js'
+      - 'admin/js/**/*.js'
+      - 'eslint.config.cjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/eslint-js.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  eslint:
+    name: ESLint JS report-only
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        continue-on-error: true
+        run: npm run lint:js
