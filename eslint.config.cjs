@@ -30,12 +30,17 @@ module.exports = [
 
         wp: "readonly",
         ajaxurl: "readonly",
+        kerbcycle_ajax: "readonly",
         kerbcycleQrScanner: "readonly",
         KC_OSRM: "readonly",
         Html5Qrcode: "readonly",
         Html5QrcodeScanner: "readonly",
         BarcodeDetector: "readonly",
         L: "readonly",
+        KerbcycleQRGen: "readonly",
+        QRCode: "readonly",
+        Chart: "readonly",
+        kerbcycleReportData: "readonly",
       },
     },
 
