@@ -280,7 +280,7 @@ function initKerbcycleAdmin() {
             return parsed;
           }
         }
-      } catch (error) {
+      } catch {
         // ignore malformed URLs
       }
     }
