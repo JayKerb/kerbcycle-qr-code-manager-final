@@ -19,7 +19,16 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5  
+        uses: actions/checkout@v5
+
+      - name: Check staging with Basic Auth
+        env:
+          TARGET_URL: ${{ secrets.ZAP_TARGET_URL }}
+          BASIC_TOKEN: ${{ secrets.ZAP_BASIC_AUTH_TOKEN }}
+        run: |
+          curl -I -L --max-time 30 \
+            -H "Authorization: Basic $BASIC_TOKEN" \
+            "$TARGET_URL"
 
       - name: Run OWASP ZAP baseline scan
         uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25
