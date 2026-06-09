@@ -21,6 +21,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Confirm target URL is set
+        run: |
+          if [ -z "${{ secrets.ZAP_TARGET_URL }}" ]; then
+            echo "ZAP_TARGET_URL is missing"
+            exit 1
+          fi
+            echo "ZAP_TARGET_URL is configured"
+
+      - name: Check staging is reachable
+        run: |
+          curl -I --max-time 20 "${{ secrets.ZAP_TARGET_URL }}"   
+
       - name: Run OWASP ZAP baseline scan
         uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25
         env:
