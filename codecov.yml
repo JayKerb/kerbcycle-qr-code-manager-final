@@ -1,0 +1,27 @@
+coverage:
+  precision: 2
+  round: down
+  range: "40...80"
+
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 5%
+        if_not_found: success
+    patch:
+      default:
+        target: 0%
+        threshold: 100%
+        if_not_found: success
+
+comment:
+  layout: "reach,diff,flags,tree"
+  behavior: default
+  require_changes: false
+
+ignore:
+  - "vendor/**"
+  - "node_modules/**"
+  - "tests/**"
+  - ".github/**"
