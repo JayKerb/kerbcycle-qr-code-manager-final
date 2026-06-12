@@ -9,4 +9,11 @@
             <directory suffix="Test.php">tests/phpunit/Smoke</directory>
         </testsuite>
     </testsuites>
+<coverage>
+    <include>
+        <directory suffix=".php">includes</directory>
+        <directory suffix=".php">admin</directory>
+        <directory suffix=".php">public</directory>
+    </include>
+</coverage>
 </phpunit>
