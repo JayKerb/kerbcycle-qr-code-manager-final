@@ -67,7 +67,7 @@ jobs:
         run: vendor/bin/phpunit -c phpunit.xml.dist --coverage-clover coverage.xml
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@a99c28d3f0da835de33ff2feb2e15691c7b9641f #v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.xml
