@@ -68,11 +68,11 @@ jobs:
         run: |
           set -euo pipefail
 
-        if [ -s changed-php-files.txt ]; then
-          xargs -a changed-php-files.txt vendor/bin/phpcs --standard=phpcs.xml.dist
-        else
-          echo "No changed PHP files to lint."
-        fi
+          if [ -s changed-php-files.txt ]; then
+            xargs -a changed-php-files.txt vendor/bin/phpcs --standard=phpcs.xml.dist
+          else
+            echo "No changed PHP files to lint."
+          fi
 
       #- name: Annotate PHPCS results
         #if: always()
