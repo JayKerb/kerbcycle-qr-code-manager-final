@@ -44,6 +44,8 @@ jobs:
             exit 1
           fi
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Set up Snyk CLI to check for security issues
         # Snyk can be used to break the build when it detects security issues.
         # In this case we want to upload the SAST issues to GitHub Code Scanning
