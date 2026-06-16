@@ -43,7 +43,7 @@ jobs:
             echo "SNYK_TOKEN is not configured in GitHub repository secrets."
             exit 1
           fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 #v4
         with:
           persist-credentials: false
       - name: Set up Snyk CLI to check for security issues
@@ -53,7 +53,7 @@ jobs:
 
         # For Snyk Open Source you must first set up the development environment for your application's dependencies
         # For example for Node
-        #- uses: actions/setup-node@v4
+        #- uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         #  with:
         #    node-version: 20
 
@@ -81,6 +81,6 @@ jobs:
 
         # Push the Snyk Code results into GitHub Code Scanning tab
       - name: Upload result to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@dd903d2e4f5405488e5ef1422510ee31c8b32357 # v3
         with:
           sarif_file: snyk-code.sarif
