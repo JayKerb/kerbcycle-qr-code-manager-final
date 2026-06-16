@@ -18,7 +18,7 @@ jobs:
     name: semgrep/ci-report-only
     runs-on: ubuntu-latest
     container:
-      image: semgrep/semgrep:1.162.0-nonroot@sha256:c9205060e5cefc26fe140f8d5ee477295c6d0724f9d15931a0a70f8272157064
+      image: semgrep/semgrep:1.162.0-nonroot@sha256:67eb06814eb0c38d8d77f074c18cb5d476df68a14e2caed9dd3241b71223891b
     if: (github.actor != 'dependabot[bot]')
 
     steps:
