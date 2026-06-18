@@ -1,8 +1,8 @@
 version: 2
 
 updates:
-  # Keep pinned GitHub Actions moving forward.
-  # Dependabot will open PRs when workflow action references can be updated.
+  # GitHub Actions:
+  # Group minor/patch action updates, but let major action updates open separately.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -16,12 +16,15 @@ updates:
       - "github-actions"
       - "security"
     groups:
-      github-actions:
+      github-actions-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
         patterns:
           - "*"
 
-  # Keep Composer-based PHP tooling updated:
-  # PHPUnit, PHPCS/WPCS, PHPStan, Psalm, and other Composer dependencies.
+  # Composer:
+  # Group safe routine updates, but keep major updates separate.
   - package-ecosystem: "composer"
     directory: "/"
     schedule:
@@ -35,12 +38,15 @@ updates:
       - "composer"
       - "php"
     groups:
-      composer-dependencies:
+      composer-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
         patterns:
           - "*"
 
-  # Keep npm-based tooling updated:
-  # ESLint, Playwright, JS tooling, and packages in package-lock.json.
+  # npm:
+  # Group routine JS/tooling updates, but keep major updates separate.
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
@@ -54,6 +60,9 @@ updates:
       - "npm"
       - "javascript"
     groups:
-      npm-dependencies:
+      npm-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
         patterns:
           - "*"
