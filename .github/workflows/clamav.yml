@@ -53,6 +53,10 @@ jobs:
               --max-scansize=400M \
               /scan
 
+      - name: Fix ClamAV scan log permissions
+        if: always()
+        run: sudo chown -R "$USER":"$USER" clamav-output
+
       - name: Upload ClamAV scan log
         if: always()
         uses: actions/upload-artifact@v7
