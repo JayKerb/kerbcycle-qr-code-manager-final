@@ -1,4 +1,3 @@
-````yaml
 name: Wordfence CLI Scan
 
 on:
@@ -83,4 +82,3 @@ jobs:
         with:
           name: wordfence-cli-results
           path: wordfence-results/
-````
