@@ -1,0 +1,63 @@
+name: ClamAV Malware Scan
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '17 8 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: clamav-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  clamav:
+    name: ClamAV repository scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Prepare scan output
+        run: mkdir -p clamav-output
+
+      - name: Pull ClamAV image
+        run: docker pull clamav/clamav:stable
+
+      - name: Run ClamAV scan
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          docker run --rm \
+            --mount type=bind,source="${GITHUB_WORKSPACE}",target=/scan,readonly \
+            --mount type=bind,source="${GITHUB_WORKSPACE}/clamav-output",target=/output \
+            clamav/clamav:stable \
+            clamscan \
+              --recursive \
+              --infected \
+              --log=/output/clamav-scan.log \
+              --exclude-dir='^/scan/\.git' \
+              --exclude-dir='^/scan/clamav-output' \
+              --max-filesize=100M \
+              --max-scansize=400M \
+              /scan
+
+      - name: Upload ClamAV scan log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: clamav-scan-log
+          path: clamav-output/clamav-scan.log
+          if-no-files-found: warn
+          retention-days: 14
