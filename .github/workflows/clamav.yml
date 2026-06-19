@@ -32,7 +32,7 @@ jobs:
         run: mkdir -p clamav-output
 
       - name: Pull ClamAV image
-        run: docker pull clamav/clamav:stable
+        run: docker pull clamav/clamav:stable@sha256:8df57e58b9127333f9ab5748a03a0f80f99d3c4830727c1c9ba9bffaa45a1b9c
 
       - name: Run ClamAV scan
         shell: bash
@@ -42,7 +42,7 @@ jobs:
           docker run --rm \
             --mount type=bind,source="${GITHUB_WORKSPACE}",target=/scan,readonly \
             --mount type=bind,source="${GITHUB_WORKSPACE}/clamav-output",target=/output \
-            clamav/clamav:stable \
+            clamav/clamav:stable@sha256:8df57e58b9127333f9ab5748a03a0f80f99d3c4830727c1c9ba9bffaa45a1b9c \
             clamscan \
               --recursive \
               --infected \
