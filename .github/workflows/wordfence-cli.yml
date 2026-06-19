@@ -34,6 +34,17 @@ jobs:
 
           wordfence version
 
+      - name: Configure Wordfence CLI
+        run: |
+          set -euo pipefail
+
+          wordfence configure \
+            --request-license \
+            --accept-terms \
+            --workers 2 \
+            --default \
+            --overwrite
+
       - name: Run malware scan
         run: |
           set -euo pipefail
