@@ -1,94 +1,93 @@
 name: Wordfence CLI Scan
 
 on:
-pull_request:
-push:
-branches:
-- main
-schedule:
-- cron: "37 8 * * 1"
-workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "37 8 * * 1"
+  workflow_dispatch:
 
 permissions:
-contents: read
+  contents: read
 
 jobs:
-wordfence-cli:
-name: Wordfence CLI malware scan
-runs-on: ubuntu-24.04
-timeout-minutes: 20
+  wordfence-cli:
+    name: Wordfence CLI malware scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
 
-steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  - name: Install Wordfence CLI
-    run: |
-      set -euo pipefail
+      - name: Install Wordfence CLI
+        run: |
+          set -euo pipefail
 
-      sudo apt-get update
-      sudo apt-get install -y libpcre3
+          sudo apt-get update
+          sudo apt-get install -y libpcre3
 
-      python -m pip install --upgrade pip
-      python -m pip install "wordfence==5.0.4"
+          python -m pip install --upgrade pip
+          python -m pip install "wordfence==5.0.4"
 
-      wordfence version
+          wordfence version
 
-  - name: Run malware scan
-    run: |
-      set -euo pipefail
+      - name: Run malware scan
+        run: |
+          set -euo pipefail
 
-      mkdir -p wordfence-results
+          mkdir -p wordfence-results
 
-      wordfence \
-        --accept-terms \
-        malware-scan \
-        --workers 2 \
-        --include-all-files \
-        --output-format csv \
-        --output-headers \
-        --output-path wordfence-results/malware-scan.csv \
-        .
+          wordfence \
+            --accept-terms \
+            malware-scan \
+            --workers 2 \
+            --include-all-files \
+            --output-format csv \
+            --output-headers \
+            --output-path wordfence-results/malware-scan.csv \
+            .
 
-      if [ ! -f wordfence-results/malware-scan.csv ]; then
-        {
-          echo "### Wordfence CLI malware scan"
-          echo "✅ No malware report file was produced."
-        } >> "$GITHUB_STEP_SUMMARY"
-        exit 0
-      fi
+          if [ ! -f wordfence-results/malware-scan.csv ]; then
+            {
+              echo "### Wordfence CLI malware scan"
+              echo "✅ No malware report file was produced."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
 
-      if [ ! -s wordfence-results/malware-scan.csv ]; then
-        {
-          echo "### Wordfence CLI malware scan"
-          echo "✅ No malware report rows were produced."
-        } >> "$GITHUB_STEP_SUMMARY"
-        exit 0
-      fi
+          if [ ! -s wordfence-results/malware-scan.csv ]; then
+            {
+              echo "### Wordfence CLI malware scan"
+              echo "✅ No malware report rows were produced."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
 
-      findings=$(( $(wc -l < wordfence-results/malware-scan.csv) - 1 ))
+          findings=$(( $(wc -l < wordfence-results/malware-scan.csv) - 1 ))
 
-      if [ "$findings" -gt 0 ]; then
-        {
-          echo "### Wordfence CLI malware scan"
-          echo "❌ Wordfence CLI found $findings possible malware signature match(es)."
-          echo ""
-          echo "First 20 report lines:"
-          echo '```csv'
-          head -n 20 wordfence-results/malware-scan.csv
-          echo '```'
-        } >> "$GITHUB_STEP_SUMMARY"
-        exit 1
-      fi
+          if [ "$findings" -gt 0 ]; then
+            {
+              echo "### Wordfence CLI malware scan"
+              echo "❌ Wordfence CLI found $findings possible malware signature match(es)."
+              echo ""
+              echo "First 20 report lines:"
+              echo '```csv'
+              head -n 20 wordfence-results/malware-scan.csv
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
 
-      {
-        echo "### Wordfence CLI malware scan"
-        echo "✅ No malware signatures matched."
-      } >> "$GITHUB_STEP_SUMMARY"
-
-  - name: Upload Wordfence report
-    if: always()
-    uses: actions/upload-artifact@v4
-    with:
-      name: wordfence-cli-results
-      path: wordfence-results/
+          {
+            echo "### Wordfence CLI malware scan"
+            echo "✅ No malware signatures matched."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload Wordfence report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wordfence-cli-results
+          path: wordfence-results/
