@@ -1,6 +1,6 @@
 # .github/workflows/dependency-review.yml
 
-name: Dependency Review
+name: Required - Dependency Review
 
 on:
   pull_request:
@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   dependency-review:
-    name: Dependency Review
+    name: required / dependency-review
     runs-on: ubuntu-latest
 
     steps:
@@ -27,3 +27,16 @@ jobs:
           fail-on-severity: high
           fail-on-scopes: runtime
           comment-summary-in-pr: always
+
+      - name: Write Dependency Review summary
+        if: always()
+        run: |
+          {
+            echo "## Required Check: Dependency Review"
+            echo ""
+            echo "- Policy: newly introduced vulnerable dependencies should block the PR according to the configured severity rules."
+            echo "- Scope: dependency changes introduced by this pull request."
+            echo "- Result: see job status above."
+            echo ""
+            echo "This check is intended to fail the PR when dependency-review rules are violated."
+          } >> "$GITHUB_STEP_SUMMARY"

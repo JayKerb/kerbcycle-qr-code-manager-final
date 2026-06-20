@@ -1,4 +1,4 @@
-name: PHPUnit Smoke Tests
+name: Required - PHPUnit Smoke Tests
 
 on:
   pull_request:
@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   phpunit-smoke:
+    name: required / phpunit
     runs-on: ubuntu-latest
 
     services:
@@ -63,3 +64,16 @@ jobs:
 
       - name: Run PHPUnit smoke tests
         run: vendor/bin/phpunit -c phpunit.xml.dist
+
+      - name: Write PHPUnit summary
+        if: always()
+        run: |
+          {
+            echo "## Required Check: PHPUnit Smoke Tests"
+            echo ""
+            echo "- Policy: smoke and security-boundary tests must pass."
+            echo "- Scope: core plugin behavior and regression protection."
+            echo "- Result: see job status above."
+            echo ""
+            echo "This check is intended to fail the PR if tests fail."
+          } >> "$GITHUB_STEP_SUMMARY"

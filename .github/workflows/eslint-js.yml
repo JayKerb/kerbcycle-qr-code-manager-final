@@ -1,4 +1,4 @@
-name: ESLint JS
+name: Required - ESLint JS
 
 on:
   pull_request:
@@ -16,9 +16,8 @@ permissions:
 
 jobs:
   eslint:
-    name: ESLint JS report-only
+    name: required / eslint
     runs-on: ubuntu-latest
-    continue-on-error: true
 
     steps:
       - name: Checkout
@@ -36,5 +35,17 @@ jobs:
         run: npm ci
 
       - name: Run ESLint
-        continue-on-error: true
         run: npm run lint:js
+
+      - name: Write ESLint summary
+        if: always()
+        run: |
+          {
+            echo "## Required Check: ESLint"
+            echo ""
+            echo "- Policy: JavaScript linting must pass when JavaScript files are checked."
+            echo "- Scope: JavaScript files and related frontend tooling."
+            echo "- Result: see job status above."
+            echo ""
+            echo "This check is intended to fail the PR if ESLint reports errors."
+          } >> "$GITHUB_STEP_SUMMARY"

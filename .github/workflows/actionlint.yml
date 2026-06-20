@@ -1,6 +1,6 @@
 # .github/workflows/actionlint.yml
 
-name: actionlint
+name: Required - actionlint
 
 on:
   pull_request:
@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   actionlint:
-    name: Lint GitHub Actions workflows
+    name: required / actionlint
     runs-on: ubuntu-latest
 
     steps:
@@ -34,3 +34,16 @@ jobs:
 
       - name: Run actionlint
         run: actionlint
+
+      - name: Write actionlint summary
+        if: always()
+        run: |
+          {
+            echo "## Required Check: actionlint"
+            echo ""
+            echo "- Policy: GitHub Actions workflow syntax and structural issues must be fixed."
+            echo "- Scope: workflow files under .github/workflows."
+            echo "- Result: see job status above."
+            echo ""
+            echo "This check is intended to fail the PR if workflow linting fails."
+          } >> "$GITHUB_STEP_SUMMARY"
