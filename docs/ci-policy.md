@@ -20,16 +20,16 @@ These checks are expected to be fast, deterministic, and high-confidence. They p
 
 ### Required checks
 
-| Tool / workflow | Should run on PRs? | Should fail PRs? | Reason |
-|---|---:|---:|---|
-| PHPUnit smoke/security tests | Yes | Yes | Protects core plugin behavior and security-boundary assumptions. |
-| PHPCS changed-files gate | Yes | Yes | Prevents new WordPress coding/security-standard issues in changed PHP files. |
-| PHPStan | Yes | Yes | Prevents new static-analysis regressions at the current accepted level. |
-| Dependency Review | Yes | Yes | Blocks newly introduced vulnerable dependencies. |
-| actionlint | Yes, especially workflow changes | Yes | Prevents invalid or broken GitHub Actions workflows. |
-| zizmor | Yes, especially workflow changes | Yes for high-confidence findings | Helps detect risky GitHub Actions patterns. |
-| TruffleHog diff scan | Yes | Yes for verified secrets | Prevents accidentally committing secrets. |
-| ESLint | Yes, once stable | Yes | Prevents new JavaScript syntax/style regressions once the baseline is reliable. |
+| Tool / workflow              |               Should run on PRs? |                 Should fail PRs? | Reason                                                                          |
+| ---------------------------- | -------------------------------: | -------------------------------: | ------------------------------------------------------------------------------- |
+| PHPUnit smoke/security tests |                              Yes |                              Yes | Protects core plugin behavior and security-boundary assumptions.                |
+| PHPCS changed-files gate     |                              Yes |                              Yes | Prevents new WordPress coding/security-standard issues in changed PHP files.    |
+| PHPStan                      |                              Yes |                              Yes | Prevents new static-analysis regressions at the current accepted level.         |
+| Dependency Review            |                              Yes |                              Yes | Blocks newly introduced vulnerable dependencies.                                |
+| actionlint                   | Yes, especially workflow changes |                              Yes | Prevents invalid or broken GitHub Actions workflows.                            |
+| zizmor                       | Yes, especially workflow changes | Yes for high-confidence findings | Helps detect risky GitHub Actions patterns.                                     |
+| TruffleHog diff scan         |                              Yes |         Yes for verified secrets | Prevents accidentally committing secrets.                                       |
+| ESLint                       |                 Yes, once stable |                              Yes | Prevents new JavaScript syntax/style regressions once the baseline is reliable. |
 
 ### Required-check policy
 
@@ -50,13 +50,13 @@ These tools are useful for visibility, backlog planning, and security review, bu
 
 ### Advisory checks
 
-| Tool / workflow | Should run on PRs? | Should fail PRs? | Reason |
-|---|---:|---:|---|
-| Semgrep broad rules | Yes | No, except custom high-confidence rules | Useful security signal, but broad rules can produce false positives. |
-| Snyk Code | Optional | No | Useful as an advisory scanner, but should not block until baseline is reviewed. |
-| SonarQube | Optional | No | Best used for maintainability, complexity, and code-smell backlog. |
-| Codacy | Optional | No | Useful for quality visibility, but not a primary security gate. |
-| Codecov | Yes | Not yet | Useful for coverage visibility. Later, patch coverage may become blocking. |
+| Tool / workflow     | Should run on PRs? |                        Should fail PRs? | Reason                                                                          |
+| ------------------- | -----------------: | --------------------------------------: | ------------------------------------------------------------------------------- |
+| Semgrep broad rules |                Yes | No, except custom high-confidence rules | Useful security signal, but broad rules can produce false positives.            |
+| Snyk Code           |           Optional |                                      No | Useful as an advisory scanner, but should not block until baseline is reviewed. |
+| SonarQube           |           Optional |                                      No | Best used for maintainability, complexity, and code-smell backlog.              |
+| Codacy              |           Optional |                                      No | Useful for quality visibility, but not a primary security gate.                 |
+| Codecov             |                Yes |                                 Not yet | Useful for coverage visibility. Later, patch coverage may become blocking.      |
 
 ### Advisory-check policy
 
@@ -76,14 +76,14 @@ These tools are slower, noisier, more expensive, or dependent on staging/server 
 
 ### Scheduled/manual checks
 
-| Tool / workflow | Run frequency | Should fail normal PRs? | Reason |
-|---|---|---:|---|
-| Wordfence CLI | Weekly/manual | No | Full repo malware scanning is useful, but not needed on every PR. |
-| ClamAV | Weekly/manual | No | Useful malware scan, but better as scheduled/manual unless release-sensitive. |
-| OWASP ZAP baseline | Weekly/manual | No, not initially | Depends on staging availability and needs a reviewed baseline. |
-| WPScan, if added later | Weekly/manual | No, not initially | Depends on staging/plugin state and needs triage. |
-| Full OSV inventory scan | Weekly/manual | No, except urgent criticals | Useful for dependency inventory beyond PR-specific dependency changes. |
-| k6/load testing, if added later | Manual/scheduled | No | Performance tests should not block normal PRs unless thresholds are mature. |
+| Tool / workflow                 | Run frequency    |     Should fail normal PRs? | Reason                                                                        |
+| ------------------------------- | ---------------- | --------------------------: | ----------------------------------------------------------------------------- |
+| Wordfence CLI                   | Weekly/manual    |                          No | Full repo malware scanning is useful, but not needed on every PR.             |
+| ClamAV                          | Weekly/manual    |                          No | Useful malware scan, but better as scheduled/manual unless release-sensitive. |
+| OWASP ZAP baseline              | Weekly/manual    |           No, not initially | Depends on staging availability and needs a reviewed baseline.                |
+| WPScan, if added later          | Weekly/manual    |           No, not initially | Depends on staging/plugin state and needs triage.                             |
+| Full OSV inventory scan         | Weekly/manual    | No, except urgent criticals | Useful for dependency inventory beyond PR-specific dependency changes.        |
+| k6/load testing, if added later | Manual/scheduled |                          No | Performance tests should not block normal PRs unless thresholds are mature.   |
 
 ### Scheduled/manual policy
 
@@ -108,17 +108,17 @@ Recommended reporting pattern:
 
 Recommended artifact names:
 
-| Tool | Artifact name |
-|---|---|
-| PHPCS | phpcs-results |
-| PHPStan | phpstan-results |
-| Semgrep | semgrep-results |
-| Snyk | snyk-results |
-| OSV Scanner | osv-results |
+| Tool          | Artifact name         |
+| ------------- | --------------------- |
+| PHPCS         | phpcs-results         |
+| PHPStan       | phpstan-results       |
+| Semgrep       | semgrep-results       |
+| Snyk          | snyk-results          |
+| OSV Scanner   | osv-results           |
 | Wordfence CLI | wordfence-cli-results |
-| ClamAV | clamav-results |
-| ZAP | zap-baseline-report |
-| Codecov | codecov-results |
+| ClamAV        | clamav-results        |
+| ZAP           | zap-baseline-report   |
+| Codecov       | codecov-results       |
 
 ## Branch protection guidance
 
