@@ -1,14 +1,10 @@
-name: ClamAV Malware Scan
+name: Scheduled - ClamAV Malware Scan
 
 on:
-  pull_request:
-  push:
-    branches:
-      - main
-  schedule:
-    - cron: '17 8 * * 1'
   workflow_dispatch:
-
+  schedule:
+    - cron: '17 8 * * *'
+  
 permissions:
   contents: read
 
@@ -18,13 +14,13 @@ concurrency:
 
 jobs:
   clamav:
-    name: ClamAV repository scan
+    name: scheduled / clamav
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           persist-credentials: false
 
@@ -59,9 +55,23 @@ jobs:
 
       - name: Upload ClamAV scan log
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: clamav-scan-log
           path: clamav-output/clamav-scan.log
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Write ClamAV scheduled summary
+        if: always()
+        run: |
+          {
+            echo "## Scheduled Check: ClamAV"
+            echo ""
+            echo "- Policy: malware scanning is scheduled/manual, not a normal PR blocker."
+            echo "- Scope: repository file scan."
+            echo "- Blocking behavior: this workflow should not block ordinary PRs."
+            echo "- Result: review job logs and uploaded artifacts."
+            echo ""
+            echo "Review this before major releases or after suspicious repository activity."
+          } >> "$GITHUB_STEP_SUMMARY"

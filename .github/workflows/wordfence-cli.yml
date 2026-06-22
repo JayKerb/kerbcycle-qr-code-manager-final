@@ -1,26 +1,24 @@
-name: Wordfence CLI Scan
+name: Scheduled - Wordfence CLI Scan
 
 on:
-  pull_request:
-  push:
-    branches:
-      - main
-  schedule:
-    - cron: "37 8 * * 1"
   workflow_dispatch:
-
+  schedule:
+    - cron: "37 8 * * *"
+  
 permissions:
   contents: read
 
 jobs:
   wordfence-cli:
-    name: Wordfence CLI malware scan
+    name: scheduled / wordfence-cli
     runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
 
       - name: Install Wordfence CLI
         run: |
@@ -63,7 +61,7 @@ jobs:
 
           if [ ! -f wordfence-results/malware-scan.csv ]; then
             {
-              echo "### Wordfence CLI malware scan"
+              echo "### Scheduled Check: Wordfence CLI malware scan"
               echo "✅ No malware report file was produced."
             } >> "$GITHUB_STEP_SUMMARY"
             exit 0
@@ -71,7 +69,7 @@ jobs:
 
           if [ ! -s wordfence-results/malware-scan.csv ]; then
             {
-              echo "### Wordfence CLI malware scan"
+              echo "### Scheduled Check: Wordfence CLI malware scan"
               echo "✅ No malware report rows were produced."
             } >> "$GITHUB_STEP_SUMMARY"
             exit 0
@@ -81,7 +79,7 @@ jobs:
 
           if [ "$findings" -gt 0 ]; then
             {
-              echo "### Wordfence CLI malware scan"
+              echo "### Scheduled Check: Wordfence CLI malware scan"
               echo "❌ Wordfence CLI found $findings possible malware signature match(es)."
               echo ""
               echo "First 20 report lines:"
@@ -93,12 +91,13 @@ jobs:
           fi
 
           {
-            echo "### Wordfence CLI malware scan"
+            echo "### Scheduled Check: Wordfence CLI malware scan"
             echo "✅ No malware signatures matched."
           } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload Wordfence report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: wordfence-cli-results
           path: wordfence-results/

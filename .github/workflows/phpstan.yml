@@ -1,4 +1,4 @@
-name: PHPStan
+name: Required - PHPStan
 
 on:
   pull_request:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   phpstan:
-    name: PHPStan
+    name: required / phpstan
     runs-on: ubuntu-latest
 
     steps:
@@ -32,3 +32,16 @@ jobs:
 
       - name: Run PHPStan
         run: composer phpstan
+
+      - name: Write PHPStan summary
+        if: always()
+        run: |
+          {
+            echo "## Required Check: PHPStan"
+            echo ""
+            echo "- Policy: PHPStan must pass at the repository's current configured level."
+            echo "- Scope: static analysis for PHP code."
+            echo "- Result: see job status above."
+            echo ""
+            echo "This check is intended to fail the PR if PHPStan reports errors."
+          } >> "$GITHUB_STEP_SUMMARY"

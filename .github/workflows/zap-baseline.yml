@@ -1,12 +1,9 @@
-name: OWASP ZAP Baseline
+name: Scheduled - OWASP ZAP Baseline
 
 on:
   workflow_dispatch:
-  pull_request:
-    branches:
-      - main
   schedule:
-    - cron: "0 8 * * 1"
+    - cron: "0 10 * * 1"
 
 permissions:
   contents: read
@@ -14,8 +11,9 @@ permissions:
 
 jobs:
   zap-baseline:
-    name: ZAP Baseline Scan
+    name: scheduled / zap-baseline
     runs-on: ubuntu-latest
+    continue-on-error: true
 
     steps:
       - name: Checkout repository
@@ -51,3 +49,17 @@ jobs:
           allow_issue_writing: false
           fail_action: false
           cmd_options: "-I -m 2"
+
+      - name: Write ZAP scheduled summary
+        if: always()
+        run: |
+          {
+            echo "## Scheduled Check: ZAP Baseline"
+            echo ""
+            echo "- Policy: staging-site dynamic scanning is scheduled/manual, not a normal PR blocker."
+            echo "- Scope: OWASP ZAP baseline scan against the configured target."
+            echo "- Blocking behavior: this workflow should not block ordinary PRs."
+            echo "- Result: review job logs and uploaded ZAP report artifacts."
+            echo ""
+            echo "Because this depends on staging availability and authentication, findings should be manually triaged."
+          } >> "$GITHUB_STEP_SUMMARY"

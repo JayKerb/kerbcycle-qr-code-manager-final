@@ -1,4 +1,4 @@
-name: PHPCS
+name: Required - PHPCS
 
 on:
   pull_request:
@@ -16,6 +16,7 @@ permissions:
 
 jobs:
   phpcs:
+    name: required / phpcs
     runs-on: ubuntu-latest
 
     steps:
@@ -74,6 +75,33 @@ jobs:
           else
             echo "No changed PHP files to lint."
           fi
+
+      - name: Write PHPCS summary
+        if: always()
+        env:
+          HAS_PHP_FILES: ${{ steps.changed_php.outputs.has_php_files }}
+        run: |
+          {
+            echo "## Required Check: PHPCS"
+            echo ""
+            echo "- Policy: changed PHP files must pass PHPCS."
+            echo "- Scope: changed PHP files only."
+            echo "- Result: see job status above."
+
+            if [ "$HAS_PHP_FILES" = "true" ]; then
+              echo ""
+              echo "### Changed PHP files checked"
+              echo ""
+              if [ -s changed-php-files.txt ]; then
+                sed 's/^/- `/' changed-php-files.txt | sed 's/$/`/'
+              else
+                echo "- No changed PHP files were listed."
+              fi
+            else
+              echo ""
+              echo "No changed PHP files were detected, so PHPCS did not run."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       #- name: Annotate PHPCS results
         #if: always()

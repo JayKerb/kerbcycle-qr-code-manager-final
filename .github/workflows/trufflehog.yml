@@ -1,4 +1,4 @@
-name: TruffleHog Secret Scan
+name: Required - TruffleHog
 
 on:
   pull_request:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   trufflehog:
-    name: Scan for leaked secrets
+    name: required / trufflehog
     runs-on: ubuntu-latest
 
     steps:
@@ -23,7 +23,19 @@ jobs:
 
       - name: Run TruffleHog
         uses: trufflesecurity/trufflehog@26eae1f2969f4240acfd3fc363b504b1b43255d4 
-        continue-on-error: true
         with:
           path: ./
-          extra_args: --results=verified,unknown --github-actions
+          extra_args: --results=verified,unknown
+      
+      - name: Write TruffleHog summary
+        if: always()
+        run: |
+          {
+            echo "## Required Check: TruffleHog"
+            echo ""
+            echo "- Policy: verified leaked secrets should block the PR."
+            echo "- Scope: secret scanning for changes introduced by the pull request."
+            echo "- Result: see job status above."
+            echo ""
+            echo "This check is intended to fail the PR if verified secrets are detected."
+          } >> "$GITHUB_STEP_SUMMARY"

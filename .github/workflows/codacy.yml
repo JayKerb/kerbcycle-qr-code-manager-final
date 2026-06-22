@@ -11,16 +11,12 @@
 # For more information on Codacy Analysis CLI in general, see
 # https://github.com/codacy/codacy-analysis-cli.
 
-name: Codacy Security Scan
+name: Scheduled - Codacy
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ "main" ]
+  workflow_dispatch:
   schedule:
-    - cron: '17 14 * * 0'
+    - cron: '54 8 * * 1'
 
 permissions:
   contents: read
@@ -31,8 +27,9 @@ jobs:
       contents: read # for actions/checkout to fetch code
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
       actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
-    name: Codacy Security Scan
+    name: scheduled / codacy
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       # Checkout the repository to the GitHub Actions runner
       - name: Checkout code
@@ -55,6 +52,20 @@ jobs:
           # Force 0 exit code to allow SARIF file generation
           # This will handover control about PR rejection to the GitHub side
           max-allowed-issues: 2147483647
+
+      - name: Write Codacy scheduled summary
+        if: always()
+        run: |
+          {
+            echo "## Scheduled Check: Codacy"
+            echo ""
+            echo "- Policy: broad Codacy analysis is scheduled/manual because it is slower and overlaps with focused PR checks."
+            echo "- Scope: broad repository quality/security analysis."
+            echo "- Blocking behavior: this workflow should not block ordinary PRs."
+            echo "- Result: review job logs, SARIF output, Code Scanning output, or uploaded artifacts if present."
+            echo ""
+            echo "Use Codacy findings for cleanup planning rather than ordinary PR blocking."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       # Upload the SARIF file generated in the previous step
       #- name: Upload SARIF results file

@@ -1,4 +1,4 @@
-name: GitHub Actions Security Analysis with zizmor
+name: Required - zizmor
 
 on:
   pull_request:
@@ -17,12 +17,13 @@ on:
       - "action.yml"
       - "action.yaml"
       - ".github/dependabot.yml"
+  workflow_dispatch:
 
 permissions: {}
 
 jobs:
   zizmor:
-    name: Analyze GitHub Actions security
+    name: required / zizmor
     runs-on: ubuntu-latest
 
     permissions:
@@ -37,7 +38,19 @@ jobs:
 
       - name: Run zizmor
         uses: zizmorcore/zizmor-action@5f14fd08f7cf1cb1609c1e344975f152c7ee938d # v0.5.6
-        continue-on-error: true
         with:
           advanced-security: false
           inputs: .
+
+      - name: Write zizmor summary
+        if: always()
+        run: |
+          {
+            echo "## Required Check: zizmor"
+            echo ""
+            echo "- Policy: high-confidence GitHub Actions security findings should block the PR."
+            echo "- Scope: workflow security analysis for .github/workflows."
+            echo "- Result: see job status above."
+            echo ""
+            echo "This check is intended to fail the PR if zizmor reports blocking findings."
+          } >> "$GITHUB_STEP_SUMMARY"

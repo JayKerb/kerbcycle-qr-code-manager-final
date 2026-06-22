@@ -1,4 +1,4 @@
-name: Codecov
+name: Advisory - Codecov
 
 on:
   pull_request:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   php-coverage:
-    name: PHP coverage
+    name: advisory / codecov
     runs-on: ubuntu-latest
 
     services:
@@ -76,3 +76,17 @@ jobs:
           flags: php
           name: kerbcycle-php
           fail_ci_if_error: true
+
+      - name: Write Codecov advisory summary
+        if: always()
+        run: |
+          {
+            echo "## Advisory Check: Codecov"
+            echo ""
+            echo "- Policy: coverage reporting is advisory at this stage."
+            echo "- Scope: test coverage visibility."
+            echo "- Blocking behavior: this job should not block ordinary PRs yet."
+            echo "- Result: review Codecov output or linked dashboard."
+            echo ""
+            echo "Patch coverage can become blocking later after the coverage baseline is stable."
+          } >> "$GITHUB_STEP_SUMMARY"
