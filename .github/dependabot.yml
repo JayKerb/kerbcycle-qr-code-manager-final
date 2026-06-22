@@ -54,13 +54,13 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "10:00"
+      interval: "daily"
+      #day: "monday"
+      time: "6:00"
       timezone: "America/New_York"
     cooldown:
       default-days: 7
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 8
     labels:
       - "dependencies"
       - "npm"
