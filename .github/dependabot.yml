@@ -6,13 +6,13 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
+      interval: "daily"
+      #day: "monday"
+      time: "06:00"
       timezone: "America/New_York"
     cooldown:
       default-days: 7
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 8
     labels:
       - "dependencies"
       - "github-actions"
@@ -30,13 +30,13 @@ updates:
   - package-ecosystem: "composer"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:30"
+      interval: "daily"
+      #day: "monday"
+      time: "06:30"
       timezone: "America/New_York"
     cooldown:
       default-days: 7
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 5
     labels:
       - "dependencies"
       - "composer"
@@ -54,13 +54,13 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "10:00"
+      interval: "daily"
+      #day: "monday"
+      time: "07:00"
       timezone: "America/New_York"
     cooldown:
       default-days: 7
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 5
     labels:
       - "dependencies"
       - "npm"
