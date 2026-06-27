@@ -21,8 +21,7 @@ final class AiProviderServiceSmokeTest extends TestCase
         delete_option('kerbcycle_ai_render_endpoint');
         delete_option('kerbcycle_ai_render_api_key');
         delete_option('kerbcycle_ai_render_model');
-
-        parent::tear_down();
+        
     }
 
     public function test_generate_rejects_unsupported_provider(): void
