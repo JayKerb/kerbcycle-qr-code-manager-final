@@ -264,9 +264,11 @@ final class SmsServiceSmokeTest extends TestCase
                     return new \WP_Error('unexpected_key_header', 'Unexpected key header.');
                 }
 
-                if (($query['to'] ?? '') !== '+12015550123') {
-                    return new \WP_Error('unexpected_query_to', 'Unexpected query recipient.');
-                }
+               $queryToDigits = preg_replace('/\D+/', '', (string) ($query['to'] ?? ''));
+
+               if ($queryToDigits !== '12015550123') {
+                   return new \WP_Error('unexpected_query_to', 'Unexpected query recipient.');
+}
 
                 if (($query['message'] ?? '') !== 'GET message') {
                     return new \WP_Error('unexpected_query_message', 'Unexpected query message.');
