@@ -1,9 +1,9 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'https://example.com';
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || "https://example.com";
 
 export default defineConfig({
-  testDir: './tests/playwright',
+  testDir: "./tests/playwright",
   timeout: 30_000,
   expect: {
     timeout: 10_000,
@@ -12,14 +12,14 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
 
   reporter: process.env.CI
-    ? [['html'], ['github'], ['list']]
-    : [['list'], ['html']],
+    ? [["html"], ["github"], ["list"]]
+    : [["list"], ["html"]],
 
   use: {
     baseURL,
-    trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
 
     httpCredentials:
       process.env.BASIC_AUTH_USER && process.env.BASIC_AUTH_PASS
@@ -32,9 +32,9 @@ export default defineConfig({
 
   projects: [
     {
-      name: 'chromium',
+      name: "chromium",
       use: {
-        ...devices['Desktop Chrome'],
+        ...devices["Desktop Chrome"],
       },
     },
   ],
