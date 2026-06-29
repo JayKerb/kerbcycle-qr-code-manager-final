@@ -1,4 +1,4 @@
-name: Playwright Smoke Tests
+name: Advisory - Playwright Smoke Tests
 
 on:
   pull_request:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   playwright-smoke:
-    name: Browser smoke tests
+    name: advisory / playwright
     runs-on: ubuntu-latest
 
     # Non-blocking while this new test layer is being stabilized.
