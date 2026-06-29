@@ -22,7 +22,7 @@ jobs:
           persist-credentials: false
 
       - name: Run TruffleHog
-        uses: trufflesecurity/trufflehog@c1a1d6a28a601e902d8652e75425c4b3d3294053 
+        uses: trufflesecurity/trufflehog@885fa2d6b0e8347ee3d921bf79ecb6c8510f8ae1 
         with:
           path: ./
           extra_args: --results=verified,unknown
