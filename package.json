@@ -4,6 +4,8 @@
     "lint:js:fix": "eslint \"assets/js/**/*.js\" --fix"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@types/node": "^26.0.1",
     "@wordpress/eslint-plugin": "^25.4.1",
     "eslint": "^9.39.4",
     "globals": "^17.6.0"
