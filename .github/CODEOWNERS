@@ -1,0 +1,10 @@
+# Default owner for all files
+* @JayKerb
+
+# Extra attention for CI and security-sensitive files
+.github/workflows/ @JayKerb
+SECURITY.md @JayKerb
+composer.json @JayKerb
+composer.lock @JayKerb
+package.json @JayKerb
+package-lock.json @JayKerb
