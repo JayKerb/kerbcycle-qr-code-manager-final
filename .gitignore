@@ -19,3 +19,8 @@ id_ed25519
 # Local tool output
 trufflehog-results.json
 node_modules/
+
+# Playwright generated output
+/playwright-report/
+/test-results/
+playwright-debug-output.txt
