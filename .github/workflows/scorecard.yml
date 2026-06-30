@@ -1,7 +1,9 @@
-name: OpenSSF Scorecard
+name: Scheduled - OpenSSF Scorecard
 
 on:
   push:
+    branches:
+      - main
   schedule:
     # Weekly on Saturday at 1:30 UTC.
     - cron: '30 1 * * 6'
@@ -11,16 +13,16 @@ permissions:
 
 jobs:
   analysis:
-    name: Scorecard analysis
+    name: scheduled / scorecard
     runs-on: ubuntu-latest
 
     permissions:
+      security-events: write
+      id-token: write
       contents: read
       issues: read
       pull-requests: read
       checks: read
-      security-events: write
-      id-token: write
 
     steps:
       - name: Checkout code
