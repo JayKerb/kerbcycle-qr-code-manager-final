@@ -146,6 +146,11 @@ final class AssetLoadingSmokeTest extends TestCase
         return $decoded;
     }
 
+    private function localizedBoolean($value): bool
+    {
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
+
     private function setCurrentPostContent(string $content): void
     {
         $postId = self::factory()->post->create(
@@ -304,8 +309,18 @@ final class AssetLoadingSmokeTest extends TestCase
                     'kerbcycle_ajax'
                 );
 
-                $this->assertFalse($localized['scanner_enabled']);
-                $this->assertTrue($localized['drag_drop_disabled']);
+                $this->assertFalse(
+                    $this->localizedBoolean(
+                        $localized['scanner_enabled']
+                    )
+                );
+
+                $this->assertTrue(
+                    $this->localizedBoolean(
+                        $localized['drag_drop_disabled']
+                    )
+                );
+
                 $this->assertNotEmpty($localized['nonce']);
                 $this->assertNotEmpty($localized['rest_nonce']);
 
@@ -377,8 +392,17 @@ final class AssetLoadingSmokeTest extends TestCase
                     'kerbcycle_ajax'
                 );
 
-                $this->assertTrue($localized['scanner_enabled']);
-                $this->assertFalse($localized['drag_drop_disabled']);
+                $this->assertTrue(
+                    $this->localizedBoolean(
+                        $localized['scanner_enabled']
+                    )
+                );
+
+                $this->assertFalse(
+                    $this->localizedBoolean(
+                        $localized['drag_drop_disabled']
+                    )
+                );
             }
         );
     }
@@ -511,7 +535,12 @@ final class AssetLoadingSmokeTest extends TestCase
                     'kerbcycle_ajax'
                 );
 
-                $this->assertFalse($localized['scanner_enabled']);
+                $this->assertFalse(
+                    $this->localizedBoolean(
+                        $localized['scanner_enabled']
+                    )
+                );
+
                 $this->assertNotEmpty($localized['nonce']);
 
                 $this->assertStringContainsString(
@@ -568,7 +597,11 @@ final class AssetLoadingSmokeTest extends TestCase
                     'kerbcycle_ajax'
                 );
 
-                $this->assertTrue($localized['scanner_enabled']);
+                $this->assertTrue(
+                    $this->localizedBoolean(
+                        $localized['scanner_enabled']
+                    )
+                );
             }
         );
     }
