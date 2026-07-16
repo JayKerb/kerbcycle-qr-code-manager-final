@@ -329,8 +329,8 @@ final class AssetLoadingSmokeTest extends TestCase
                     $localized['ajax_url']
                 );
 
-                $this->assertStringContainsString(
-                    '/wp-json/kerbcycle/v1/ai',
+                $this->assertSame(
+                    rest_url('kerbcycle/v1/ai'),
                     $localized['rest_url']
                 );
             }
