@@ -99,7 +99,12 @@ final class AdminSettingsPageSmokeTest extends TestCase
         $this->assertStringContainsString('name="kerbcycle_qr_enable_reminders"', $html);
         $this->assertStringContainsString('name="kerbcycle_qr_enable_scanner"', $html);
         $this->assertStringContainsString('name="kerbcycle_qr_disable_drag_drop"', $html);
-        $this->assertSame(5, substr_count($html, 'checked="checked"'));
+        $checkedCount = preg_match_all(
+            '/checked\s*=\s*([\'"])checked\1/',
+            $html
+);
+
+$this->assertSame(5, $checkedCount);
     }
 
     public function test_settings_number_fields_reflect_saved_options(): void
