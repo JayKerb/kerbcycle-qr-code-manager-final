@@ -202,15 +202,18 @@ final class MessagesHistoryPageSmokeTest extends TestCase
                     $html
                 );
 
-                $this->assertStringContainsString(
-                    '>SMS',
+                $smsTabCount = preg_match(
+                    '/>\s*SMS\s*<\/a>/',
                     $html
                 );
 
-                $this->assertStringContainsString(
-                    '>Email',
+                $emailTabCount = preg_match(
+                    '/>\s*Email\s*<\/a>/',
                     $html
-                );
+        );
+
+        $this->assertSame(1, $smsTabCount);
+        $this->assertSame(1, $emailTabCount);
 
                 $this->assertStringContainsString(
                     'name="page" value="kerbcycle-messages-history"',
@@ -283,8 +286,7 @@ final class MessagesHistoryPageSmokeTest extends TestCase
                         'body'
                             => '<script>bodyAttack()</script>'
                                 . ' Customer pickup message.',
-                        'status'
-                            => '<img src=x onerror=statusAttack()>',
+                        'status' => '<b>failed</b>',
                         'provider'
                             => '<b>provider-name</b>',
                         'response'
@@ -320,9 +322,9 @@ final class MessagesHistoryPageSmokeTest extends TestCase
                 );
 
                 $this->assertStringContainsString(
-                    '&lt;img src=x onerror=statusAttack()&gt;',
+                    '&lt;b&gt;failed&lt;/b&gt;',
                     $html
-                );
+        );
 
                 $this->assertStringContainsString(
                     '&lt;b&gt;provider-name&lt;/b&gt;',
@@ -345,7 +347,7 @@ final class MessagesHistoryPageSmokeTest extends TestCase
                 );
 
                 $this->assertStringNotContainsString(
-                    '<img src=x onerror=statusAttack()>',
+                    '<b>failed</b>',
                     $html
                 );
 
