@@ -336,7 +336,7 @@ final class MessagesHistoryPageSmokeTest extends TestCase
                     $html
                 );
 
-                $this->assertStringContainsString(
+                $this->assertStringNotContainsString(
                     'responseAttack()',
                     $html
                 );
