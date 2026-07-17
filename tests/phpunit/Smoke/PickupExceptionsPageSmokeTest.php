@@ -348,7 +348,7 @@ final class PickupExceptionsPageSmokeTest extends TestCase
                         'qr_code' => 'QR-<script>qrAttack()</script>',
                         'issue' => '<script>issueAttack()</script>',
                         'notes' => '<img src=x onerror=notesAttack()>',
-                        'source' => '<strong>mobile</strong>',
+                        'source' => '<b>mobile</b>',
                         'ai_summary' => '<script>summaryAttack()</script>',
                         'ai_recommended_action'
                             => '<em>Call customer</em>',
@@ -382,7 +382,7 @@ final class PickupExceptionsPageSmokeTest extends TestCase
                 );
 
                 $this->assertStringContainsString(
-                    '&lt;strong&gt;mobile&lt;/strong&gt;',
+                    '&lt;b&gt;mobile&lt;/b&gt;',
                     $html
                 );
 
