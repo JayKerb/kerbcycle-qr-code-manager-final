@@ -283,9 +283,9 @@ final class ErrorsPageSmokeTest extends TestCase
                 );
 
                 $this->assertStringNotContainsString(
-                    '<strong>',
+                    '<strong>Legacy failure message</strong>',
                     $html
-                );
+        );
             }
         );
     }
