@@ -362,10 +362,15 @@ final class RoutingPageSmokeTest extends TestCase
             $html
         );
 
-        $this->assertStringContainsString(
-            'name="option_page"'
-                . ' value="kerbcycle_osrm_options"',
-            $html
+        $optionPageCount = preg_match(
+           '/name=[\'"]option_page[\'"]\s+'
+               . 'value=[\'"]kerbcycle_osrm_options[\'"]/',
+           $html
+        );
+
+        $this->assertSame(
+            1,
+            $optionPageCount
         );
 
         $this->assertStringContainsString(
