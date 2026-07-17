@@ -316,10 +316,15 @@ final class MessagesHistoryPageSmokeTest extends TestCase
                     $html
                 );
 
-                $this->assertStringContainsString(
-                    'bodyAttack() Customer pickup message.',
-                    $html
-                );
+               $this->assertStringContainsString(
+                   'Customer pickup message.',
+                   $html
+               );
+
+               $this->assertStringNotContainsString(
+                   'bodyAttack()',
+                   $html
+        );
 
                 $this->assertStringContainsString(
                     '&lt;b&gt;failed&lt;/b&gt;',
