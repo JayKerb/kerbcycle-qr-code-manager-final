@@ -669,9 +669,14 @@ final class DashboardPageSmokeTest extends TestCase
             $html
         );
 
-        $this->assertStringContainsString(
-            'id="dashboard-customer-id"',
+        $customerSelectCount = preg_match(
+            '/<select\b[^>]*\bid=[\'"]dashboard-customer-id[\'"]/',
             $html
+        );
+
+        $this->assertSame(
+            1,
+            $customerSelectCount
         );
 
         $this->assertStringContainsString(
