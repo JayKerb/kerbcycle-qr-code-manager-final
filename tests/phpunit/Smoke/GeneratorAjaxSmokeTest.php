@@ -48,6 +48,18 @@ final class GeneratorAjaxSmokeTest extends TestCase
         wp_set_current_user(0);
     }
 
+    private function generatorPageWithoutHooks(): GeneratorPage
+    {
+        $reflection = new \ReflectionClass(
+            GeneratorPage::class
+        );
+
+        /** @var GeneratorPage $page */
+        $page = $reflection->newInstanceWithoutConstructor();
+
+        return $page;
+    }
+
     private function insertRepoCode(
         string $code,
         int $userId
@@ -154,7 +166,7 @@ final class GeneratorAjaxSmokeTest extends TestCase
         ob_start();
 
         try {
-            GeneratorPage::instance()
+            $this->generatorPageWithoutHooks()
                 ->ajax_generate_qr();
         } catch (AjaxDieException $exception) {
             /*
