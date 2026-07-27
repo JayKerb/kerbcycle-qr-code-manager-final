@@ -6,8 +6,8 @@
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "@types/node": "^26.1.1",
-    "@wordpress/eslint-plugin": "^25.6.0",
-    "eslint": "^9.39.4",
+    "@wordpress/eslint-plugin": "^25.7.0",
+    "eslint": "^9.39.5",
     "globals": "^17.7.0"
   }
 }
