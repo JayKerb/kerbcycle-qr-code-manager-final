@@ -1,0 +1,538 @@
+ChatGPT Plus
+
+Scheduled GitHub CI report — August 3, 2026
+
+I confirmed that the KerbCycle repository currently has seven workflows configured for scheduled execution:
+Scheduled workflow	General purpose
+ClamAV	Malware and suspicious-file scanning
+Wordfence CLI	WordPress/PHP malware scanning
+OWASP ZAP Baseline	External staging-site security scan
+Playwright Smoke	Browser-based staging smoke tests
+Semgrep	Static security analysis
+OpenSSF Scorecard	Repository and supply-chain security posture
+Codacy	Static code-quality/security analysis
+
+These workflow files are present on main.
+Current assessment
+
+No confirmed scheduled-run failure could be identified from the GitHub connector data available to me. The connector can inspect jobs and logs when a run ID is already known, but it did not expose a repository-wide list of recent schedule-triggered runs. Therefore, I cannot reliably claim that all seven workflows passed, failed, or ran on schedule.
+
+What I could verify:
+
+    The repository is accessible and active.
+
+    main was updated on August 3, 2026 through PR #526.
+
+    That update refreshed several pinned GitHub Actions, including:
+
+        actions/checkout 7.0.0 → 7.0.1
+
+        OpenSSF Scorecard 2.4.3 → 2.4.4
+
+        CodeQL SARIF upload 4.37.0 → 4.37.3
+
+        SonarQube scan action 8.2.0 → 8.2.1
+
+        zizmor 0.5.7 → 0.6.1.
+
+    The latest visible third-party commit statuses were successful for DeepSource PHP, JavaScript, secrets scanning, and formatting.
+
+    The dependency update touched numerous CI workflows, so the next scheduled executions are important regression checks, particularly for Scorecard, zizmor, and workflows using actions/checkout.
+
+What deserves manual attention
+
+In Actions → All workflows, filter by Event: schedule and check these first:
+
+    OWASP ZAP Baseline — most likely to fail because of staging availability, Basic Authentication, changed responses, or ZAP’s warning-based exit codes.
+
+    Playwright Smoke — sensitive to staging login credentials, selectors, browser setup, and site availability.
+
+    Wordfence CLI and ClamAV — verify that result artifacts were uploaded even when no malware was found.
+
+    OpenSSF Scorecard — verify the SARIF upload still succeeds after today’s action upgrades.
+
+    Semgrep and Codacy — distinguish scanner findings from workflow execution failures.
+
+Overall conclusion
+
+Repository scheduling coverage appears appropriately broad, and I found no evidence of a currently known CI outage. However, the actual recent scheduled-run results remain unverified rather than confirmed healthy. The most important next check is whether the first runs after the August 3 action upgrades complete successfully and continue producing their expected reports or artifacts.
+
+"The connector can inspect jobs and logs when a run ID is already known, but it did not expose a repository-wide list of recent schedule-triggered runs."
+
+Is there a way to resolve this issue so you can access the results?
+
+Yes. The limitation is not primarily a GitHub repository permission problem. The connected GitHub app can read jobs and logs once it has a run ID, but its available toolset does not currently include GitHub’s repository-wide “list workflow runs” endpoint. Reinstalling or reconnecting the GitHub app is therefore unlikely to fix it.
+
+I also checked the command environment available in this conversation: GitHub CLI (gh) is not installed, so I cannot use the normal CLI fallback here.
+Best resolution: publish a CI-health issue automatically
+
+Add a small workflow such as .github/workflows/scheduled-ci-report.yml that:
+
+    Uses the repository’s built-in GITHUB_TOKEN.
+
+    Calls GitHub’s Actions API to list runs filtered to event=schedule.
+
+    Collects the latest result for each scheduled workflow.
+
+    Updates one persistent GitHub issue, such as:
+
+    Scheduled CI Health Report
+
+    Includes:
+
+        workflow name
+
+        latest execution time
+
+        status and conclusion
+
+        run ID and run link
+
+        failed job names
+
+        whether expected artifacts were produced
+
+The connected GitHub tool can reliably search and read issues. Once the issue contains the run IDs, it can also fetch the associated jobs, steps, logs, and artifacts for deeper analysis.
+
+This can be done safely with narrowly scoped workflow permissions:
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+GitHub’s API supports listing workflow runs and filtering them by event, and an Actions-read token is sufficient for reading run and job information. The repository’s temporary GITHUB_TOKEN can authenticate API requests made inside the workflow.
+Why this is preferable
+
+    No personal access token is needed.
+
+    No secret needs to be given to ChatGPT.
+
+    The report remains inside your repository.
+
+    It gives you a human-readable dashboard even when you are not using ChatGPT.
+
+    I would then have enough identifiers to inspect individual failures and their logs.
+
+    The workflow can update the same issue rather than creating issue spam.
+
+Alternative: use GitHub CLI externally
+
+From a Codespace or trusted local terminal, this command returns the missing run list:
+
+gh run list \
+  --repo JayKerb/kerbcycle-qr-code-manager-final \
+  --event schedule \
+  --limit 100 \
+  --json databaseId,workflowName,status,conclusion,createdAt,updatedAt,url,headSha
+
+For an individual failure:
+
+gh run view RUN_ID \
+  --repo JayKerb/kerbcycle-qr-code-manager-final \
+  --log-failed
+
+GitHub CLI officially supports filtering runs by triggering event and returning the run IDs, workflow names, conclusions, dates, and URLs in JSON.
+
+You could paste that JSON here, but that would remain a manual process and would not permanently solve access.
+Recommendation
+
+Add the Scheduled CI Health Report workflow through a pull request. It is the safest and most durable workaround for the connector gap. After it creates or updates the report issue, future requests such as “check the recent scheduled CI runs” can be completed end to end, including targeted log and artifact inspection.
+
+Please generate the steps to create the Scheduled CI Health Report workflow through a pull request
+
+What this workflow will do
+
+The workflow checks the latest schedule-triggered run for the seven currently configured KerbCycle scheduled workflows:
+
+    Playwright and Semgrep run daily at 07:23 and 07:37 UTC.
+
+    ClamAV and Wordfence CLI run daily at 08:17 and 08:37 UTC.
+
+    Codacy and ZAP run Mondays at 08:54 and 10:00 UTC.
+
+    OpenSSF Scorecard runs Saturdays at 01:30 UTC.
+
+It updates one persistent GitHub issue named Scheduled CI Health Report with:
+
+    Latest result and run link
+
+    Run ID
+
+    Failed or non-successful job names and job IDs
+
+    Artifact names and artifact IDs
+
+    Stale-run warnings
+
+    Overall healthy, running, and attention counts
+
+The report runs daily at 12:30 UTC, after the existing scans. Using minute 30 rather than the beginning of an hour also reduces the likelihood of GitHub’s known top-of-hour scheduling delays.
+1. Download the validated workflow
+
+The file has been checked for valid YAML and JavaScript syntax.
+2. Create the file through GitHub
+
+    Open JayKerb/kerbcycle-qr-code-manager-final.
+
+    Confirm you are viewing the main branch.
+
+    Select Add file → Create new file.
+
+    In the filename field, enter:
+
+.github/workflows/scheduled-ci-health-report.yml
+
+    Open the downloaded file in a text editor.
+
+    Copy its entire contents and paste them into GitHub’s editor.
+
+    Select Commit changes…
+
+    Choose Create a new branch for this commit and start a pull request.
+
+    Use this branch name:
+
+ci/add-scheduled-ci-health-report
+
+    Select Propose changes.
+
+Do not commit it directly to main.
+3. Create the pull request
+
+Use this title:
+
+ci: add scheduled CI health report
+
+Use this PR description:
+Summary
+
+Adds a scheduled GitHub Actions health-reporting workflow that records the latest scheduled execution of the repository’s recurring CI and security workflows.
+
+The workflow updates one persistent GitHub issue titled Scheduled CI Health Report rather than creating a new issue on every run.
+Report contents
+
+For each configured scheduled workflow, the report includes:
+
+    latest scheduled run status and conclusion
+
+    run number, run URL, and run ID
+
+    run age and stale-run detection
+
+    failed or otherwise non-successful job names and job IDs
+
+    generated artifact names and artifact IDs
+
+The report currently covers:
+
+    Playwright Smoke
+
+    Semgrep
+
+    ClamAV
+
+    Wordfence CLI
+
+    Codacy
+
+    OWASP ZAP Baseline
+
+    OpenSSF Scorecard
+
+Security and permissions
+
+    Uses the repository-scoped GITHUB_TOKEN; no PAT or new repository secret is added.
+
+    Grants only actions: read and issues: write.
+
+    Pins actions/github-script to a full commit SHA.
+
+    Does not use pull_request_target.
+
+    Runs only by schedule or manual dispatch from the default branch.
+
+    Remains advisory and does not convert advisory scanner findings into merge blockers.
+
+Schedule
+
+Runs daily at 12:30 UTC, after the repository’s existing scheduled scans.
+Validation
+
+    YAML syntax validated
+
+    Embedded JavaScript syntax validated
+
+    Required actionlint check passes
+
+    zizmor reports no unacceptable workflow-security findings
+
+    Manual post-merge run creates or updates the Scheduled CI Health Report issue
+
+    Report contains run IDs, job IDs, and artifact IDs where available
+
+This workflow uses GitHub’s automatically generated, repository-scoped GITHUB_TOKEN; it does not require a personal access token. The explicit permissions limit it to reading Actions data and writing the report issue.
+
+The action is pinned to a complete commit SHA, which GitHub recommends as the immutable way to reference an action.
+4. Review the pull-request checks
+
+Your existing required actionlint workflow runs whenever files under .github/workflows/** change and is designed to fail the PR for workflow syntax or structural problems.
+
+Before merging, verify:
+
+    Required – actionlint passes.
+
+    zizmor has no new high-confidence security finding.
+
+    Other required branch-protection checks pass.
+
+    The PR changes only:
+
+.github/workflows/scheduled-ci-health-report.yml
+
+It is normal that the new report workflow itself does not run from the pull request. Giving an issue-writing workflow a normal PR trigger would be unnecessary, and manual dispatch is only available after the workflow exists on the default branch.
+5. Merge the pull request
+
+After the required checks pass:
+
+    Review Files changed one final time.
+
+    Use your normal squash or rebase merge method.
+
+    Confirm the file is now present on main.
+
+Scheduled workflows operate from the default branch, so merging is required before either the scheduled trigger or manual dispatch can test the complete behavior.
+6. Run the first report manually
+
+    Open the repository’s Actions tab.
+
+    Select Scheduled – CI Health Report.
+
+    Select Run workflow.
+
+    Confirm the branch is main.
+
+    Select the green Run workflow button.
+
+    Open the resulting run.
+
+    Confirm the job named scheduled / ci-health-report succeeds.
+
+7. Verify the issue
+
+Open the repository’s Issues tab and look for:
+
+Scheduled CI Health Report
+
+The issue should show seven rows. Each row should contain the workflow’s latest scheduled result and run ID. Failed runs should also show relevant job IDs, while workflows that retained artifacts should show artifact IDs.
+
+The workflow will update that same open issue on future runs. Do not close it unless you intend the workflow to create a replacement issue during its next execution.
+8. Important maintenance rule
+
+The seven workflow filenames are deliberately listed inside the report workflow. Whenever a scheduled workflow is added, deleted, or renamed, update the configured array in:
+
+.github/workflows/scheduled-ci-health-report.yml
+
+After the first manual run updates the issue, ask me to review the Scheduled CI Health Report issue and investigate any listed failures.
+
+
+Library
+/scheduled-ci-health-report.yml
+
+name: Scheduled - CI Health Report
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Daily at 12:30 UTC, after the repository's existing scheduled scans.
+    - cron: '30 12 * * *'
+
+permissions:
+  actions: read
+  issues: write
+
+concurrency:
+  group: scheduled-ci-health-report
+  cancel-in-progress: true
+
+jobs:
+  report:
+    name: scheduled / ci-health-report
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Update scheduled CI health issue
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          REPORT_TITLE: Scheduled CI Health Report
+          REPORT_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        with:
+          github-token: ${{ github.token }}
+          retries: 3
+          script: |
+            const { owner, repo } = context.repo;
+            const now = new Date();
+
+            const configured = [
+              { name: 'Playwright Smoke', file: 'playwright-smoke.yml', cadence: 'Daily', staleHours: 36 },
+              { name: 'Semgrep', file: 'semgrep.yml', cadence: 'Daily', staleHours: 36 },
+              { name: 'ClamAV', file: 'clamav.yml', cadence: 'Daily', staleHours: 36 },
+              { name: 'Wordfence CLI', file: 'wordfence-cli.yml', cadence: 'Daily', staleHours: 36 },
+              { name: 'Codacy', file: 'codacy.yml', cadence: 'Weekly (Monday)', staleHours: 192 },
+              { name: 'OWASP ZAP Baseline', file: 'zap-baseline.yml', cadence: 'Weekly (Monday)', staleHours: 192 },
+              { name: 'OpenSSF Scorecard', file: 'scorecard.yml', cadence: 'Weekly (Saturday)', staleHours: 192 },
+            ];
+
+            const escapeMarkdown = (value) => String(value ?? '')
+              .replaceAll('|', '\\|')
+              .replace(/\r?\n/g, '<br>');
+
+            const rows = [];
+            let healthy = 0;
+            let attention = 0;
+            let running = 0;
+
+            for (const item of configured) {
+              try {
+                const { data } = await github.rest.actions.listWorkflowRuns({
+                  owner,
+                  repo,
+                  workflow_id: item.file,
+                  event: 'schedule',
+                  per_page: 1,
+                });
+
+                const run = data.workflow_runs[0];
+                if (!run) {
+                  attention += 1;
+                  rows.push(`| ❓ ${item.name} | ${item.cadence} | No scheduled run found | — | — | — |`);
+                  continue;
+                }
+
+                const result = run.conclusion ?? run.status;
+                const startedAt = new Date(run.run_started_at ?? run.created_at);
+                const ageHours = Math.max(0, Math.floor((now - startedAt) / 3_600_000));
+                const isRunning = ['queued', 'requested', 'waiting', 'pending', 'in_progress'].includes(result);
+                const isStale = result === 'success' && ageHours > item.staleHours;
+
+                let icon = '⚠️';
+                let resultText = result;
+
+                if (isStale) {
+                  resultText += `; stale after ${item.staleHours}h`;
+                  attention += 1;
+                } else if (isRunning) {
+                  icon = '⏳';
+                  running += 1;
+                } else if (result === 'success') {
+                  icon = '✅';
+                  healthy += 1;
+                } else {
+                  icon = ['failure', 'timed_out', 'action_required', 'startup_failure'].includes(result)
+                    ? '❌'
+                    : '⚠️';
+                  attention += 1;
+                }
+
+                let jobs = '—';
+                if (run.status === 'completed' && run.conclusion !== 'success') {
+                  const { data: jobData } = await github.rest.actions.listJobsForWorkflowRun({
+                    owner,
+                    repo,
+                    run_id: run.id,
+                    filter: 'latest',
+                    per_page: 100,
+                  });
+
+                  const nonSuccessJobs = jobData.jobs
+                    .filter((job) => !['success', 'skipped'].includes(job.conclusion ?? job.status))
+                    .map((job) => `${escapeMarkdown(job.name)} (job ID \`${job.id}\`, ${job.conclusion ?? job.status})`);
+
+                  if (nonSuccessJobs.length > 0) jobs = nonSuccessJobs.join('<br>');
+                }
+
+                const { data: artifactData } = await github.rest.actions.listWorkflowRunArtifacts({
+                  owner,
+                  repo,
+                  run_id: run.id,
+                  per_page: 100,
+                });
+
+                const artifacts = artifactData.artifacts.length > 0
+                  ? artifactData.artifacts
+                    .map((artifact) => `${escapeMarkdown(artifact.name)} (artifact ID \`${artifact.id}\`)`)
+                    .join('<br>')
+                  : 'None';
+
+                const latestRun = [
+                  `[#${run.run_number}](${run.html_url})`,
+                  `run ID \`${run.id}\``,
+                  startedAt.toISOString(),
+                  `${ageHours}h ago`,
+                ].join('<br>');
+
+                rows.push(`| ${icon} ${item.name} | ${item.cadence} | ${latestRun} | ${escapeMarkdown(resultText)} | ${jobs} | ${artifacts} |`);
+              } catch (error) {
+                attention += 1;
+                core.warning(`Could not inspect ${item.file}: ${error.message}`);
+                rows.push(`| ⚠️ ${item.name} | ${item.cadence} | API query failed | — | — | — |`);
+              }
+            }
+
+            const body = [
+              '# Scheduled CI Health Report',
+              '',
+              `_Last refreshed: ${now.toISOString()}_`,
+              '',
+              `Automatically updated by [the CI health workflow](${process.env.REPORT_RUN_URL}).`,
+              '',
+              '## Summary',
+              '',
+              `- Scheduled workflows checked: **${configured.length}**`,
+              `- Healthy: **${healthy}**`,
+              `- Needs attention: **${attention}**`,
+              `- Running or queued: **${running}**`,
+              '',
+              '## Latest scheduled run per workflow',
+              '',
+              '| Workflow | Cadence | Latest scheduled run | Result | Failed/non-success jobs | Artifacts |',
+              '|---|---|---|---|---|---|',
+              ...rows,
+              '',
+              '## Interpretation',
+              '',
+              '- This report is advisory and does not turn advisory scanner findings into merge blockers.',
+              '- A successful scanner workflow means execution completed; review its logs, annotations, SARIF, and artifacts for findings.',
+              '- Run IDs, job IDs, and artifact IDs are included so connected tooling can inspect the underlying results.',
+            ].join('\n');
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100,
+            });
+
+            const existing = issues.find(
+              (issue) => !issue.pull_request && issue.title === process.env.REPORT_TITLE,
+            );
+
+            if (existing) {
+              await github.rest.issues.update({
+                owner,
+                repo,
+                issue_number: existing.number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner,
+                repo,
+                title: process.env.REPORT_TITLE,
+                body,
+              });
+            }
+
+            await core.summary.addRaw(body).write();
+
